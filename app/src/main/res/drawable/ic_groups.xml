@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shoshin icon: groups / community -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:strokeColor="@color/sh_ink" android:strokeWidth="1.5"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M17,21 C17,21 17,19.5 15.5,18.5 C14,17.5 12,17 10,17 C8,17 6,17.5 4.5,18.5 C3,19.5 3,21 3,21 M10,14 A4,4 0 1,1 10,6 A4,4 0 0,1 10,14 Z M21,21 C21,21 21,19.5 19.5,18.5 C18.5,17.9 17.3,17.5 16,17.3 M16,6.13 A4,4 0 0,1 16,14"/>
+</vector>

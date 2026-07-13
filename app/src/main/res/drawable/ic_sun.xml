@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shoshin icon: sun -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:strokeColor="@color/sh_ink" android:strokeWidth="1.5"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M12,5 L12,3 M12,21 L12,19 M5,12 L3,12 M21,12 L19,12 M7.05,7.05 L5.64,5.64 M18.36,18.36 L16.95,16.95 M7.05,16.95 L5.64,18.36 M18.36,5.64 L16.95,7.05 M12,16 A4,4 0 1,1 12,8 A4,4 0 0,1 12,16 Z"/>
+</vector>

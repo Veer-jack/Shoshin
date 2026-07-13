@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ── Spacing scale ── -->
+    <dimen name="sh_space_2">2dp</dimen>
+    <dimen name="sh_space_4">4dp</dimen>
+    <dimen name="sh_space_6">6dp</dimen>
+    <dimen name="sh_space_8">8dp</dimen>
+    <dimen name="sh_space_10">10dp</dimen>
+    <dimen name="sh_space_12">12dp</dimen>
+    <dimen name="sh_space_14">14dp</dimen>
+    <dimen name="sh_space_16">16dp</dimen>
+    <dimen name="sh_space_20">20dp</dimen>
+    <dimen name="sh_space_22">22dp</dimen>
+    <dimen name="sh_space_24">24dp</dimen>
+    <dimen name="sh_space_28">28dp</dimen>
+    <dimen name="sh_space_32">32dp</dimen>
+    <dimen name="sh_space_36">36dp</dimen>
+    <dimen name="sh_space_40">40dp</dimen>
+    <dimen name="sh_space_48">48dp</dimen>
+
+    <!-- ── Screen padding ── -->
+    <dimen name="sh_screen_h_pad">20dp</dimen>
+    <dimen name="sh_screen_top_pad">16dp</dimen>
+
+    <!-- ── Radius ── -->
+    <dimen name="sh_radius_sm">8dp</dimen>
+    <dimen name="sh_radius_md">12dp</dimen>
+    <dimen name="sh_radius_card">20dp</dimen>
+    <dimen name="sh_radius_button">14dp</dimen>
+    <dimen name="sh_radius_option">16dp</dimen>
+    <dimen name="sh_radius_chip">13dp</dimen>
+    <dimen name="sh_radius_pill">999dp</dimen>
+
+    <!-- ── Component heights ── -->
+    <dimen name="sh_button_height">56dp</dimen>
+    <dimen name="sh_button_height_lg">60dp</dimen>
+    <dimen name="sh_button_height_sm">46dp</dimen>
+    <dimen name="sh_pill_height">26dp</dimen>
+    <dimen name="sh_toggle_width">48dp</dimen>
+    <dimen name="sh_toggle_height">28dp</dimen>
+    <dimen name="sh_toggle_thumb">22dp</dimen>
+    <dimen name="sh_fab_size">56dp</dimen>
+    <dimen name="sh_tab_bar_height">80dp</dimen>
+    <dimen name="sh_keypad_key_height">60dp</dimen>
+    <dimen name="sh_settings_row_height">56dp</dimen>
+
+    <!-- ── Icon sizes ── -->
+    <dimen name="sh_icon_sm">18dp</dimen>
+    <dimen name="sh_icon_md">24dp</dimen>
+    <dimen name="sh_icon_lg">28dp</dimen>
+    <dimen name="sh_icon_chip">22dp</dimen>
+
+    <!-- ── Icon chip container ── -->
+    <dimen name="sh_icon_chip_size">38dp</dimen>
+    <dimen name="sh_icon_chip_radius">11dp</dimen>
+    <dimen name="sh_option_icon_size">46dp</dimen>
+    <dimen name="sh_option_icon_radius">13dp</dimen>
+
+    <!-- ── Typography ── -->
+    <dimen name="sh_text_display">52sp</dimen>
+    <dimen name="sh_text_title">30sp</dimen>
+    <dimen name="sh_text_h2">17sp</dimen>
+    <dimen name="sh_text_body">15sp</dimen>
+    <dimen name="sh_text_label">13sp</dimen>
+    <dimen name="sh_text_kicker">11sp</dimen>
+    <dimen name="sh_text_num_lg">36sp</dimen>
+    <dimen name="sh_text_num_xl">52sp</dimen>
+
+    <!-- ── Stroke ── -->
+    <dimen name="sh_stroke_hair">1dp</dimen>
+    <dimen name="sh_stroke_default">1.5dp</dimen>
+    <dimen name="sh_stroke_active">2dp</dimen>
+
+    <!-- ── Minimum touch target (Material 3) ── -->
+    <dimen name="sh_touch_target">44dp</dimen>
+
+    <!-- ── OTP ── -->
+    <dimen name="sh_otp_box_max_width">50dp</dimen>
+    <dimen name="sh_otp_box_radius">12dp</dimen>
+    <dimen name="sh_otp_gap">10dp</dimen>
+
+    <!-- ── Checkpoint ── -->
+    <dimen name="sh_checkpoint_node">34dp</dimen>
+    <dimen name="sh_checkpoint_icon">19dp</dimen>
+
+    <!-- ── Ring ── -->
+    <dimen name="sh_ring_stroke">8dp</dimen>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shoshin icon: walk -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:strokeColor="@color/sh_ink" android:strokeWidth="1.5"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M13,3.5 A1.5,1.5 0 1,1 13,0.5 A1.5,1.5 0 0,1 13,3.5 Z M9,8 L13,7 L15,10 L18,11 M9,8 L7,14 L10,15 L11,20 M15,10 L14,14 L17,20"/>
+</vector>

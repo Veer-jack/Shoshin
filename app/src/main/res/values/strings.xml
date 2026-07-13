@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shoshin</string>
+    <string name="app_tagline">Beginner\'s mind. Every morning.</string>
+    <string name="app_kanji">初心</string>
+
+    <!-- Auth -->
+    <string name="auth_title">Start your practice</string>
+    <string name="auth_subtitle">One quiet account. Your mornings, kept.</string>
+    <string name="auth_continue_google">Continue with Google</string>
+    <string name="auth_continue_apple">Continue with Apple</string>
+    <string name="auth_or_continue_with">or continue with</string>
+    <string name="auth_tab_phone">Phone</string>
+    <string name="auth_tab_email">Email</string>
+    <string name="auth_phone_label">Mobile number</string>
+    <string name="auth_phone_prefix">+91</string>
+    <string name="auth_phone_placeholder">98765 43210</string>
+    <string name="auth_email_label">Email address</string>
+    <string name="auth_email_placeholder">you@example.com</string>
+    <string name="auth_continue">Continue</string>
+    <string name="auth_terms">By continuing you agree to our Terms and Privacy Policy.</string>
+
+    <!-- Phone OTP -->
+    <string name="otp_phone_title">Enter the code</string>
+    <string name="otp_phone_sent_to">Sent to %1$s</string>
+    <string name="otp_resend_in">Didn\'t receive it? Resend in %1$s</string>
+    <string name="otp_resend">Resend</string>
+
+    <!-- Email OTP -->
+    <string name="otp_email_title">Check your email</string>
+    <string name="otp_email_subtitle">We sent a 6-digit code to</string>
+    <string name="otp_email_spam_hint">Also check your spam folder.</string>
+
+    <!-- Onboarding -->
+    <string name="onboard_skip">Skip</string>
+    <string name="onboard_continue">Continue</string>
+    <string name="onboard_cta">Choose your path</string>
+
+    <string name="onboard_1_kicker">The problem</string>
+    <string name="onboard_1_title">Mornings decide\nthe day</string>
+    <string name="onboard_1_body">Most routines die in the ten quiet minutes after the alarm — half-asleep, the old self wins.</string>
+
+    <string name="onboard_2_kicker">The method</string>
+    <string name="onboard_2_title">Cross the\nbridge</string>
+    <string name="onboard_2_body">Shoshin walks you from alarm to action through small checkpoints. One step, then the next.</string>
+
+    <string name="onboard_3_kicker">The payoff</string>
+    <string name="onboard_3_title">Become who\nyou return as</string>
+    <string name="onboard_3_body">Each morning kept is a vote for the person you\'re practicing to be. Begin again, every day.</string>
+
+    <!-- Permissions -->
+    <string name="perms_kicker">Honest asks</string>
+    <string name="perms_title">Two things, only\nwhen needed</string>
+    <string name="perms_subtitle">No background tracking. No noise. We ask plainly, and you stay in control.</string>
+    <string name="perms_notif_title">Notifications</string>
+    <string name="perms_notif_body">One gentle wind-down at night, and the alarm that begins your morning. Nothing more.</string>
+    <string name="perms_camera_title">Camera</string>
+    <string name="perms_camera_body">Used only when you choose photo proof for a checkpoint. Images never leave your phone.</string>
+    <string name="perms_continue">Continue</string>
+    <string name="perms_later">Maybe later</string>
+
+    <!-- Goals -->
+    <string name="goal_kicker">A beginning · 1 of 2</string>
+    <string name="goal_title">What are you\npracticing for?</string>
+    <string name="goal_exam_title">Crack the exam</string>
+    <string name="goal_exam_sub">Deep study before the world wakes</string>
+    <string name="goal_fit_title">Get fit</string>
+    <string name="goal_fit_sub">Move first, decide later</string>
+    <string name="goal_walk_title">Morning walk</string>
+    <string name="goal_walk_sub">Step gently into the day</string>
+    <string name="goal_routine_title">Build a routine</string>
+    <string name="goal_routine_sub">Show up, every single day</string>
+
+    <!-- Home -->
+    <string name="home_streak">%1$d mornings kept</string>
+    <string name="home_begin">Begin</string>
+    <string name="home_set_alarm">Set alarm</string>
+    <string name="home_consistency">Consistency</string>
+
+    <!-- Morning Activation -->
+    <string name="activation_kicker">Time to begin</string>
+    <string name="activation_cta">Begin morning</string>
+    <string name="activation_challenge_title">Solve to begin</string>
+
+    <!-- Checkpoints -->
+    <string name="checkpoint_done">Done</string>
+    <string name="checkpoint_skip_photo">Skip photo</string>
+    <string name="checkpoint_complete_cta">Complete</string>
+
+    <!-- Consistency -->
+    <string name="progress_consistency">Consistency</string>
+    <string name="progress_21_day">21-Day Challenge</string>
+    <string name="progress_71_day">71-Day Discipline</string>
+
+    <!-- Profile -->
+    <string name="profile_title">You</string>
+    <string name="settings_title">Settings</string>
+    <string name="pro_title">Shoshin Pro</string>
+    <string name="pro_cta">Start 7-day free trial</string>
+
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="retry">Try again</string>
+    <string name="ok">OK</string>
+    <string name="miss_not_failure">A miss is not a failure.\nBegin again tomorrow.</string>
+</resources>

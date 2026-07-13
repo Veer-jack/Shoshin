@@ -1,0 +1,66 @@
+# 🎉 Shoshin - Developer Handoff Package
+
+## Quick Overview
+- **App:** Offline-first habit tracking Android app
+- **Status:** Production Ready ✅
+- **Language:** Kotlin + Jetpack Compose
+- **Backend:** Firebase (Auth, Firestore, Storage, Messaging)
+- **Local DB:** Room Database
+- **Architecture:** Clean Architecture + MVVM
+
+## Getting Started (5 minutes)
+
+### Step 1: Extract Source Code
+```bash
+unzip shoshin-source.zip
+```
+
+### Step 2: Open in Android Studio
+1. File → Open Project
+2. Select the ShoshinAPP folder
+3. Wait for Gradle to sync
+
+### Step 3: Setup Firebase
+1. Get `google-services.json` from Firebase Console
+2. Place in `app/` folder
+3. Build → Rebuild Project
+
+### Step 4: Run on Emulator
+1. Create Android Virtual Device (Pixel 4, API 34)
+2. Run → Run 'app'
+3. Test offline scenarios
+
+## Project Structure
+# 🎉 Shoshin - Developer Handoff Package
+
+## Quick Overview
+- **App:** Offline-first habit tracking Android app
+- **Status:** Production Ready ✅
+- **Language:** Kotlin + Jetpack Compose
+- **Backend:** Firebase (Auth, Firestore, Storage, Messaging)
+- **Local DB:** Room Database
+- **Architecture:** Clean Architecture + MVVM
+
+## Getting Started (5 minutes)
+
+### Step 1: Extract Source Code
+```bash
+unzip shoshin-source.zip
+```
+
+### Step 2: Open in Android Studio
+1. File → Open Project
+2. Select the ShoshinAPP folder
+3. Wait for Gradle to sync
+
+### Step 3: Setup Firebase
+1. Get `google-services.json` from Firebase Console
+2. Place in `app/` folder
+3. Build → Rebuild Project
+
+### Step 4: Run on Emulator
+1. Create Android Virtual Device (Pixel 4, API 34)
+2. Run → Run 'app'
+3. Test offline scenarios
+
+## Project Structure

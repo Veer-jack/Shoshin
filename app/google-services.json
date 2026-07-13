@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "91496310161",
+    "project_id": "shoshin-habit",
+    "storage_bucket": "shoshin-habit.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91496310161:android:9ab7ace05542381a572630",
+        "android_client_info": {
+          "package_name": "com.shoshin.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA_jzYQhyZXoblGRNs5jZNVLB70kRYUJk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

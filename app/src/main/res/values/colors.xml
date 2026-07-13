@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- ── Core Palette ── -->
+    <color name="sh_ink">#FF1C1C1E</color>
+    <color name="sh_ink_2">#FF2C2C2E</color>
+    <color name="sh_paper">#FFFAF9F6</color>
+    <color name="sh_paper_2">#FFF3F1EB</color>
+    <color name="sh_surface">#FFFFFFFF</color>
+
+    <!-- ── Accent ── -->
+    <color name="sh_vermillion">#FFC84B31</color>
+    <color name="sh_vermillion_2">#FFB23E27</color>
+
+    <!-- ── Success ── -->
+    <color name="sh_matcha">#FF4A7C59</color>
+    <color name="sh_matcha_light">#1F4A7C59</color>
+
+    <!-- ── Neutrals ── -->
+    <color name="sh_sand">#FFE8E4DC</color>
+    <color name="sh_fog">#FF8A8580</color>
+    <color name="sh_fog_2">#FFB0ABA2</color>
+    <color name="sh_line">#FFE7E3DA</color>
+    <color name="sh_line_2">#FFD8D3C8</color>
+
+    <!-- ── Dark / Night screens ── -->
+    <color name="sh_night">#FF0F0F0F</color>
+    <color name="sh_night_2">#FF1A1A1A</color>
+    <color name="sh_night_3">#FF242424</color>
+    <color name="sh_night_text">#FFF2F1EC</color>
+    <color name="sh_night_muted">#FF8C8A85</color>
+
+    <!-- ── Semantic ── -->
+    <color name="sh_error">#FFE53935</color>
+    <color name="sh_on_primary">#FFFFFFFF</color>
+    <color name="sh_scrim">#80000000</color>
+
+    <!-- ── System / Status bar (transparent) ── -->
+    <color name="sh_status_bar">@android:color/transparent</color>
+</resources>

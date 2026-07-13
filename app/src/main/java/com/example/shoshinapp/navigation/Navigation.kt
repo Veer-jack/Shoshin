@@ -1,0 +1,26 @@
+package com.example.shoshinapp.navigation
+
+object Routes {
+    const val SPLASH       = "splash"
+    const val AUTH         = "auth"
+    const val PHONE_AUTH   = "phone_auth/{mode}"
+    const val OTP_VERIFY   = "otp_verify/{phone}/{mode}"
+    const val ONBOARDING   = "onboarding"
+    const val PERMISSIONS  = "permissions"
+    const val GOAL         = "goal"
+    const val TEMPLATE     = "template/{template}"
+    const val HOME         = "home/{template}"
+    const val ALARM        = "alarm/{template}"
+    const val ACTIVATION   = "activation/{template}"
+    const val CAMERA       = "camera/{template}"
+    const val CHECKPOINT   = "checkpoint/{template}/{current}"
+    const val CONSISTENCY  = "consistency"
+    const val CHALLENGE_21 = "challenge21"
+    const val CHALLENGE_71 = "challenge71"
+    const val PROFILE      = "profile"
+    const val SETTINGS     = "settings"
+    const val EDITOR       = "editor/{template}"
+    const val GROUPS       = "groups"
+    const val GROUP_DETAIL = "group_detail/{groupId}"
+    const val CREATE_GROUP = "create_group"
+}
