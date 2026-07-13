@@ -15,7 +15,7 @@ import android.util.Log
 class GoogleAuthManager(context: Context, private val auth: FirebaseAuth) {
 
     private val googleSignInClient: GoogleSignInClient = GoogleSignIn.getClient(
-        context,
+        context.applicationContext,
         GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken("91496310161-0rc0v6focf6olfnf0djkkehhh4hadv8a.apps.googleusercontent.com")
             .requestEmail()
@@ -54,7 +54,13 @@ class GoogleAuthManager(context: Context, private val auth: FirebaseAuth) {
         onError: (Exception) -> Unit
     ) {
         Log.d("GoogleAuth", "Authenticating with Firebase...")
-        val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+        val idToken = account.idToken
+        if (idToken == null) {
+            Log.e("GoogleAuth", "ID Token is null")
+            onError(Exception("Google ID Token is null"))
+            return
+        }
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
