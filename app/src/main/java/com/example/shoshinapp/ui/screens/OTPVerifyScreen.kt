@@ -31,7 +31,9 @@ fun OTPVerifyScreen(
     phone: String = "",
     email: String = "",
     password: String = "",
-    mode: OtpMode = OtpMode.Phone
+    mode: OtpMode = OtpMode.Phone,
+    referralCode: String? = null,
+    onSuccess: (String, String?, String?) -> Unit = { _, _, _ -> }
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -180,12 +182,8 @@ fun OTPVerifyScreen(
                         phoneAuthManager.verifyOTP(
                             code,
                             onSuccess = {
-                                scope.launch {
-                                    shoshinRepository.saveUser(name = "User", phone = phone)
-                                    navController.navigate(ShRoutes.onboarding(0)) {
-                                        popUpTo(ShRoutes.AUTH) { inclusive = true }
-                                    }
-                                }
+                                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                                onSuccess(userId, phone, referralCode)
                             },
                             onError = {
                                 errorMessage = ErrorHandler.mapFirebaseError(it)
@@ -196,12 +194,8 @@ fun OTPVerifyScreen(
                     OtpMode.Email -> {
                         emailAuthManager.verifyEmail(
                             onSuccess = {
-                                scope.launch {
-                                    shoshinRepository.saveUser(name = "User", email = email)
-                                    navController.navigate(ShRoutes.onboarding(0)) {
-                                        popUpTo(ShRoutes.AUTH) { inclusive = true }
-                                    }
-                                }
+                                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                                onSuccess(userId, email, referralCode)
                             },
                             onError = {
                                 errorMessage = ErrorHandler.mapFirebaseError(it)

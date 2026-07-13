@@ -38,6 +38,15 @@ class SettingsViewModel(
         }
     }
 
+    fun updateNotificationTime(hour: Int, minute: Int) {
+        val currentUser = _user.value ?: return
+        val timeString = String.format("%02d:%02d", hour, minute)
+        viewModelScope.launch {
+            userRepository.updateUser(currentUser.copy(notificationTime = timeString))
+            shoshinRepository.saveAlarm(hour, minute) // Keep legacy alarm in sync if needed
+        }
+    }
+
     fun updateProductiveHours(start: String, end: String) {
         val currentUser = _user.value ?: return
         viewModelScope.launch {

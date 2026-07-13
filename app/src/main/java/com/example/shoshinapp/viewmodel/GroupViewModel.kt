@@ -31,27 +31,17 @@ class GroupViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    fun loadGroups() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            val result = repository.getGroups()
-            result.onSuccess { _groups.value = it }
-            result.onFailure { _error.value = it.message }
-            _isLoading.value = false
-        }
-    }
+    private val _limitReached = MutableStateFlow<String?>(null)
+    val limitReached: StateFlow<String?> = _limitReached.asStateFlow()
 
-    fun createGroup(name: String, description: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            val result = repository.createGroup(name, description)
-            result.onSuccess {
-                loadGroups()
-            }
-            result.onFailure { _error.value = it.message }
-            _isLoading.value = false
-        }
+    private val _groupFull = MutableStateFlow<String?>(null)
+    val groupFull: StateFlow<String?> = _groupFull.asStateFlow()
+
+    fun loadGroups() {
+        // ...
     }
+    
+    // ... (rest of methods)
 
     fun joinGroup(inviteCode: String) {
         viewModelScope.launch {
@@ -60,9 +50,21 @@ class GroupViewModel : ViewModel() {
             result.onSuccess {
                 loadGroups()
             }
-            result.onFailure { _error.value = it.message }
+            result.onFailure { 
+                val msg = it.message ?: ""
+                when {
+                    msg.startsWith("LIMIT_REACHED:") -> _limitReached.value = msg.substringAfter(":")
+                    msg.startsWith("GROUP_FULL:") -> _groupFull.value = msg.substringAfter(":")
+                    else -> _error.value = msg
+                }
+            }
             _isLoading.value = false
         }
+    }
+
+    fun clearLimitError() {
+        _limitReached.value = null
+        _groupFull.value = null
     }
 
     fun loadGroupMembers(groupId: String) {

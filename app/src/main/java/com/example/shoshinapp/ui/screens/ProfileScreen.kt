@@ -2,6 +2,7 @@ package com.example.shoshinapp.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -13,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -26,14 +28,19 @@ import com.example.shoshinapp.R
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
 import com.example.shoshinapp.viewmodel.ProfileViewModel
+import com.example.shoshinapp.viewmodel.BadgeViewModel
+import com.example.shoshinapp.navigation.ShRoutes
 
 @Composable
 fun ProfileScreen(
     navController: NavController,
-    viewModel: ProfileViewModel
+    viewModel: ProfileViewModel,
+    badgeViewModel: BadgeViewModel? = null
 ) {
     val user by viewModel.user.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val badges by badgeViewModel?.badges?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf(emptyList()) }
+    val earnedCount = badges.count { !it.isLocked }
 
     Column(
         modifier = Modifier
@@ -127,9 +134,93 @@ fun ProfileScreen(
 
                 Spacer(Modifier.height(40.dp))
 
+                // Referral Section (Feature 4.2)
+                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                    Kicker("YOUR REFERRAL CODE", color = ShInk)
+                    Spacer(Modifier.height(12.dp))
+                    ShoshinCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { navController.navigate(ShRoutes.REFERRALS) }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                val userLimits by badgeViewModel?.userId?.let { uid -> 
+                                    // This is a bit hacky, normally should use a dedicated ViewModel
+                                    remember { mutableStateOf("VINAY142") } // Mock for now
+                                } ?: remember { mutableStateOf("...") }
+                                
+                                Text(text = "VINAY142", style = ShNumeralStyle.copy(fontSize = 24.sp), letterSpacing = 2.sp)
+                                Text("Tap to see your rewards", style = ShLabelStyle, color = ShFog)
+                            }
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ShLine2)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(40.dp))
+
+                // Badges Section (Feature 2.1)
+                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Kicker("My Badges ($earnedCount/${badges.size})", color = ShInk)
+                        TextButton(onClick = { navController.navigate(ShRoutes.BADGES) }) {
+                            Text("Show all", style = ShLabelStyle, color = ShVermillion)
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(12.dp))
+                    
+                    if (badges.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Show first 4 badges (mix of unlocked and locked)
+                            badges.take(4).forEach { badge ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .background(
+                                            if (badge.isLocked) ShSand else Color.parseColor(badge.color).copy(alpha = 0.15f),
+                                            RoundedCornerShape(12.dp)
+                                        )
+                                        .clickable { navController.navigate(ShRoutes.badgeDetail(badge.id)) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = badge.icon,
+                                        fontSize = 28.sp,
+                                        modifier = Modifier.alpha(if (badge.isLocked) 0.3f else 1f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(40.dp))
+
                 // Stats Section
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    Kicker("Statistics", color = ShInk)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Kicker("Statistics", color = ShInk)
+                        TextButton(onClick = { navController.navigate(ShRoutes.STATS) }) {
+                            Text("View detail", style = ShLabelStyle, color = ShVermillion)
+                        }
+                    }
                     Spacer(Modifier.height(16.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -141,11 +232,12 @@ fun ProfileScreen(
                             modifier = Modifier.weight(1f)
                         )
                         StatCard(
-                            label = "Total Risings",
-                            value = "${u.totalActivations}",
-                            icon = R.drawable.ic_bolt,
+                            label = "Friends",
+                            value = "${u.friendCount}",
+                            icon = R.drawable.ic_groups,
                             color = ShMatcha,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            onClick = { navController.navigate(ShRoutes.ALL_FRIENDS) }
                         )
                     }
                 }
@@ -156,15 +248,22 @@ fun ProfileScreen(
     }
 }
 
+private fun Color.Companion.parseColor(colorString: String): Color {
+    return Color(android.graphics.Color.parseColor(colorString))
+}
+
 @Composable
 fun StatCard(
     label: String,
     value: String,
     icon: Int,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
-    ShoshinCard(modifier = modifier) {
+    ShoshinCard(
+        modifier = if (onClick != null) modifier.clickable { onClick() } else modifier
+    ) {
         Column(
             modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally

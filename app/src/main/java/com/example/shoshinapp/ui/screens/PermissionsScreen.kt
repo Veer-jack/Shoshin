@@ -27,12 +27,15 @@ fun PermissionsScreen(onContinue: () -> Unit) {
     val context = LocalContext.current
     var cameraGranted  by remember { mutableStateOf(false) }
     var notifsGranted  by remember { mutableStateOf(false) }
+    var locationGranted by remember { mutableStateOf(false) }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { cameraGranted = it }
     val notifLauncher  = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { notifsGranted = it }
+    val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { locationGranted = it }
 
     Column(modifier = Modifier.fillMaxSize().background(ShPaper)) {
         Column(modifier = Modifier.weight(1f).padding(horizontal = 24.dp, vertical = 32.dp)) {
+            // ... (Title/Subtitle)
             Kicker(stringResource(R.string.perms_kicker), color = ShVermillion)
             Spacer(Modifier.height(10.dp))
             Text(stringResource(R.string.perms_title), fontSize = 34.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShInk)
@@ -51,6 +54,16 @@ fun PermissionsScreen(onContinue: () -> Unit) {
             Spacer(modifier = Modifier.height(14.dp))
             
             PermissionRow(
+                icon = R.drawable.ic_map_pin, 
+                title = "Location", 
+                sub = "Helps us give you geographic insights into your habits.",
+                granted = locationGranted,
+                onAllow = { locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION) }
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+            
+            PermissionRow(
                 icon = R.drawable.ic_bell, 
                 title = stringResource(R.string.perms_notif_title), 
                 sub = stringResource(R.string.perms_notif_body),
@@ -59,6 +72,7 @@ fun PermissionsScreen(onContinue: () -> Unit) {
             )
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                // ... (Exact Alarms)
                 var alarmGranted by remember { mutableStateOf(false) }
                 val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
                 
@@ -91,10 +105,10 @@ fun PermissionsScreen(onContinue: () -> Unit) {
 
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             ShoshinButton(
-                variant = if (cameraGranted && notifsGranted) ShButtonVariant.Accent else ShButtonVariant.Ghost,
+                variant = if (cameraGranted && notifsGranted && locationGranted) ShButtonVariant.Accent else ShButtonVariant.Ghost,
                 onClick = onContinue
             ) {
-                Text(if (cameraGranted && notifsGranted) stringResource(R.string.perms_continue) else stringResource(R.string.perms_later))
+                Text(if (cameraGranted && notifsGranted && locationGranted) stringResource(R.string.perms_continue) else stringResource(R.string.perms_later))
             }
         }
     }

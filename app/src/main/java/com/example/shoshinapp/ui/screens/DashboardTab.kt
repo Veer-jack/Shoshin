@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -43,12 +44,20 @@ fun DashboardTab(
     navController: NavController,
     syncManager: SyncManager,
     networkMonitor: NetworkStateMonitor,
-    conflictResolver: ConflictResolver
+    conflictResolver: ConflictResolver,
+    streakViewModel: com.example.shoshinapp.viewmodel.StreakViewModel,
+    friendViewModel: com.example.shoshinapp.viewmodel.FriendStreaksViewModel? = null
 ) {
     val context = LocalContext.current
     val repo = remember { ShoshinRepository(context) }
-    val userName by repo.userName.collectAsState(initial = "Friend")
-    val streak by repo.streakCount.collectAsState(initial = 0)
+    val user by streakViewModel.user.collectAsState()
+    
+    val userName = user?.displayName ?: "Friend"
+    val streak = user?.currentStreak ?: 0
+    
+    val topFriends by friendViewModel?.topFriends?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf(emptyList()) }
+    val totalFriends = user?.friendCount ?: 0
+
     val template by repo.template.collectAsState(initial = "walk")
     val t = TEMPLATE_MAP[template] ?: TEMPLATE_MAP["walk"]!!
 
@@ -213,22 +222,145 @@ fun DashboardTab(
 
             Spacer(Modifier.height(16.dp))
 
-            // Metrics
+            // Streak Loss Warning (Feature 0.2)
+            val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val lastCheckpoint = user?.lastCheckpointDate ?: 0L
+            val isTodayDone = isSameDay(lastCheckpoint, System.currentTimeMillis())
+            
+            if (!isTodayDone && currentHour >= 20) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(ShVermillion.copy(alpha = 0.1f))
+                        .border(1.dp, ShVermillion, RoundedCornerShape(12.dp))
+                        .padding(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("⚠️", fontSize = 20.sp)
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "Complete your checkpoint to maintain your streak!",
+                            style = ShBodyStyle,
+                            color = ShVermillion,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Streak Section (New Feature 0.2)
+            ShoshinCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { navController.navigate(ShRoutes.STREAK_DETAILS) }
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val streakColor = streakViewModel.getStreakColor(streak)
+                    val badges = streakViewModel.getMilestoneBadges(streak)
+
+                    Text(
+                        text = "🔥 $streak",
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = DmSansFamily,
+                        color = streakColor
+                    )
+                    
+                    Text(
+                        text = "DAYS IN A ROW",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = DmSansFamily,
+                        color = ShFog,
+                        letterSpacing = 1.sp
+                    )
+
+                    // Milestone Badges
+                    if (badges.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            badges.forEach { Text(it, fontSize = 20.sp) }
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(4.dp))
+                    
+                    val startDateText = if ((user?.streakStartDate ?: 0) > 0) {
+                        SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(user!!.streakStartDate))
+                    } else "Not started"
+                    
+                    Text(
+                        text = "Started: $startDateText",
+                        fontSize = 12.sp,
+                        color = ShFog2,
+                        fontFamily = DmSansFamily
+                    )
+                    
+                    // Streak Freezes (Feature 2.2)
+                    if ((user?.streakFreezes ?: 0) > 0) {
+                        Spacer(Modifier.height(16.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Freeze Tokens: ", style = ShLabelStyle, color = ShFog)
+                            repeat(user?.streakFreezes ?: 0) { i ->
+                                val isUsed = i < (user?.freezesUsedThisMonth ?: 0)
+                                Text(
+                                    text = "❄️",
+                                    fontSize = 18.sp,
+                                    modifier = Modifier
+                                        .padding(horizontal = 2.dp)
+                                        .alpha(if (isUsed) 0.3f else 1f)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "You have ${(user?.streakFreezes ?: 0) - (user?.freezesUsedThisMonth ?: 0)} available",
+                            style = ShLabelStyle,
+                            color = ShFog2,
+                            fontSize = 10.sp
+                        )
+                    }
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    ShoshinButton(
+                        onClick = { 
+                            navController.navigate(ShRoutes.streakShare(streak, t.name, user?.streakStartDate ?: 0L))
+                        },
+                        variant = ShButtonVariant.Primary,
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text("Share Your Streak")
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Friend Streaks Section (Feature 3.1)
+            FriendStreaksSection(
+                friends = topFriends,
+                totalCount = totalFriends,
+                onSeeAll = { navController.navigate(ShRoutes.ALL_FRIENDS) },
+                onInvite = { navController.navigate(ShRoutes.INVITE) },
+                onFriendTap = { friendId -> navController.navigate(ShRoutes.friendProfile(friendId)) }
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // Metrics Row (Modified to show only Consistency)
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                ShoshinCard(modifier = Modifier.weight(1f)) {
+                ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         RingProgress(percentage = 86, size = 52, strokeWidth = 5f, valueText = "86", color = ShInk, trackColor = ShSand)
                         Column {
                             Text("86%", fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShInk)
                             Text("CONSISTENCY", fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShFog, letterSpacing = 1.sp)
                         }
-                    }
-                }
-                ShoshinCard(modifier = Modifier.width(115.dp)) {
-                    Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🔥", fontSize = 24.sp); Spacer(Modifier.height(6.dp))
-                        Text("$streak", fontSize = 26.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShInk)
-                        Text("MORNINGS\nKEPT", fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShFog, letterSpacing = 1.sp, textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -314,4 +446,11 @@ fun DashboardTab(
             onMerge = { conflictResolver.resolveWithMerge(conflict.local, conflict.remote) }
         )
     }
+}
+
+private fun isSameDay(t1: Long, t2: Long): Boolean {
+    val cal1 = Calendar.getInstance().apply { timeInMillis = t1 }
+    val cal2 = Calendar.getInstance().apply { timeInMillis = t2 }
+    return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+           cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
 }

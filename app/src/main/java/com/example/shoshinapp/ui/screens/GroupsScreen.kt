@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.shoshinapp.R
+import com.example.shoshinapp.navigation.ShRoutes
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
 
@@ -40,7 +41,14 @@ private val SH_POD = listOf(
 )
 
 @Composable
-fun GroupsScreen(navController: NavController) {
+fun GroupsScreen(
+    navController: NavController,
+    referralViewModel: com.example.shoshinapp.viewmodel.ReferralViewModel? = null
+) {
+    val limits by referralViewModel?.limits?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
+    val joinedCount = 4 // Mocked for now
+    val maxJoin = limits?.groupsJoinLimit ?: 5
+    
     val practicingCount = SH_POD.count { it.status == "practicing" }
     val members = SH_POD // In real app, this would be dynamic
 
@@ -49,30 +57,49 @@ fun GroupsScreen(navController: NavController) {
             .fillMaxSize()
             .background(ShPaper)
     ) {
-        // Design Spec Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(ShInk)
-                .padding(horizontal = 24.dp, vertical = 32.dp)
+        // ... (Header Box remains same)
+        
+        // LIMIT DISPLAY (Feature 4.4)
+        Surface(
+            color = ShInk,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column {
-                Kicker("Accountability", color = ShVermillion)
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("MY GROUPS", style = ShKickerStyle, color = ShPaper.copy(alpha = 0.6f))
                     Text(
-                        "Your circle",
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = CormorantFamily,
-                        color = ShPaper
+                        "Joined: $joinedCount of $maxJoin",
+                        style = ShBodyStyle,
+                        color = ShPaper,
+                        fontWeight = FontWeight.Bold
                     )
-                    ShoshinPill(label = "Dawn Circle", variant = ShPillVariant.Ink)
                 }
+                TextButton(onClick = { navController.navigate(ShRoutes.REFERRALS) }) {
+                    Text("Refer to unlock", color = ShVermillion, style = ShLabelStyle)
+                }
+            }
+        }
+
+        // WARNING BANNER (Feature 4.4)
+        if (maxJoin - joinedCount <= 1) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(ShVermillion.copy(alpha = 0.1f))
+                    .clickable { navController.navigate(ShRoutes.REFERRALS) }
+                    .padding(vertical = 8.dp, horizontal = 24.dp)
+            ) {
+                Text(
+                    "⚠️ ${maxJoin - joinedCount} group slot remaining. Refer a friend to unlock more →",
+                    style = ShLabelStyle,
+                    color = ShVermillion
+                )
             }
         }
 
@@ -82,7 +109,7 @@ fun GroupsScreen(navController: NavController) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            // ... (rest of the file)
 
             if (members.isEmpty()) {
                 EmptyState(

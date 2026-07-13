@@ -13,28 +13,32 @@ import androidx.compose.ui.unit.sp
 import com.example.shoshinapp.R
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
+import com.example.shoshinapp.utils.AnalyticsManager
 import android.util.Patterns
 
 enum class AuthInputMode { Phone, Email }
 
 @Composable
 fun AuthScreen(
-    onPhoneContinue: (phoneNumber: String) -> Unit,
-    onEmailContinue: (email: String, pass: String) -> Unit,
+    onPhoneContinue: (phoneNumber: String, referralCode: String?) -> Unit,
+    onEmailContinue: (email: String, pass: String, referralCode: String?) -> Unit,
     onGoogleSignIn: () -> Unit,
     onPrivacyClick: () -> Unit,
     onTermsClick: () -> Unit,
     modifier: Modifier = Modifier,
     isGoogleLoading: Boolean = false,
+    initialReferralCode: String? = null
 ) {
     var inputMode by remember { mutableStateOf(AuthInputMode.Phone) }
     var phoneInput by remember { mutableStateOf("") }
     var emailInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
+    var referralCodeInput by remember { mutableStateOf(initialReferralCode ?: "") }
     
     var emailError by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+    var referralError by remember { mutableStateOf<String?>(null) }
 
     val termsText = buildAnnotatedString {
         append("By continuing you agree to our ")
@@ -124,7 +128,10 @@ fun AuthScreen(
             // OAuth buttons
             OAuthButton(
                 provider = OAuthProvider.Google, 
-                onClick = onGoogleSignIn,
+                onClick = {
+                    AnalyticsManager.logAuthMethodSelected("google")
+                    onGoogleSignIn()
+                },
                 enabled = !isGoogleLoading
             )
             Spacer(Modifier.height(22.dp))
@@ -142,6 +149,7 @@ fun AuthScreen(
                 selected = inputMode,
                 onSelect = { 
                     if (!isGoogleLoading) {
+                        AnalyticsManager.logAuthMethodSelected(if (it == AuthInputMode.Phone) "phone" else "email")
                         inputMode = it
                         emailError = null
                         phoneError = null
@@ -219,19 +227,34 @@ fun AuthScreen(
                 }
             }
 
+            Spacer(Modifier.height(24.dp))
+
+            // Optional Referral Code
+            ShoshinTextField(
+                value = referralCodeInput,
+                onValueChange = { 
+                    referralCodeInput = it.uppercase()
+                    referralError = null
+                },
+                label = "Referral Code (Optional)",
+                placeholder = "e.g. VINAY142",
+                enabled = !isGoogleLoading
+            )
+
             Spacer(Modifier.weight(1f))
 
             // CTA
             ShoshinButton(
                 onClick  = {
+                    val code = referralCodeInput.takeIf { it.isNotEmpty() }
                     when (inputMode) {
                         AuthInputMode.Phone -> {
-                            if (validatePhone(phoneInput)) onPhoneContinue(phoneInput)
+                            if (validatePhone(phoneInput)) onPhoneContinue(phoneInput, code)
                         }
                         AuthInputMode.Email -> {
                             val isEmailValid = validateEmail(emailInput)
                             val isPassValid = validatePassword(passwordInput)
-                            if (isEmailValid && isPassValid) onEmailContinue(emailInput, passwordInput)
+                            if (isEmailValid && isPassValid) onEmailContinue(emailInput, passwordInput, code)
                         }
                     }
                 },

@@ -10,8 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
+import com.example.shoshinapp.utils.AnalyticsManager
+import com.example.shoshinapp.utils.LocationHelper
+import kotlinx.coroutines.launch
 
 private data class Checkpoint(val label: String, val type: String)
 private val CHECKPOINTS = listOf(
@@ -25,10 +29,13 @@ private val CHECKPOINTS = listOf(
 @Composable
 fun CheckpointCompletionScreen(
     onPhotoRequired: (Int, String) -> Unit,
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
+    streakViewModel: com.example.shoshinapp.viewmodel.StreakViewModel? = null
 ) {
     var currentIndex by remember { mutableStateOf(0) }
     val current = CHECKPOINTS[currentIndex]
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -39,7 +46,8 @@ fun CheckpointCompletionScreen(
     ) {
         Kicker("Morning Practice", color = ShVermillion)
         Spacer(modifier = Modifier.height(10.dp))
-        Text("Day 1", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShInk)
+        val user by streakViewModel?.user?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
+        Text("Day ${user?.currentStreak ?: 1}", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShInk)
         Spacer(modifier = Modifier.height(32.dp))
 
         CHECKPOINTS.forEachIndexed { index, checkpoint ->
@@ -70,6 +78,23 @@ fun CheckpointCompletionScreen(
                     if (currentIndex < CHECKPOINTS.lastIndex) {
                         currentIndex++
                     } else {
+                        streakViewModel?.incrementStreak()
+                        
+                        // Phase 5: Analytics and Location
+                        AnalyticsManager.logCheckpointCompleted(
+                            userType = "professional",
+                            streak = user?.currentStreak ?: 0,
+                            hadPhoto = CHECKPOINTS.any { it.type == "photo" },
+                            timeSeconds = 0 // Placeholder
+                        )
+                        
+                        scope.launch {
+                            val location = LocationHelper.getLastLocation(context)
+                            location?.let {
+                                AnalyticsManager.logLocationCaptured(it.latitude, it.longitude, "checkpoint")
+                            }
+                        }
+
                         onComplete()
                     }
                 }

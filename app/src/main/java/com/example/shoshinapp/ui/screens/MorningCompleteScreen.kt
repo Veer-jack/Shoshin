@@ -19,7 +19,10 @@ import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
 
 @Composable
-fun MorningCompleteScreen(onClose: () -> Unit) {
+fun MorningCompleteScreen(
+    onClose: () -> Unit,
+    onShare: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -125,6 +128,17 @@ fun MorningCompleteScreen(onClose: () -> Unit) {
         }
 
         Spacer(Modifier.weight(1f))
+
+        ShoshinButton(
+            onClick = onShare,
+            variant = ShButtonVariant.Accent
+        ) {
+            Icon(painterResource(R.drawable.ic_share), contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+            Text("Share Your Achievement")
+        }
+
+        Spacer(Modifier.height(12.dp))
 
         ShoshinButton(
             onClick = onClose,

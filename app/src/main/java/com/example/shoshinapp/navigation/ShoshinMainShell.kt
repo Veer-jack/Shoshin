@@ -30,7 +30,10 @@ fun ShoshinMainShell(
     syncManager: SyncManager,
     networkMonitor: NetworkStateMonitor,
     conflictResolver: ConflictResolver,
-    userRepository: com.example.shoshinapp.data.user.UserRepository
+    userRepository: com.example.shoshinapp.data.user.UserRepository,
+    streakViewModel: com.example.shoshinapp.viewmodel.StreakViewModel,
+    friendViewModel: com.example.shoshinapp.viewmodel.FriendStreaksViewModel? = null,
+    referralViewModel: com.example.shoshinapp.viewmodel.ReferralViewModel? = null
 ) {
     val innerNav = rememberNavController()
     val currentBackStack by innerNav.currentBackStackEntryAsState()
@@ -64,7 +67,9 @@ fun ShoshinMainShell(
                     navController = rootNavController,
                     syncManager = syncManager,
                     networkMonitor = networkMonitor,
-                    conflictResolver = conflictResolver
+                    conflictResolver = conflictResolver,
+                    streakViewModel = streakViewModel,
+                    friendViewModel = friendViewModel
                 )
             }
 
@@ -73,7 +78,10 @@ fun ShoshinMainShell(
             }
 
             composable(ShRoutes.GROUPS) {
-                GroupsScreen(navController = rootNavController)
+                GroupsScreen(
+                    navController = rootNavController,
+                    referralViewModel = referralViewModel
+                )
             }
 
             composable(ShRoutes.PROFILE) {

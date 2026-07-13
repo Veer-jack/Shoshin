@@ -41,7 +41,16 @@ class GroupRepository {
         return try {
             val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not authenticated"))
 
-            // Find group by invite code
+            // 1. Check User's Join Limit
+            val userLimitsSnapshot = db.collection("users").document(userId).collection("limits").document("current").get().await()
+            val groupsJoinLimit = userLimitsSnapshot.getLong("groupsJoinLimit")?.toInt() ?: 5
+            
+            val userGroupsQuery = db.collection("groups").whereArrayContains("members", userId).get().await()
+            if (userGroupsQuery.size() >= groupsJoinLimit) {
+                return Result.failure(Exception("LIMIT_REACHED:You can join up to $groupsJoinLimit groups. Refer a friend to unlock more!"))
+            }
+
+            // 2. Find group by invite code
             val query = db.collection("groups").whereEqualTo("inviteCode", inviteCode).get().await()
             
             if (query.documents.isEmpty()) {
@@ -51,6 +60,14 @@ class GroupRepository {
             val groupDoc = query.documents.first()
             val groupId = groupDoc.id
             val group = groupDoc.toObject(Group::class.java) ?: return Result.failure(Exception("Invalid group"))
+
+            // 3. Check Group's Member Limit (based on creator)
+            val creatorLimitsSnapshot = db.collection("users").document(group.createdBy).collection("limits").document("current").get().await()
+            val groupMemberLimit = creatorLimitsSnapshot.getLong("groupMemberLimit")?.toInt() ?: 5
+            
+            if (group.members.size >= groupMemberLimit) {
+                return Result.failure(Exception("GROUP_FULL:This group has reached its maximum of $groupMemberLimit members."))
+            }
 
             // Check if user already member
             if (group.members.contains(userId)) {

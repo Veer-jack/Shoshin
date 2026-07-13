@@ -13,9 +13,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import com.example.shoshinapp.data.ShoshinRepository
+import com.example.shoshinapp.data.BadgeRepository
+import com.example.shoshinapp.data.FriendRepository
+import com.example.shoshinapp.data.ReferralRepository
+import com.example.shoshinapp.data.UserLimitsRepository
 import com.example.shoshinapp.data.user.UserRepository
 import com.example.shoshinapp.GoogleAuthManager
+import com.example.shoshinapp.utils.AnalyticsManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -33,6 +39,7 @@ fun ShoshinNavGraph(
     conflictResolver: ConflictResolver,
     isLoggedIn: Boolean,
     hasCompletedOnboarding: Boolean,
+    deepLinkCode: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -42,8 +49,83 @@ fun ShoshinNavGraph(
     val googleAuthManager = remember { GoogleAuthManager(context, firebaseAuth) }
     
     val userRepository = remember { UserRepository(database.userDao(), firestore, storage, firebaseAuth) }
+    val authRepository = remember { AuthRepository(firebaseAuth) }
+    val badgeRepository = remember { BadgeRepository(database.badgeDao()) }
+    val friendRepository = remember { FriendRepository(database.friendDao(), firestore) }
+    val referralRepository = remember { ReferralRepository(database.userLimitsDao(), firestore) }
+    val limitsRepository = remember { UserLimitsRepository(database.userLimitsDao(), firestore) }
+    
+    val onboardingViewModel: OnboardingViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return OnboardingViewModel(userRepository, shoshinRepository) as T
+        }
+    })
+    
+    val streakViewModel: StreakViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return StreakViewModel(userRepository, badgeRepository) as T
+        }
+    })
+
+    val badgeViewModel: BadgeViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return BadgeViewModel(badgeRepository, userRepository) as T
+        }
+    })
+
+    val friendViewModel: FriendStreaksViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return FriendStreaksViewModel(friendRepository, userRepository) as T
+        }
+    })
+
+    val groupStatsViewModel: GroupStatsViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return GroupStatsViewModel(database.groupDao()) as T
+        }
+    })
+
+    val inviteViewModel: InviteViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return InviteViewModel(userRepository) as T
+        }
+    })
+
+    val referralViewModel: ReferralViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return ReferralViewModel(userRepository, referralRepository, limitsRepository) as T
+        }
+    })
+
+    val statsViewModel: StatsViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return StatsViewModel(database.statsDao(), database.userDao(), database.badgeDao(), userRepository) as T
+        }
+    })
     
     var isGoogleLoading by remember { mutableStateOf(false) }
+
+    // Milestone Auto-Trigger
+    val lastMilestone by streakViewModel.lastMilestoneReached.collectAsState()
+    LaunchedEffect(lastMilestone) {
+        lastMilestone?.let { milestone ->
+            val templateKey = shoshinRepository.template.first()
+            val habitName = when(templateKey) {
+                "study" -> "Deep Study"
+                "gym" -> "Strength"
+                else -> "Morning Walk"
+            }
+            val user = streakViewModel.user.value
+            navController.navigate(
+                ShRoutes.streakShare(
+                    streak = milestone,
+                    habit = habitName,
+                    start = user?.streakStartDate ?: 0L
+                )
+            )
+            streakViewModel.clearMilestone()
+        }
+    }
 
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -53,15 +135,18 @@ fun ShoshinNavGraph(
             task = task,
             onSuccess = {
                 val account = task.result
+                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
                 scope.launch {
-                    shoshinRepository.saveUser(
-                        name = account?.displayName ?: "User",
-                        email = account?.email ?: ""
+                    handleNewUser(
+                        userId = userId,
+                        displayName = account?.displayName ?: "User",
+                        phone = null,
+                        email = account?.email,
+                        referralCode = null, // Google sign in doesn't have a field for this yet in current UI
+                        referralRepository = referralRepository,
+                        shoshinRepository = shoshinRepository,
+                        navController = navController
                     )
-                    isGoogleLoading = false
-                    navController.navigate(ShRoutes.onboarding(0)) {
-                        popUpTo(ShRoutes.AUTH) { inclusive = true }
-                    }
                 }
             },
             onError = { e ->
@@ -75,7 +160,7 @@ fun ShoshinNavGraph(
         navController  = navController,
         startDestination = when {
             !isLoggedIn               -> ShRoutes.SPLASH
-            !hasCompletedOnboarding   -> ShRoutes.ONBOARDING.replace("{pageIndex}", "0")
+            !hasCompletedOnboarding   -> ShRoutes.ONBOARDING
             else                      -> ShRoutes.MAIN
         },
     ) {
@@ -98,11 +183,11 @@ fun ShoshinNavGraph(
             popExitTransition  = { slideOutHorizontally(tween(320)) { it } },
         ) {
             AuthScreen(
-                onPhoneContinue = { phone ->
-                    navController.navigate(ShRoutes.otpPhone(phone))
+                onPhoneContinue = { phone, code ->
+                    navController.navigate(ShRoutes.otpPhone(phone, code))
                 },
-                onEmailContinue = { email, pass ->
-                    navController.navigate(ShRoutes.otpEmail(email) + "?pass=$pass")
+                onEmailContinue = { email, pass, code ->
+                    navController.navigate(ShRoutes.otpEmail(email, pass, code))
                 },
                 onGoogleSignIn = {
                     isGoogleLoading = true
@@ -110,67 +195,75 @@ fun ShoshinNavGraph(
                 },
                 onPrivacyClick = { navController.navigate(ShRoutes.PRIVACY) },
                 onTermsClick = { navController.navigate(ShRoutes.TERMS) },
-                isGoogleLoading = isGoogleLoading
+                isGoogleLoading = isGoogleLoading,
+                initialReferralCode = deepLinkCode
+            )
+        }
+
+        // ── Onboarding ───────────────────────────────────────
+        composable(ShRoutes.ONBOARDING) {
+            OnboardingScreen(
+                viewModel = onboardingViewModel,
+                onComplete = {
+                    navController.navigate(ShRoutes.PERMISSIONS) {
+                        popUpTo(ShRoutes.ONBOARDING) { inclusive = true }
+                    }
+                }
             )
         }
 
         // ── Phone OTP ────────────────────────────────────────
         composable(
             route     = ShRoutes.OTP_PHONE,
-            arguments = listOf(navArgument("phoneNumber") { type = NavType.StringType }),
+            arguments = listOf(
+                navArgument("phoneNumber") { type = NavType.StringType },
+                navArgument("code") { type = NavType.StringType; nullable = true; defaultValue = null }
+            ),
             enterTransition  = { slideInHorizontally(tween(320)) { it } },
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) { back ->
             val phone = back.arguments?.getString("phoneNumber") ?: ""
+            val referralCode = back.arguments?.getString("code")
             OTPVerifyScreen(
                 navController = navController,
                 shoshinRepository = shoshinRepository,
                 phone = phone,
-                mode = OtpMode.Phone
+                mode = OtpMode.Phone,
+                referralCode = referralCode,
+                onSuccess = { userId, contact, code ->
+                    scope.launch {
+                        handleNewUser(userId, "User", contact, null, code, referralRepository, shoshinRepository, navController)
+                    }
+                }
             )
         }
 
         // ── Email OTP ────────────────────────────────────────
         composable(
-            route     = ShRoutes.OTP_EMAIL + "?pass={pass}",
+            route     = ShRoutes.OTP_EMAIL + "?pass={pass}&code={code}",
             arguments = listOf(
                 navArgument("email") { type = NavType.StringType },
-                navArgument("pass") { type = NavType.StringType; defaultValue = "" }
+                navArgument("pass") { type = NavType.StringType; defaultValue = "" },
+                navArgument("code") { type = NavType.StringType; nullable = true; defaultValue = null }
             ),
             enterTransition  = { slideInHorizontally(tween(320)) { it } },
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) { back ->
             val email = back.arguments?.getString("email") ?: ""
             val pass = back.arguments?.getString("pass") ?: ""
+            val referralCode = back.arguments?.getString("code")
             OTPVerifyScreen(
                 navController = navController,
                 shoshinRepository = shoshinRepository,
                 email = email,
                 password = pass,
-                mode = OtpMode.Email
-            )
-        }
-
-        composable(
-            route     = ShRoutes.ONBOARDING,
-            arguments = listOf(navArgument("pageIndex") { type = NavType.IntType }),
-            enterTransition  = { slideInHorizontally(tween(320)) { it } },
-            exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
-        ) { back ->
-            val idx = back.arguments?.getInt("pageIndex") ?: 0
-            OnboardingScreen(
-                index  = idx,
-                onNext = {
-                    if (idx < 2) navController.navigate(ShRoutes.onboarding(idx + 1))
-                    else navController.navigate(ShRoutes.PERMISSIONS) {
-                        popUpTo(ShRoutes.onboarding(0)) { inclusive = true }
+                mode = OtpMode.Email,
+                referralCode = referralCode,
+                onSuccess = { userId, contact, code ->
+                    scope.launch {
+                        handleNewUser(userId, "User", null, contact, code, referralRepository, shoshinRepository, navController)
                     }
-                },
-                onSkip = {
-                    navController.navigate(ShRoutes.PERMISSIONS) {
-                        popUpTo(ShRoutes.onboarding(0)) { inclusive = true }
-                    }
-                },
+                }
             )
         }
 
@@ -234,8 +327,87 @@ fun ShoshinNavGraph(
                 syncManager = syncManager,
                 networkMonitor = networkMonitor,
                 conflictResolver = conflictResolver,
-                userRepository = userRepository
+                userRepository = userRepository,
+                streakViewModel = streakViewModel,
+                friendViewModel = friendViewModel,
+                referralViewModel = referralViewModel
             )
+        }
+
+        // ── Streak Details ───────────────────────────────────
+        composable(ShRoutes.STREAK_DETAILS) {
+            StreakDetailsScreen(navController = navController, viewModel = streakViewModel)
+        }
+
+        // ── Streak Share ─────────────────────────────────────
+        composable(
+            route = ShRoutes.STREAK_SHARE,
+            arguments = listOf(
+                navArgument("streak") { type = NavType.IntType },
+                navArgument("habitName") { type = NavType.StringType },
+                navArgument("startDate") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val streak = backStackEntry.arguments?.getInt("streak") ?: 0
+            val habitName = backStackEntry.arguments?.getString("habitName") ?: "Morning Routine"
+            val startDate = backStackEntry.arguments?.getLong("startDate") ?: 0L
+            
+            val shareViewModel: ShareViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                    return ShareViewModel(context) as T
+                }
+            })
+            
+            ShareScreen(
+                navController = navController,
+                viewModel = shareViewModel,
+                streak = streak,
+                habitName = habitName,
+                startDate = startDate
+            )
+        }
+
+        // ── Badges ───────────────────────────────────────────
+        composable(ShRoutes.BADGES) {
+            BadgeScreen(navController = navController, viewModel = badgeViewModel)
+        }
+
+        // ── Badge Detail ─────────────────────────────────────
+        composable(
+            route = ShRoutes.BADGE_DETAIL,
+            arguments = listOf(navArgument("badgeId") { type = NavType.StringType })
+        ) { back ->
+            val badgeId = back.arguments?.getString("badgeId") ?: ""
+            BadgeDetailScreen(navController = navController, viewModel = badgeViewModel, badgeId = badgeId)
+        }
+
+        // ── All Friends ──────────────────────────────────────
+        composable(ShRoutes.ALL_FRIENDS) {
+            AllFriendsScreen(navController = navController, viewModel = friendViewModel)
+        }
+
+        // ── Friend Profile ───────────────────────────────────
+        composable(
+            route = ShRoutes.FRIEND_PROFILE,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { back ->
+            val userId = back.arguments?.getString("userId") ?: ""
+            FriendProfileScreen(navController = navController, viewModel = friendViewModel, friendUserId = userId)
+        }
+
+        // ── Invite ───────────────────────────────────────────
+        composable(ShRoutes.INVITE) {
+            InviteScreen(navController = navController, viewModel = inviteViewModel)
+        }
+
+        // ── Referrals ────────────────────────────────────────
+        composable(ShRoutes.REFERRALS) {
+            ReferralScreen(navController = navController, viewModel = referralViewModel)
+        }
+
+        // ── Stats ────────────────────────────────────────────
+        composable(ShRoutes.STATS) {
+            StatsScreen(navController = navController, viewModel = statsViewModel)
         }
 
         // ── Profile ──────────────────────────────────────────
@@ -245,7 +417,11 @@ fun ShoshinNavGraph(
                     return ProfileViewModel(userRepository) as T
                 }
             })
-            ProfileScreen(navController = navController, viewModel = profileViewModel)
+            ProfileScreen(
+                navController = navController, 
+                viewModel = profileViewModel,
+                badgeViewModel = badgeViewModel
+            )
         }
 
         // ── Edit Profile ─────────────────────────────────────
@@ -317,7 +493,13 @@ fun ShoshinNavGraph(
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupDetailScreen(navController = navController, groupId = groupId)
+            val groupViewModel: GroupViewModel = viewModel()
+            GroupDetailScreen(
+                navController = navController, 
+                groupId = groupId, 
+                viewModel = groupViewModel,
+                statsViewModel = groupStatsViewModel
+            )
         }
 
         // ── Legal Screens ─────────────────────────────────────
@@ -379,6 +561,7 @@ fun ShoshinNavGraph(
                         popUpTo(ShRoutes.CHECKPOINT) { inclusive = true }
                     }
                 },
+                streakViewModel = streakViewModel
             )
         }
 
@@ -394,7 +577,63 @@ fun ShoshinNavGraph(
                         popUpTo(ShRoutes.MORNING_COMPLETE) { inclusive = true }
                     }
                 },
+                onShare = {
+                    val user = streakViewModel.user.value
+                    // Fetch habit name from repository or state
+                    scope.launch {
+                        val templateKey = shoshinRepository.template.first()
+                        val habitName = when(templateKey) {
+                            "study" -> "Deep Study"
+                            "gym" -> "Strength"
+                            else -> "Morning Walk"
+                        }
+                        navController.navigate(
+                            ShRoutes.streakShare(
+                                streak = user?.currentStreak ?: 0,
+                                habit = habitName,
+                                start = user?.streakStartDate ?: 0L
+                            )
+                        )
+                    }
+                }
             )
         }
+    }
+}
+
+private suspend fun handleNewUser(
+    userId: String,
+    displayName: String,
+    phone: String?,
+    email: String?,
+    referralCode: String?,
+    referralRepository: ReferralRepository,
+    shoshinRepository: ShoshinRepository,
+    navController: NavHostController
+) {
+    // 1. Basic user save
+    shoshinRepository.saveUser(name = displayName, email = email ?: "", phone = phone ?: "")
+    
+    // 2. Generate referral code for new user
+    val newUserCode = referralRepository.generateAndSaveReferralCode(userId, displayName)
+    
+    // 3. Process entered referral code
+    if (referralCode != null) {
+        val referrerId = referralRepository.validateReferralCode(referralCode)
+        if (referrerId != null && referrerId != userId) {
+            referralRepository.deliverReferralReward(referrerId, userId)
+            AnalyticsManager.logSignupCompleted(method = if (email != null) "email" else "phone", hadReferral = true)
+        } else {
+            AnalyticsManager.logSignupCompleted(method = if (email != null) "email" else "phone", hadReferral = false)
+        }
+    } else {
+        AnalyticsManager.logSignupCompleted(method = if (email != null) "email" else "phone", hadReferral = false)
+    }
+
+    AnalyticsManager.setUserProperties(userType = "professional", signupMethod = if (email != null) "email" else "phone", hasReferral = referralCode != null)
+    
+    // 4. Navigate
+    navController.navigate(ShRoutes.ONBOARDING) {
+        popUpTo(ShRoutes.AUTH) { inclusive = true }
     }
 }

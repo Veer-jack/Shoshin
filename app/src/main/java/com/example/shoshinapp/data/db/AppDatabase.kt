@@ -17,9 +17,13 @@ import com.example.shoshinapp.data.db.entities.*
         GroupEntity::class,
         GroupMemberEntity::class,
         GroupPostEntity::class,
-        SocialShareEntity::class
+        SocialShareEntity::class,
+        BadgeEntity::class,
+        FriendEntity::class,
+        UserLimitsEntity::class,
+        CheckpointEntity::class
     ],
-    version = 3,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,6 +36,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun groupMemberDao(): GroupMemberDao
     abstract fun groupPostDao(): GroupPostDao
     abstract fun socialShareDao(): SocialShareDao
+    abstract fun badgeDao(): BadgeDao
+    abstract fun friendDao(): FriendDao
+    abstract fun userLimitsDao(): UserLimitsDao
+    abstract fun statsDao(): StatsDao
 
     companion object {
         @Volatile

@@ -65,6 +65,31 @@ fun SettingsScreen(
                     onCheckedChange = { viewModel.updateNotifications(it) },
                     icon = Icons.Default.Notifications
                 )
+                
+                var showTimePicker by remember { mutableStateOf(false) }
+                SettingsRow(
+                    title = "Reminder Time",
+                    subtitle = u.notificationTime,
+                    onClick = { showTimePicker = true },
+                    icon = Icons.Default.Alarm
+                )
+
+                if (showTimePicker) {
+                    val timeParts = u.notificationTime.split(":")
+                    val currentHour = timeParts.getOrNull(0)?.toIntOrNull() ?: 6
+                    val currentMinute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
+                    
+                    TimePickerDialog(
+                        onDismiss = { showTimePicker = false },
+                        onTimeSelected = { hour, minute ->
+                            viewModel.updateNotificationTime(hour, minute)
+                            showTimePicker = false
+                        },
+                        title = "Reminder Time",
+                        initialHour = currentHour,
+                        initialMinute = currentMinute
+                    )
+                }
             }
 
             // Productivity
@@ -107,6 +132,12 @@ fun SettingsScreen(
 
             // About
             SettingsSection(title = "About") {
+                SettingsRow(
+                    title = "Refer a Friend",
+                    subtitle = "Unlock more groups",
+                    onClick = { navController.navigate(ShRoutes.REFERRALS) },
+                    icon = Icons.Default.CardGiftcard
+                )
                 SettingsRow(
                     title = "App Version",
                     subtitle = "1.0.1 (Beta)",

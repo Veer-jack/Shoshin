@@ -9,12 +9,14 @@ import java.util.*
 fun TimePickerDialog(
     onDismiss: () -> Unit,
     onTimeSelected: (Int, Int) -> Unit,
-    title: String
+    title: String,
+    initialHour: Int? = null,
+    initialMinute: Int? = null
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
-    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-    val minute = calendar.get(Calendar.MINUTE)
+    val hour = initialHour ?: calendar.get(Calendar.HOUR_OF_DAY)
+    val minute = initialMinute ?: calendar.get(Calendar.MINUTE)
 
     val dialog = TimePickerDialog(
         context,
