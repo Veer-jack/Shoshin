@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:91496310161:android:9ab7ace05542381a572630",
+        "mobilesdk_app_id": "1:91496310161:android:8a855bca991f0178572630",
         "android_client_info": {
-          "package_name": "com.shoshin.app"
+          "package_name": "com.example.shoshinapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "91496310161-0rc0v6focf6olfnf0djkkehhh4hadv8a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAA_jzYQhyZXoblGRNs5jZNVLB70kRYUJk"
@@ -20,7 +25,41 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "91496310161-0rc0v6focf6olfnf0djkkehhh4hadv8a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91496310161:android:9ab7ace05542381a572630",
+        "android_client_info": {
+          "package_name": "com.shoshin.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "91496310161-0rc0v6focf6olfnf0djkkehhh4hadv8a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA_jzYQhyZXoblGRNs5jZNVLB70kRYUJk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "91496310161-0rc0v6focf6olfnf0djkkehhh4hadv8a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

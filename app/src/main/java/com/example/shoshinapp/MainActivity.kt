@@ -15,6 +15,9 @@ import com.example.shoshinapp.sync.*
 import com.example.shoshinapp.ui.theme.ShoshinTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
     
@@ -30,6 +33,13 @@ class MainActivity : ComponentActivity() {
         
         // Enable edge-to-edge as per Shoshin design principles
         enableEdgeToEdge()
+
+        // Initialize Firebase App Check for local development authorization
+        FirebaseApp.initializeApp(this)
+        val firebaseAppCheck = FirebaseAppCheck.getInstance()
+        firebaseAppCheck.installAppCheckProviderFactory(
+            DebugAppCheckProviderFactory.getInstance()
+        )
 
         // Initialize Firebase and local database
         val firebaseAuth = FirebaseAuth.getInstance()
