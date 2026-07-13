@@ -14,6 +14,91 @@ class ShareCardGenerator(private val context: Context) {
     private val cardWidth = 1080
     private val cardHeight = 1350
 
+    fun generateCard(
+        cardStyle: String,
+        mainValue: String,
+        subValue: String,
+        kicker: String
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(cardWidth, cardHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        // 1. Background - Ink Color (#1C1C1E)
+        val bgPaint = Paint().apply { color = Color.parseColor("#1C1C1E") }
+        canvas.drawRect(0f, 0f, cardWidth.toFloat(), cardHeight.toFloat(), bgPaint)
+
+        // 2. Enso Motif (Decorative Arc)
+        val ensoPaint = Paint().apply {
+            color = Color.parseColor("#C84B31")
+            alpha = 76 // ~0.3 opacity
+            style = Paint.Style.STROKE
+            strokeWidth = 25f
+            strokeCap = Paint.Cap.ROUND
+            isAntiAlias = true
+        }
+        val ensoSize = 600f
+        val rect = RectF(
+            cardWidth - ensoSize / 1.5f,
+            cardHeight - ensoSize / 1.5f,
+            cardWidth + ensoSize / 3f,
+            cardHeight + ensoSize / 3f
+        )
+        canvas.drawArc(rect, -90f, 310f, false, ensoPaint)
+
+        // 3. LogoMark Placeholder (White Circle)
+        val logoPaint = Paint().apply {
+            color = Color.WHITE
+            isAntiAlias = true
+        }
+        canvas.drawCircle((cardWidth / 2).toFloat(), 200f, 40f, logoPaint)
+
+        // 4. Kicker - Red Accent
+        val kickerPaint = TextPaint().apply {
+            color = Color.parseColor("#C84B31")
+            textSize = 42f
+            letterSpacing = 0.2f
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        canvas.drawText(kicker, (cardWidth / 2).toFloat(), 340f, kickerPaint)
+
+        // 5. Main Value (Big Number or Text)
+        val mainPaint = TextPaint().apply {
+            color = Color.parseColor("#F2F1EC") // ShPaper
+            textSize = if (mainValue.length > 5) 120f else 220f
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        canvas.drawText(mainValue, (cardWidth / 2).toFloat(), 580f, mainPaint)
+
+        // 6. Sub Value (Description)
+        val subPaint = TextPaint().apply {
+            color = Color.parseColor("#F2F1EC")
+            alpha = 165 // ~0.65 opacity
+            textSize = 50f
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        }
+        drawMultiLineText(canvas, subValue, (cardWidth / 2).toFloat(), 680f, subPaint, 800)
+
+        // 7. "初心" (Shoshin) in JP
+        val jpPaint = TextPaint().apply {
+            color = Color.parseColor("#C84B31")
+            alpha = 180
+            textSize = 55f
+            letterSpacing = 0.3f
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        }
+        canvas.drawText("初心", (cardWidth / 2).toFloat(), 950f, jpPaint)
+
+        return bitmap
+    }
+
     fun generateStreakCard(
         streak: Int,
         habitName: String,

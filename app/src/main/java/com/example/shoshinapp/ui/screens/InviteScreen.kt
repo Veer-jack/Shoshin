@@ -1,13 +1,14 @@
 package com.example.shoshinapp.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,163 +32,121 @@ fun InviteScreen(
     navController: NavController,
     viewModel: InviteViewModel
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
+    var query by remember { mutableStateOf("") }
+    val searchResults by viewModel.searchResults.collectAsState()
+    val suggestions by viewModel.suggestedFriends.collectAsState()
     
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(ShPaper)
+            .padding(horizontal = 24.dp)
     ) {
         // App Bar
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 22.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            IconButton(onClick = { navController.popBackStack() }) {
+            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
                 Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
             }
-            Spacer(Modifier.width(16.dp))
-            Text("Invite Friends", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Add a friend", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
         }
 
-        ShoshinSegmented(
-            options = listOf(
-                SegmentOption(0, "Search"),
-                SegmentOption(1, "Invite Link")
-            ),
-            selected = selectedTab,
-            onSelect = { selectedTab = it },
-            modifier = Modifier.padding(horizontal = 24.dp)
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Box(modifier = Modifier.weight(1f).padding(horizontal = 24.dp)) {
-            if (selectedTab == 0) {
-                FriendInviteContent(viewModel)
-            } else {
-                LinkInviteContent(viewModel)
-            }
-        }
-    }
-}
-
-@Composable
-fun FriendInviteContent(viewModel: InviteViewModel) {
-    var query by remember { mutableStateOf("") }
-    val searchResults by viewModel.searchResults.collectAsState()
-    val suggestions by viewModel.suggestedFriends.collectAsState()
-
-    Column {
-        OutlinedTextField(
-            value = query,
-            onValueChange = { 
-                query = it
-                viewModel.searchFriends(it)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search by email or username...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (query.length >= 2) {
-                item { Kicker("SEARCH RESULTS") }
-                items(searchResults) { user ->
-                    SuggestedFriendRow(user)
+        // Search Bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(ShSurface)
+                .border(1.5.dp, ShLine2, RoundedCornerShape(14.dp))
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(painterResource(R.drawable.ic_sun), null, modifier = Modifier.size(18.dp), tint = ShFog) // ic_search placeholder
+            Spacer(Modifier.width(10.dp))
+            BasicTextField(
+                value = query,
+                onValueChange = { 
+                    query = it
+                    viewModel.searchFriends(it)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                textStyle = androidx.compose.ui.text.TextStyle(fontFamily = DmSansFamily, fontSize = 15.sp, color = ShInk),
+                decorationBox = { innerTextField ->
+                    if (query.isEmpty()) {
+                        Text("Search by name or number", fontSize = 15.sp, color = ShFog2)
+                    }
+                    innerTextField()
                 }
-            } else {
-                item { Kicker("SUGGESTED FRIENDS") }
-                items(suggestions) { user ->
+            )
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        ShoshinButton(
+            onClick = { /* Share link */ },
+            variant = ShButtonVariant.Ghost,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(painterResource(R.drawable.ic_share), null, modifier = Modifier.size(18.dp), tint = ShInk)
+            Spacer(Modifier.width(8.dp))
+            Text("Share invite link instead")
+        }
+
+        Spacer(Modifier.height(22.dp))
+
+        Kicker("Suggested", modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
+
+        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
+                val listToDisplay = if (query.length >= 2) searchResults else suggestions
+                listToDisplay.forEachIndexed { i, user ->
                     SuggestedFriendRow(user)
+                    if (i < listToDisplay.lastIndex) HorizontalDivider(color = ShLine)
                 }
             }
         }
+        
+        Spacer(Modifier.height(40.dp))
     }
 }
 
 @Composable
 fun SuggestedFriendRow(user: UserSummary) {
-    ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(ShSand),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier.size(40.dp).background(ShSand, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(user.userName.take(1).uppercase())
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(user.userName, fontWeight = FontWeight.Bold, style = ShBodyStyle)
-                Text("${user.currentStreak} day streak", style = ShLabelStyle, color = ShFog)
-            }
-            TextButton(onClick = { /* Add friend */ }) {
-                Text("+ Add", color = ShVermillion)
-            }
+            Text(
+                text = user.userName.take(1).uppercase(),
+                style = ShTitleStyle.copy(fontSize = 17.sp),
+                color = ShInk
+            )
         }
-    }
-}
-
-@Composable
-fun LinkInviteContent(viewModel: InviteViewModel) {
-    val context = LocalContext.current
-    val inviteCode = viewModel.getUserInviteCode()
-    val inviteLink = viewModel.getInviteLink()
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(32.dp))
-        
-        Text("Your Invite Code", style = ShLabelStyle, color = ShFog)
-        Text(inviteCode, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = ShInk)
-        
-        Spacer(Modifier.height(16.dp))
-        
-        ShoshinButton(
-            onClick = {
-                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                val clip = android.content.ClipData.newPlainText("Invite Code", inviteCode)
-                clipboard.setPrimaryClip(clip)
-            },
-            variant = ShButtonVariant.Ghost
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(user.userName, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = ShInk)
+            Text("In your contacts", fontSize = 12.5.sp, color = ShFog) // Meta info
+        }
+        Button(
+            onClick = { /* Invite */ },
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = ShInk, contentColor = ShPaper),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text("Copy Code")
+            Text("Invite", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
         }
-
-        Spacer(Modifier.height(48.dp))
-
-        Kicker("SHARE INVITE LINK")
-        Spacer(Modifier.height(16.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            ShareIconButton(Icons.Default.Chat, "WhatsApp")
-            ShareIconButton(Icons.Default.CameraAlt, "Instagram")
-            ShareIconButton(Icons.Default.Email, "Email")
-            ShareIconButton(Icons.Default.Link, "Copy")
-        }
-    }
-}
-
-@Composable
-fun ShareIconButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        IconButton(
-            onClick = { /* Share */ },
-            modifier = Modifier.size(56.dp).background(ShSand, CircleShape)
-        ) {
-            Icon(icon, contentDescription = label, tint = ShInk)
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(label, style = ShLabelStyle, color = ShFog)
     }
 }

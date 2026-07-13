@@ -15,6 +15,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import com.example.shoshinapp.data.ShoshinRepository
+import com.example.shoshinapp.data.AuthRepository
 import com.example.shoshinapp.data.BadgeRepository
 import com.example.shoshinapp.data.FriendRepository
 import com.example.shoshinapp.data.ReferralRepository
@@ -26,6 +27,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.example.shoshinapp.viewmodel.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
 
@@ -55,50 +58,58 @@ fun ShoshinNavGraph(
     val referralRepository = remember { ReferralRepository(database.userLimitsDao(), firestore) }
     val limitsRepository = remember { UserLimitsRepository(database.userLimitsDao(), firestore) }
     
-    val onboardingViewModel: OnboardingViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    val onboardingViewModel = viewModel<OnboardingViewModel>(factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return OnboardingViewModel(userRepository, shoshinRepository) as T
         }
     })
     
-    val streakViewModel: StreakViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    val streakViewModel = viewModel<StreakViewModel>(factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return StreakViewModel(userRepository, badgeRepository) as T
         }
     })
 
-    val badgeViewModel: BadgeViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    val badgeViewModel = viewModel<BadgeViewModel>(factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return BadgeViewModel(badgeRepository, userRepository) as T
         }
     })
 
-    val friendViewModel: FriendStreaksViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    val friendViewModel = viewModel<FriendStreaksViewModel>(factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return FriendStreaksViewModel(friendRepository, userRepository) as T
         }
     })
 
-    val groupStatsViewModel: GroupStatsViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    val groupStatsViewModel = viewModel<GroupStatsViewModel>(factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return GroupStatsViewModel(database.groupDao()) as T
         }
     })
 
-    val inviteViewModel: InviteViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    val inviteViewModel = viewModel<InviteViewModel>(factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return InviteViewModel(userRepository) as T
         }
     })
 
-    val referralViewModel: ReferralViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    val referralViewModel = viewModel<ReferralViewModel>(factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return ReferralViewModel(userRepository, referralRepository, limitsRepository) as T
         }
     })
 
-    val statsViewModel: StatsViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    val statsViewModel = viewModel<StatsViewModel>(factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return StatsViewModel(database.statsDao(), database.userDao(), database.badgeDao(), userRepository) as T
         }
     })
@@ -352,8 +363,9 @@ fun ShoshinNavGraph(
             val habitName = backStackEntry.arguments?.getString("habitName") ?: "Morning Routine"
             val startDate = backStackEntry.arguments?.getLong("startDate") ?: 0L
             
-            val shareViewModel: ShareViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            val shareViewModel = viewModel<ShareViewModel>(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return ShareViewModel(context) as T
                 }
             })
@@ -412,8 +424,9 @@ fun ShoshinNavGraph(
 
         // ── Profile ──────────────────────────────────────────
         composable(ShRoutes.PROFILE) {
-            val profileViewModel: ProfileViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            val profileViewModel = viewModel<ProfileViewModel>(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return ProfileViewModel(userRepository) as T
                 }
             })
@@ -426,8 +439,9 @@ fun ShoshinNavGraph(
 
         // ── Edit Profile ─────────────────────────────────────
         composable(ShRoutes.EDIT_PROFILE) {
-            val profileViewModel: ProfileViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            val profileViewModel = viewModel<ProfileViewModel>(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return ProfileViewModel(userRepository) as T
                 }
             })
@@ -436,8 +450,9 @@ fun ShoshinNavGraph(
 
         // ── Settings ─────────────────────────────────────────
         composable(ShRoutes.SETTINGS) {
-            val settingsViewModel: SettingsViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            val settingsViewModel = viewModel<SettingsViewModel>(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return SettingsViewModel(userRepository, shoshinRepository, firebaseAuth) as T
                 }
             })
@@ -459,8 +474,9 @@ fun ShoshinNavGraph(
             enterTransition  = { slideInHorizontally(tween(320)) { it } },
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) {
-            val clockViewModel: BackwardsClockViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            val clockViewModel = viewModel<BackwardsClockViewModel>(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return BackwardsClockViewModel(userRepository) as T
                 }
             })
@@ -500,6 +516,57 @@ fun ShoshinNavGraph(
                 viewModel = groupViewModel,
                 statsViewModel = groupStatsViewModel
             )
+        }
+
+        // ── Group Invite ─────────────────────────────────────
+        composable(
+            route = ShRoutes.GROUP_INVITE,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { back ->
+            val groupId = back.arguments?.getString("groupId") ?: ""
+            GroupInviteScreen(navController = navController, groupId = groupId)
+        }
+
+        // ── Group Preview ────────────────────────────────────
+        composable(
+            route = ShRoutes.GROUP_PREVIEW,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { back ->
+            val groupId = back.arguments?.getString("groupId") ?: ""
+            GroupPreviewScreen(navController = navController, groupId = groupId)
+        }
+
+        // ── Group Leaderboard ────────────────────────────────
+        composable(
+            route = ShRoutes.GROUP_LEADERBOARD,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { back ->
+            val groupId = back.arguments?.getString("groupId") ?: ""
+            GroupLeaderboardScreen(navController = navController, groupId = groupId)
+        }
+
+        // ── Support ──────────────────────────────────────────
+        composable(ShRoutes.SUPPORT) {
+            SupportScreen(navController = navController)
+        }
+
+        // ── Notifications ────────────────────────────────────
+        composable(ShRoutes.NOTIFICATIONS) {
+            NotificationsScreen(navController = navController)
+        }
+
+        // ── Data Privacy ─────────────────────────────────────
+        composable(ShRoutes.DATA_PRIVACY) {
+            DataPrivacyScreen(navController = navController)
+        }
+
+        // ── Badge Unlock ─────────────────────────────────────
+        composable(
+            route = ShRoutes.BADGE_UNLOCK,
+            arguments = listOf(navArgument("badgeId") { type = NavType.StringType })
+        ) { back ->
+            val badgeId = back.arguments?.getString("badgeId") ?: ""
+            BadgeUnlockScreen(navController = navController, viewModel = badgeViewModel, badgeId = badgeId)
         }
 
         // ── Legal Screens ─────────────────────────────────────

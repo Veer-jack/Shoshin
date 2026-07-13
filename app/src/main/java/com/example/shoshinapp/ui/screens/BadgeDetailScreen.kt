@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.shoshinapp.R
+import com.example.shoshinapp.navigation.ShRoutes
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
 import com.example.shoshinapp.viewmodel.BadgeViewModel
@@ -42,112 +43,103 @@ fun BadgeDetailScreen(
     ) {
         // App Bar
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { navController.popBackStack() }) {
+            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
                 Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
             }
-            Spacer(Modifier.width(16.dp))
-            Text("Badge Details", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
 
-        Spacer(Modifier.height(32.dp))
-
-        // Large Badge Icon
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            // Badge Medallion
             Box(
                 modifier = Modifier
-                    .size(160.dp)
-                    .background(Color.parseColor(badge.color).copy(alpha = 0.15f), CircleShape),
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(if (!badge.isLocked) Color.parseColor(badge.color).copy(alpha = 0.1f) else ShPaper2),
                 contentAlignment = Alignment.Center
             ) {
-                Text(badge.icon, fontSize = 80.sp)
-            }
-            
-            Spacer(Modifier.height(24.dp))
-            
-            Text(
-                text = badge.name.uppercase(),
-                style = ShTitleStyle,
-                color = ShInk
-            )
-            
-            Kicker(badge.category.name, color = ShFog)
-        }
-
-        Spacer(Modifier.height(40.dp))
-
-        // Description Card
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    text = badge.description,
-                    style = ShBodyStyle,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(Modifier.height(24.dp))
-                
-                DetailItem(label = "Requirement", value = badge.requirementDescription)
-                
-                if (!badge.isLocked) {
-                    HorizontalDivider(color = ShLine, modifier = Modifier.padding(vertical = 12.dp))
-                    DetailItem(
-                        label = "Earned on", 
-                        value = badge.unlockedDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "Unknown"
+                Box(
+                    modifier = Modifier
+                        .size(76.dp)
+                        .clip(CircleShape)
+                        .background(if (!badge.isLocked) Color.parseColor(badge.color) else ShSand),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(if (badge.isLocked) R.drawable.ic_lock else getBadgeIconRes(badge.icon)),
+                        contentDescription = null,
+                        tint = if (badge.isLocked) ShFog else Color.White,
+                        modifier = Modifier.size(34.dp)
                     )
                 }
-                
-                HorizontalDivider(color = ShLine, modifier = Modifier.padding(vertical = 12.dp))
-                DetailItem(label = "Rarity", value = badge.rarity.name.lowercase().replaceFirstChar { it.uppercase() })
             }
+
+            Spacer(Modifier.height(24.dp))
+
+            Kicker(
+                text = if (badge.isLocked) "Locked" else "Earned",
+                color = if (badge.isLocked) ShFog2 else Color.parseColor(badge.color),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = badge.name,
+                style = ShTitleStyle.copy(fontSize = 28.sp),
+                color = ShInk,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            Text(
+                text = if (!badge.isLocked) {
+                    "Earned ${SimpleDateFormat("d MMMM yyyy", Locale.getDefault()).format(Date(badge.unlockedDate ?: System.currentTimeMillis()))} — ${badge.description}"
+                } else {
+                    badge.requirementDescription
+                },
+                style = ShBodyStyle,
+                color = ShFog,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = 280.dp)
+            )
         }
 
-        Spacer(Modifier.height(32.dp))
-
-        if (!badge.isLocked) {
-            ShoshinButton(
-                onClick = { /* Share Badge logic would go here */ },
-                variant = ShButtonVariant.Accent
-            ) {
-                Text("Share This Achievement")
-            }
-        } else {
-            // Progress if locked
-            val progress = badge.currentProgress.toFloat() / badge.threshold
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                LinearProgressIndicator(
-                    progress = { progress.coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                    color = ShVermillion,
-                    trackColor = ShSand
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "${(progress * 100).toInt()}% towards this badge",
-                    style = ShLabelStyle,
-                    color = ShFog
-                )
+        Box(modifier = Modifier.padding(bottom = 24.dp)) {
+            if (!badge.isLocked) {
+                ShoshinButton(
+                    onClick = { 
+                        navController.navigate(ShRoutes.streakShare(1, badge.name, System.currentTimeMillis()))
+                    },
+                    variant = ShButtonVariant.Accent,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(painterResource(R.drawable.ic_share), null, modifier = Modifier.size(18.dp), tint = Color.White)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Share this badge")
+                }
+            } else {
+                ShoshinButton(
+                    onClick = { },
+                    variant = ShButtonVariant.Ghost,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false
+                ) {
+                    Text("Keep practicing to unlock", color = ShFog)
+                }
             }
         }
-
-        Spacer(Modifier.height(48.dp))
     }
 }
 
-@Composable
-private fun DetailItem(label: String, value: String) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(label, style = ShLabelStyle, color = ShFog)
-        Text(value, style = ShBodyStyle, fontWeight = FontWeight.SemiBold, color = ShInk)
-    }
+// Helper for icon mapping
+private fun getBadgeIconRes(iconName: String): Int {
+    return R.drawable.ic_trophy // Placeholder
 }
 
 private fun Color.Companion.parseColor(colorString: String): Color {

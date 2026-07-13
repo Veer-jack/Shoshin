@@ -133,25 +133,27 @@ fun SettingsScreen(
             // About
             SettingsSection(title = "About") {
                 SettingsRow(
-                    title = "Refer a Friend",
-                    subtitle = "Unlock more groups",
+                    title = "Invite the circle",
+                    subtitle = "A month of Pro, on us",
                     onClick = { navController.navigate(ShRoutes.REFERRALS) },
-                    icon = Icons.Default.CardGiftcard
+                    icon = Icons.Default.GroupAdd
+                )
+                SettingsRow(
+                    title = "Help & support",
+                    subtitle = "FAQ, contact, feedback",
+                    onClick = { navController.navigate(ShRoutes.SUPPORT) },
+                    icon = Icons.Default.HelpOutline
+                )
+                SettingsRow(
+                    title = "Privacy & data",
+                    subtitle = "Export, delete, privacy policy",
+                    onClick = { navController.navigate(ShRoutes.DATA_PRIVACY) },
+                    icon = Icons.Default.Shield
                 )
                 SettingsRow(
                     title = "App Version",
                     subtitle = "1.0.1 (Beta)",
                     icon = Icons.Default.Info
-                )
-                SettingsRow(
-                    title = "Privacy Policy",
-                    onClick = { navController.navigate(ShRoutes.PRIVACY) },
-                    icon = Icons.Default.PrivacyTip
-                )
-                SettingsRow(
-                    title = "Terms of Service",
-                    onClick = { navController.navigate(ShRoutes.TERMS) },
-                    icon = Icons.Default.Description
                 )
             }
 
@@ -163,13 +165,6 @@ fun SettingsScreen(
                     onClick = { showLogoutDialog = true },
                     icon = Icons.AutoMirrored.Filled.ExitToApp,
                     iconColor = ShVermillion
-                )
-                SettingsRow(
-                    title = "Delete Account",
-                    titleColor = ShError,
-                    onClick = { showDeleteDialog = true },
-                    icon = Icons.Default.DeleteForever,
-                    iconColor = ShError
                 )
             }
         }

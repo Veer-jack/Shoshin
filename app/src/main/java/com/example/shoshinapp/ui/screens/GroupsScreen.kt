@@ -187,7 +187,12 @@ fun GroupsScreen(
                 ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
                         members.forEachIndexed { index, member ->
-                            MemberRow(member)
+                            MemberRow(member, onClick = { 
+                                // Navigate to Friend Profile (except if it's you)
+                                if (!member.isYou) {
+                                    navController.navigate(ShRoutes.friendProfile(member.initial)) // Using initial as mock ID
+                                }
+                            })
                             if (index < members.lastIndex) {
                                 HorizontalDivider(color = ShLine, thickness = 1.dp)
                             }
@@ -197,35 +202,58 @@ fun GroupsScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Invite Button
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clickable { /* Invite logic */ },
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, ShLine2)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                // Action Buttons
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Leaderboard Button
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                            .clickable { navController.navigate(ShRoutes.groupLeaderboard("dawn-circle")) },
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, ShLine2)
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_plus),
-                            contentDescription = null,
-                            tint = ShFog,
-                            modifier = Modifier.size(19.dp).offset(y = (-1).dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Invite someone to the circle",
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = DmSansFamily,
-                            color = ShFog
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_sun), // ic_crown placeholder
+                                contentDescription = null,
+                                tint = ShFog,
+                                modifier = Modifier.size(19.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Leaderboard", fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = ShFog)
+                        }
+                    }
+
+                    // Invite Button
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                            .clickable { navController.navigate(ShRoutes.groupInvite("dawn-circle")) },
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, ShLine2)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_plus),
+                                contentDescription = null,
+                                tint = ShFog,
+                                modifier = Modifier.size(19.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Invite", fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = ShFog)
+                        }
                     }
                 }
             }
@@ -236,10 +264,11 @@ fun GroupsScreen(
 }
 
 @Composable
-private fun MemberRow(member: Member) {
+private fun MemberRow(member: Member, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

@@ -38,10 +38,26 @@ class GroupViewModel : ViewModel() {
     val groupFull: StateFlow<String?> = _groupFull.asStateFlow()
 
     fun loadGroups() {
-        // ...
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.getGroups()
+            result.onSuccess { _groups.value = it }
+            result.onFailure { _error.value = it.message }
+            _isLoading.value = false
+        }
     }
-    
-    // ... (rest of methods)
+
+    fun createGroup(name: String, description: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.createGroup(name, description)
+            result.onSuccess {
+                loadGroups()
+            }
+            result.onFailure { _error.value = it.message }
+            _isLoading.value = false
+        }
+    }
 
     fun joinGroup(inviteCode: String) {
         viewModelScope.launch {

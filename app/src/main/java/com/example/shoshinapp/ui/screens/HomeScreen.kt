@@ -14,7 +14,8 @@ fun HomeScreen(
     syncManager: SyncManager,
     networkMonitor: NetworkStateMonitor,
     conflictResolver: ConflictResolver,
-    userRepository: UserRepository
+    userRepository: UserRepository,
+    streakViewModel: com.example.shoshinapp.viewmodel.StreakViewModel
 ) {
     // HomeScreen now just delegates to ShoshinMainShell which handles the tabs
     ShoshinMainShell(
@@ -23,6 +24,7 @@ fun HomeScreen(
         syncManager = syncManager,
         networkMonitor = networkMonitor,
         conflictResolver = conflictResolver,
-        userRepository = userRepository
+        userRepository = userRepository,
+        streakViewModel = streakViewModel
     )
 }

@@ -46,7 +46,11 @@ object ShRoutes {
     const val PAYWALL         = "paywall"
     const val PRIVACY         = "legal/privacy"
     const val TERMS           = "legal/terms"
+    const val SUPPORT         = "support"
+    const val NOTIFICATIONS   = "notifications"
+    const val DATA_PRIVACY    = "data_privacy"
     const val STREAK_SHARE    = "streak_share/{streak}/{habitName}/{startDate}"
+    const val BADGE_UNLOCK    = "badge_unlock/{badgeId}"
     const val BADGES          = "badges"
     const val BADGE_DETAIL    = "badge_detail/{badgeId}"
     const val ALL_FRIENDS     = "friends/all"
@@ -55,6 +59,11 @@ object ShRoutes {
     const val REFERRALS       = "referrals"
     const val STATS           = "stats"
 
+    // Group extensions
+    const val GROUP_INVITE    = "group_invite/{groupId}"
+    const val GROUP_PREVIEW   = "group_preview/{groupId}"
+    const val GROUP_LEADERBOARD = "group_leaderboard/{groupId}"
+
     // Helpers
     fun otpPhone(number: String, code: String? = null)  = "otp/phone/$number" + (if (code != null) "?code=$code" else "")
     fun otpEmail(email: String, pass: String, code: String? = null) = "otp/email/$email?pass=$pass" + (if (code != null) "&code=$code" else "")
@@ -62,6 +71,10 @@ object ShRoutes {
     fun routineTemplate(goal: String) = "routine_template/$goal"
     fun cameraVerify(idx: Int, label: String) = "morning/camera/$idx/$label"
     fun streakShare(streak: Int, habit: String, start: Long) = "streak_share/$streak/$habit/$start"
+    fun badgeUnlock(badgeId: String) = "badge_unlock/$badgeId"
     fun badgeDetail(badgeId: String) = "badge_detail/$badgeId"
     fun friendProfile(userId: String) = "friend_profile/$userId"
+    fun groupInvite(groupId: String) = "group_invite/$groupId"
+    fun groupPreview(groupId: String) = "group_preview/$groupId"
+    fun groupLeaderboard(groupId: String) = "group_leaderboard/$groupId"
 }

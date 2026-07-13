@@ -2,13 +2,12 @@ package com.example.shoshinapp.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.shoshinapp.R
 import com.example.shoshinapp.ui.components.*
@@ -37,9 +37,10 @@ fun ShareScreen(
 ) {
     val bitmap by viewModel.shareBitmap.collectAsState()
     val description by viewModel.customDescription.collectAsState()
+    val selectedStyle by viewModel.selectedStyle.collectAsState()
     val scrollState = rememberScrollState()
 
-    LaunchedEffect(streak, habitName, startDate, description) {
+    LaunchedEffect(streak, habitName, startDate, description, selectedStyle) {
         viewModel.generatePreview(streak, habitName, startDate)
     }
 
@@ -53,17 +54,16 @@ fun ShareScreen(
         // App Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
                 Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
             }
-            Text("Share Achievement", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.width(48.dp))
+            Spacer(Modifier.width(14.dp))
+            Text("Share your practice", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(22.dp))
 
         // Card Preview
         Box(
@@ -71,7 +71,7 @@ fun ShareScreen(
                 .fillMaxWidth()
                 .aspectRatio(4f / 5f)
                 .clip(RoundedCornerShape(24.dp))
-                .background(ShSand),
+                .background(ShInk),
             contentAlignment = Alignment.Center
         ) {
             bitmap?.let {
@@ -86,83 +86,87 @@ fun ShareScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // Custom Description
-        Text("Add a custom message", style = ShLabelStyle, color = ShFog)
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = description,
-            onValueChange = { viewModel.updateDescription(it) },
+        // Style Picker
+        Kicker("Choose a card", modifier = Modifier.padding(start = 4.dp))
+        Spacer(Modifier.height(10.dp))
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("How does it feel to keep the morning?") },
-            maxLines = 3,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedIndicatorColor = ShVermillion
-            )
-        )
-        Text(
-            text = "${description.length}/250",
-            style = ShLabelStyle,
-            color = if (description.length > 240) ShError else ShFog,
-            modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
-        )
-
-        Spacer(Modifier.height(32.dp))
-
-        // Platforms
-        Kicker("Choose Platform")
-        Spacer(Modifier.height(16.dp))
-        
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            PlatformButton("Instagram", Icons.Default.CameraAlt) { viewModel.shareToPlatform("Instagram", streak) }
-            PlatformButton("Twitter/X", Icons.AutoMirrored.Filled.Message) { viewModel.shareToPlatform("Twitter", streak) }
-            PlatformButton("Facebook", Icons.Default.Facebook) { viewModel.shareToPlatform("Facebook", streak) }
-            PlatformButton("WhatsApp", Icons.AutoMirrored.Filled.Chat) { viewModel.shareToPlatform("WhatsApp", streak) }
+            val styles = listOf(
+                Triple("streak", R.drawable.ic_flame, "Streak"),
+                Triple("ring", R.drawable.ic_pulse, "Consistency"),
+                Triple("badge", R.drawable.ic_trophy, "Badge")
+            )
+            
+            styles.forEach { (id, icon, label) ->
+                val isSelected = selectedStyle == id
+                Button(
+                    onClick = { viewModel.setStyle(id) },
+                    modifier = Modifier.weight(1f).height(72.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isSelected) ShInk else ShPaper,
+                        contentColor = if (isSelected) ShPaper else ShFog
+                    ),
+                    contentPadding = PaddingValues(8.dp),
+                    elevation = null,
+                    border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.5.dp, ShLine)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(painterResource(icon), null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.height(6.dp))
+                        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (isSelected) ShPaper else ShInk)
+                    }
+                }
+            }
         }
 
         Spacer(Modifier.height(24.dp))
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            ShoshinButton(
-                onClick = { viewModel.saveToGallery() },
-                variant = ShButtonVariant.Dark,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Save Image")
-            }
+        // Share targets
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val targets = listOf(
+                Pair("Instagram", R.drawable.ic_share),
+                Pair("WhatsApp", R.drawable.ic_mail),
+                Pair("More", R.drawable.ic_plus)
+            )
             
-            ShoshinButton(
-                onClick = { viewModel.shareToPlatform("Generic", streak) },
-                variant = ShButtonVariant.Accent,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Other Apps")
+            targets.forEach { (label, icon) ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 14.dp).clickable { viewModel.shareToPlatform(label, streak) }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .background(ShSand, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(painterResource(icon), null, modifier = Modifier.size(22.dp), tint = ShInk)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(label, style = ShLabelStyle.copy(fontSize = 11.5.sp), color = ShInk)
+                }
             }
+        }
+
+        Spacer(Modifier.height(32.dp))
+
+        ShoshinButton(
+            onClick = { viewModel.shareToPlatform("Generic", streak) },
+            variant = ShButtonVariant.Accent,
+            modifier = Modifier.fillMaxWidth().height(56.dp)
+        ) {
+            Icon(painterResource(R.drawable.ic_share), null, modifier = Modifier.size(20.dp), tint = Color.White)
+            Spacer(Modifier.width(10.dp))
+            Text("Share this card", fontWeight = FontWeight.Bold)
         }
 
         Spacer(Modifier.height(48.dp))
     }
-}
-
-@Composable
-private fun PlatformButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    InputChip(
-        selected = false,
-        onClick = onClick,
-        label = { Text(label) },
-        leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
-        colors = InputChipDefaults.inputChipColors(
-            containerColor = ShSand,
-            labelColor = ShInk
-        ),
-        border = null
-    )
 }

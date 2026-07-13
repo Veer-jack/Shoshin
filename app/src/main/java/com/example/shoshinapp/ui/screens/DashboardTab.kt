@@ -145,6 +145,17 @@ fun DashboardTab(
                     Text("$greeting,\n$userName", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShInk, lineHeight = 36.sp)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Notifications Button
+                    IconButton(
+                        onClick = { navController.navigate(ShRoutes.NOTIFICATIONS) }
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_bell),
+                            contentDescription = "Notifications",
+                            tint = ShInk
+                        )
+                    }
+
                     // Manual Sync Button
                     IconButton(
                         onClick = { scope.launch { syncManager.syncAll() } },

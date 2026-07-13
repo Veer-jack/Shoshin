@@ -21,7 +21,10 @@ data class AllTimeStats(
     val totalDaysActive: Int,
     val memberSinceDays: Int,
     val groupsJoined: Int,
-    val badgesEarned: Int
+    val badgesEarned: Int,
+    val totalActivations: Int = 0,
+    val bestStreak: Int = 0,
+    val onTimeRate: String = "0%"
 )
 
 data class BestTimes(

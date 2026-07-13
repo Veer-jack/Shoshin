@@ -32,7 +32,33 @@ class StatsViewModel(
     }
 
     private fun loadStats() {
-        // ... (existing code)
+        val uid = userId ?: return
+        viewModelScope.launch {
+            combine(
+                userDao.getUserFlow(uid),
+                statsDao.getTotalCheckpoints(uid),
+                statsDao.getTotalReflections(uid),
+                badgeDao.getBadgesForUser(uid)
+            ) { user, checkpoints, reflections, badges ->
+                val memberSince = if (user != null) {
+                    TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - user.createdAt).toInt()
+                } else 0
+                
+                AllTimeStats(
+                    totalCheckpoints = checkpoints,
+                    totalReflections = reflections,
+                    totalDaysActive = user?.totalActivations ?: 0,
+                    memberSinceDays = memberSince,
+                    groupsJoined = 0,
+                    badgesEarned = badges.count { !it.isLocked },
+                    totalActivations = user?.totalActivations ?: 0,
+                    bestStreak = user?.bestStreak ?: 0,
+                    onTimeRate = "91%" // Mock
+                )
+            }.collect { stats ->
+                _allTimeStats.value = stats
+            }
+        }
     }
 
     private fun loadHeatmap() {

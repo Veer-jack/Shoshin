@@ -1,17 +1,16 @@
 package com.example.shoshinapp.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.shoshinapp.R
 import com.example.shoshinapp.data.models.Friend
+import com.example.shoshinapp.navigation.ShRoutes
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
 import com.example.shoshinapp.viewmodel.FriendStreaksViewModel
@@ -30,13 +30,7 @@ fun AllFriendsScreen(
     viewModel: FriendStreaksViewModel
 ) {
     val friends by viewModel.allFriends.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
     
-    val filteredFriends = remember(friends, searchQuery) {
-        if (searchQuery.isEmpty()) friends
-        else friends.filter { it.userName.contains(searchQuery, ignoreCase = true) }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -45,97 +39,88 @@ fun AllFriendsScreen(
     ) {
         // App Bar
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 22.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
+                }
+                Text("Friends", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
             }
-            Spacer(Modifier.width(16.dp))
-            Text("All Friends (${friends.size})", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            IconButton(onClick = { navController.navigate(ShRoutes.INVITE) }, modifier = Modifier.size(22.dp)) {
+                Icon(painterResource(R.drawable.ic_plus), contentDescription = "Add", tint = ShInk)
+            }
         }
 
         // Search
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search friends...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = ShInk,
-                unfocusedBorderColor = ShLine
-            )
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        // Friends List
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(ShSurface)
+                .border(1.5.dp, ShLine2, RoundedCornerShape(14.dp))
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            items(filteredFriends) { friend ->
-                FriendListItem(friend = friend) {
-                    navController.navigate("friend_profile/${friend.userId}")
+            Icon(painterResource(R.drawable.ic_sun), null, modifier = Modifier.size(18.dp), tint = ShFog) // ic_search placeholder
+            Spacer(Modifier.width(10.dp))
+            Text("Search friends", fontSize = 15.sp, color = ShFog2)
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
+                friends.forEachIndexed { i, friend ->
+                    FriendListRow(
+                        friend = friend,
+                        onClick = { navController.navigate(ShRoutes.friendProfile(friend.userId)) }
+                    )
+                    if (i < friends.lastIndex) HorizontalDivider(color = ShLine)
                 }
             }
         }
         
-        Spacer(Modifier.height(16.dp))
-        
-        ShoshinButton(
-            onClick = { /* Navigate to invite */ },
-            variant = ShButtonVariant.Primary
-        ) {
-            Text("+ Add More Friends")
-        }
-        
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(40.dp))
     }
 }
 
 @Composable
-fun FriendListItem(friend: Friend, onClick: () -> Unit) {
-    ShoshinCard(modifier = Modifier.fillMaxWidth().height(80.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable { onClick() }
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("🔥", fontSize = 20.sp)
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(friend.userName, fontWeight = FontWeight.Bold, style = ShBodyStyle)
-                Text("${friend.currentStreak} day streak", style = ShLabelStyle, color = ShFog)
-            }
-            StatusBadge(status = friend.activityStatus)
-        }
-    }
-}
-
-@Composable
-private fun StatusBadge(status: String) {
-    val color = when (status) {
-        "Active" -> ShMatcha
-        "Building" -> Color(0xFF2196F3)
-        else -> ShFog
-    }
-    
-    Surface(
-        color = color.copy(alpha = 0.1f),
-        shape = RoundedCornerShape(4.dp)
+private fun FriendListRow(
+    friend: Friend,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = status,
-            color = color,
-            style = ShKickerStyle.copy(fontSize = 10.sp),
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(ShSand),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = friend.userName.take(1).uppercase(),
+                style = ShTitleStyle.copy(fontSize = 17.sp),
+                color = ShInk
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(friend.userName, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = ShInk)
+            Text("2 shared circles", fontSize = 12.5.sp, color = ShFog) // Mock shared count
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(15.dp), tint = ShVermillion)
+            Text(friend.currentStreak.toString(), style = ShNumeralStyle.copy(fontSize = 15.sp), color = ShInk)
+        }
     }
 }

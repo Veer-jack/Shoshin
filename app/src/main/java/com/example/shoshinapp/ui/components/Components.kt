@@ -357,3 +357,69 @@ fun StreakGrid(
     }
 }
 
+// ── Enso Motif ────────────────────────────────────────────────
+@Composable
+fun Enso(
+    size: Int = 180,
+    color: Color = ShVermillion,
+    strokeWidth: Float = 7f,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.Canvas(modifier = modifier.size(size.dp)) {
+        drawArc(
+            color = color,
+            startAngle = -90f,
+            sweepAngle = 310f,
+            useCenter = false,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                width = strokeWidth.dp.toPx(),
+                cap = androidx.compose.ui.graphics.StrokeCap.Round
+            )
+        )
+    }
+}
+
+// ── Shoshin Stat ──────────────────────────────────────────────
+@Composable
+fun ShoshinStat(
+    value: String,
+    label: String,
+    unit: String? = null,
+    color: Color = ShInk,
+    align: Alignment.Horizontal = Alignment.CenterHorizontally,
+    modifier: Modifier = Modifier
+) {
+    Column(horizontalAlignment = align, modifier = modifier) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = value,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = DmSansFamily,
+                color = color,
+                lineHeight = 24.sp
+            )
+            unit?.let {
+                Spacer(Modifier.width(2.dp))
+                Text(
+                    text = it,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = DmSansFamily,
+                    color = color.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(bottom = 3.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label.uppercase(),
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = DmSansFamily,
+            letterSpacing = 1.sp,
+            color = ShFog
+        )
+    }
+}
+

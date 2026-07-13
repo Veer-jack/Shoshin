@@ -55,6 +55,10 @@ class MainActivity : ComponentActivity() {
 
         // Initialize Firebase and local database
         val firebaseAuth = FirebaseAuth.getInstance()
+        
+        // Enable reCAPTCHA flow for testing to fix "missing valid app identifier" error in debug/test environments
+        firebaseAuth.firebaseAuthSettings.forceRecaptchaFlowForTesting(true)
+
         val firestore = FirebaseFirestore.getInstance()
         val database = AppDatabase.getInstance(applicationContext)
 

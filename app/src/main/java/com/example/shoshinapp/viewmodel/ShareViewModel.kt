@@ -24,11 +24,18 @@ class ShareViewModel(private val context: Context) : ViewModel() {
 
     private val cardGenerator = ShareCardGenerator(context)
 
+    private val _selectedStyle = MutableStateFlow("streak")
+    val selectedStyle: StateFlow<String> = _selectedStyle
+
     private val _customDescription = MutableStateFlow("")
     val customDescription: StateFlow<String> = _customDescription
 
     private val _shareBitmap = MutableStateFlow<Bitmap?>(null)
     val shareBitmap: StateFlow<Bitmap?> = _shareBitmap
+
+    fun setStyle(style: String) {
+        _selectedStyle.value = style
+    }
 
     fun updateDescription(text: String) {
         if (text.length <= 250) {
@@ -39,13 +46,33 @@ class ShareViewModel(private val context: Context) : ViewModel() {
     fun generatePreview(streak: Int, habitName: String, startDate: Long) {
         viewModelScope.launch {
             val dateStr = if (startDate > 0) SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(startDate)) else "January 1, 2024"
-            val bitmap = cardGenerator.generateStreakCard(
-                streak = streak,
-                habitName = habitName,
-                description = _customDescription.value,
-                startDate = dateStr,
-                isMilestone = isMilestone(streak)
-            )
+            val bitmap = when (_selectedStyle.value) {
+                "streak" -> cardGenerator.generateCard(
+                    cardStyle = "streak",
+                    mainValue = streak.toString(),
+                    subValue = if (streak == 1) "day of beginning again." else "$streak days of beginning again.",
+                    kicker = "MORNINGS KEPT"
+                )
+                "ring" -> cardGenerator.generateCard(
+                    cardStyle = "ring",
+                    mainValue = "86%",
+                    subValue = "Top 8% of early risers this month.",
+                    kicker = "CONSISTENCY"
+                )
+                "badge" -> cardGenerator.generateCard(
+                    cardStyle = "badge",
+                    mainValue = "Early riser",
+                    subValue = "Five mornings before 6 AM, in a row.",
+                    kicker = "EARNED"
+                )
+                else -> cardGenerator.generateStreakCard(
+                    streak = streak,
+                    habitName = habitName,
+                    description = _customDescription.value,
+                    startDate = dateStr,
+                    isMilestone = isMilestone(streak)
+                )
+            }
             _shareBitmap.value = bitmap
         }
     }
