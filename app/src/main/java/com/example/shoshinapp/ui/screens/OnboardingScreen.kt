@@ -129,9 +129,9 @@ fun OnboardingStep1() {
         
         Spacer(Modifier.height(48.dp))
         
-        BenefitRow(Icons.Default.Whatshot, "Build Streaks", "Consistency builds momentum")
-        BenefitRow(Icons.Default.BarChart, "Track Progress", "See your improvements")
-        BenefitRow(Icons.Default.Group, "Share Wins", "Celebrate with community")
+        BenefitRow(Icons.Default.FlashOn, "Build Streaks", "Consistency builds momentum")
+        BenefitRow(Icons.Default.TrendingUp, "Track Progress", "See your improvements")
+        BenefitRow(Icons.Default.Groups, "Share Wins", "Celebrate with community")
     }
 }
 

@@ -69,6 +69,10 @@ fun ProfileScreen(
             Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = ShVermillion)
             }
+        } else if (user == null) {
+            Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
+                Text("Profile not found. Please sign in again.", color = ShFog)
+            }
         } else {
             user?.let { u ->
                 // Profile Info

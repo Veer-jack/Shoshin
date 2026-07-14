@@ -69,8 +69,8 @@ object ShRoutes {
     fun otpEmail(email: String, pass: String, code: String? = null) = "otp/email/$email?pass=$pass" + (if (code != null) "&code=$code" else "")
     fun onboarding(page: Int = 0) = "onboarding/$page"
     fun routineTemplate(goal: String) = "routine_template/$goal"
-    fun cameraVerify(idx: Int, label: String) = "morning/camera/$idx/$label"
-    fun streakShare(streak: Int, habit: String, start: Long) = "streak_share/$streak/$habit/$start"
+    fun cameraVerify(idx: Int, label: String) = "morning/camera/$idx/${java.net.URLEncoder.encode(label, "UTF-8")}"
+    fun streakShare(streak: Int, habit: String, start: Long) = "streak_share/$streak/${java.net.URLEncoder.encode(habit, "UTF-8")}/$start"
     fun badgeUnlock(badgeId: String) = "badge_unlock/$badgeId"
     fun badgeDetail(badgeId: String) = "badge_detail/$badgeId"
     fun friendProfile(userId: String) = "friend_profile/$userId"

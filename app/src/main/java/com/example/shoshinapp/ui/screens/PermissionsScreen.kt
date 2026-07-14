@@ -25,13 +25,24 @@ import com.example.shoshinapp.ui.theme.*
 @Composable
 fun PermissionsScreen(onContinue: () -> Unit) {
     val context = LocalContext.current
-    var cameraGranted  by remember { mutableStateOf(false) }
-    var notifsGranted  by remember { mutableStateOf(false) }
-    var locationGranted by remember { mutableStateOf(false) }
+    
+    fun hasPerm(p: String) = androidx.core.content.ContextCompat.checkSelfPermission(context, p) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    
+    var cameraGranted  by remember { mutableStateOf(hasPerm(Manifest.permission.CAMERA)) }
+    var notifsGranted  by remember { mutableStateOf(hasPerm(Manifest.permission.POST_NOTIFICATIONS)) }
+    var locationGranted by remember { mutableStateOf(hasPerm(Manifest.permission.ACCESS_COARSE_LOCATION)) }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { cameraGranted = it }
     val notifLauncher  = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { notifsGranted = it }
     val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { locationGranted = it }
+
+    // Auto-continue if all permissions already granted
+    LaunchedEffect(cameraGranted, notifsGranted, locationGranted) {
+        if (cameraGranted && notifsGranted && locationGranted) {
+            // Optional: Give user 500ms to see "Granted" states before moving
+            onContinue()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(ShPaper)) {
         Column(modifier = Modifier.weight(1f).padding(horizontal = 24.dp, vertical = 32.dp)) {

@@ -14,12 +14,15 @@ class OnboardingViewModel(
     fun completeOnboarding(startTime: String, endTime: String) {
         val uid = userRepository.userId ?: return
         viewModelScope.launch {
-            userRepository.getUser(uid)?.let { user ->
-                userRepository.updateUser(user.copy(
-                    onboardingCompleted = true,
-                    productiveStartTime = startTime,
-                    productiveEndTime = endTime
-                ))
+            try {
+                userRepository.getUser(uid)?.let { user ->
+                    userRepository.updateUser(user.copy(
+                        onboardingCompleted = true,
+                        productiveStartTime = startTime,
+                        productiveEndTime = endTime
+                    ))
+                }
+            } finally {
                 shoshinRepository.completeOnboarding()
             }
         }
@@ -28,8 +31,11 @@ class OnboardingViewModel(
     fun skipOnboarding() {
         val uid = userRepository.userId ?: return
         viewModelScope.launch {
-            userRepository.getUser(uid)?.let { user ->
-                userRepository.updateUser(user.copy(onboardingCompleted = true))
+            try {
+                userRepository.getUser(uid)?.let { user ->
+                    userRepository.updateUser(user.copy(onboardingCompleted = true))
+                }
+            } finally {
                 shoshinRepository.completeOnboarding()
             }
         }

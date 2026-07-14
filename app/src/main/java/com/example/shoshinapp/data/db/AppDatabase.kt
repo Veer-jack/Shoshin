@@ -21,9 +21,10 @@ import com.example.shoshinapp.data.db.entities.*
         BadgeEntity::class,
         FriendEntity::class,
         UserLimitsEntity::class,
-        CheckpointEntity::class
+        CheckpointEntity::class,
+        NotificationEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -40,6 +41,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun friendDao(): FriendDao
     abstract fun userLimitsDao(): UserLimitsDao
     abstract fun statsDao(): StatsDao
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
         @Volatile

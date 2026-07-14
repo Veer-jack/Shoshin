@@ -117,6 +117,36 @@ fun ShoshinNavGraph(
     
     var isGoogleLoading by remember { mutableStateOf(false) }
 
+    // Dynamic Navigation based on Auth/Onboarding state
+    LaunchedEffect(isLoggedIn, hasCompletedOnboarding) {
+        if (!isLoggedIn) {
+            if (navController.currentDestination?.route != ShRoutes.SPLASH && 
+                navController.currentDestination?.route != ShRoutes.AUTH) {
+                navController.navigate(ShRoutes.SPLASH) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        } else if (!hasCompletedOnboarding) {
+            if (navController.currentDestination?.route != ShRoutes.ONBOARDING &&
+                navController.currentDestination?.route != ShRoutes.PERMISSIONS &&
+                navController.currentDestination?.route != ShRoutes.GOAL_SELECTION &&
+                navController.currentDestination?.route != ShRoutes.ROUTINE_TEMPLATE) {
+                navController.navigate(ShRoutes.ONBOARDING) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        } else {
+            // Logged in and onboarding done
+            if (navController.currentDestination?.route == ShRoutes.SPLASH ||
+                navController.currentDestination?.route == ShRoutes.AUTH ||
+                navController.currentDestination?.route == ShRoutes.ONBOARDING) {
+                navController.navigate(ShRoutes.MAIN) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        }
+    }
+
     // Milestone Auto-Trigger
     val lastMilestone by streakViewModel.lastMilestoneReached.collectAsState()
     LaunchedEffect(lastMilestone) {
@@ -158,6 +188,7 @@ fun ShoshinNavGraph(
                         referralRepository = referralRepository,
                         userRepository = userRepository,
                         shoshinRepository = shoshinRepository,
+                        database = database,
                         navController = navController
                     )
                 }
@@ -245,7 +276,7 @@ fun ShoshinNavGraph(
                 referralCode = referralCode,
                 onSuccess = { userId, contact, code ->
                     scope.launch {
-                        handleNewUser(userId, "User", contact, null, code, referralRepository, userRepository, shoshinRepository, navController)
+                        handleNewUser(userId, "User", contact, null, code, referralRepository, userRepository, shoshinRepository, database, navController)
                     }
                 }
             )
@@ -274,7 +305,7 @@ fun ShoshinNavGraph(
                 referralCode = referralCode,
                 onSuccess = { userId, contact, code ->
                     scope.launch {
-                        handleNewUser(userId, "User", null, contact, code, referralRepository, userRepository, shoshinRepository, navController)
+                        handleNewUser(userId, "User", null, contact, code, referralRepository, userRepository, shoshinRepository, database, navController)
                     }
                 }
             )
@@ -679,28 +710,47 @@ private suspend fun handleNewUser(
     referralRepository: ReferralRepository,
     userRepository: UserRepository,
     shoshinRepository: ShoshinRepository,
+    database: AppDatabase,
     navController: NavHostController
 ) {
     // 1. Basic user save to DataStore
     shoshinRepository.saveUser(name = displayName, email = email ?: "", phone = phone ?: "")
     
-    // 2. Create UserEntity in local DB and Firestore if it doesn't exist
-    val existingUser = userRepository.getUser(userId)
-    if (existingUser == null) {
-        val newUser = com.example.shoshinapp.data.db.entities.UserEntity(
+    // 2. Create or Update UserEntity in local DB and Firestore
+    val user = userRepository.getUser(userId)
+    val newUser = if (user == null || user.displayName == "New User") {
+        com.example.shoshinapp.data.db.entities.UserEntity(
             userId = userId,
-            displayName = displayName,
-            email = email,
-            phone = phone,
-            photoUrl = null
+            displayName = if (displayName == "User" && user?.displayName != null) user.displayName else displayName,
+            email = email ?: user?.email,
+            phone = phone ?: user?.phone,
+            photoUrl = user?.photoUrl,
+            inviteCode = user?.inviteCode ?: ""
         )
-        userRepository.updateUser(newUser)
+    } else {
+        user.copy(
+            email = email ?: user.email,
+            phone = phone ?: user.phone
+        )
     }
+    userRepository.updateUser(newUser)
 
-    // 3. Generate referral code for new user
+    // 3. Add Welcome Notification
+    database.notificationDao().insertNotification(
+        com.example.shoshinapp.data.db.entities.NotificationEntity(
+            notificationId = java.util.UUID.randomUUID().toString(),
+            userId = userId,
+            type = "welcome",
+            title = "Welcome to Shoshin",
+            body = "Begin your morning practice today. Start with intention.",
+            iconRes = com.example.shoshinapp.R.drawable.ic_sun
+        )
+    )
+
+    // 4. Generate referral code for new user
     val newUserCode = referralRepository.generateAndSaveReferralCode(userId, displayName)
     
-    // 4. Process entered referral code
+    // 5. Process entered referral code
     if (referralCode != null) {
         val referrerId = referralRepository.validateReferralCode(referralCode)
         if (referrerId != null && referrerId != userId) {

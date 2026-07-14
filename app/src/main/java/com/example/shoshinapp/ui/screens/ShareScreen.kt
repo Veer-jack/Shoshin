@@ -131,23 +131,25 @@ fun ShareScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val targets = listOf(
-                Pair("Instagram", R.drawable.ic_share),
-                Pair("WhatsApp", R.drawable.ic_mail),
-                Pair("More", R.drawable.ic_plus)
+                Triple("Instagram", R.drawable.ic_camera, Color(0xFFE4405F)),
+                Triple("WhatsApp", R.drawable.ic_mail, Color(0xFF25D366)),
+                Triple("Telegram", R.drawable.ic_share, Color(0xFF0088CC)),
+                Triple("More", R.drawable.ic_grid, Color(0xFF666666))
             )
             
-            targets.forEach { (label, icon) ->
+            targets.forEach { (label, icon, color) ->
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 14.dp).clickable { viewModel.shareToPlatform(label, streak) }
+                    modifier = Modifier.padding(horizontal = 12.dp).clickable { viewModel.shareToPlatform(label, streak) }
                 ) {
                     Box(
                         modifier = Modifier
                             .size(54.dp)
-                            .background(ShSand, CircleShape),
+                            .clip(CircleShape)
+                            .background(color.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(painterResource(icon), null, modifier = Modifier.size(22.dp), tint = ShInk)
+                        Icon(painterResource(icon), null, modifier = Modifier.size(22.dp), tint = color)
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(label, style = ShLabelStyle.copy(fontSize = 11.5.sp), color = ShInk)

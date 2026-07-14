@@ -100,7 +100,9 @@ class ShareViewModel(private val context: Context) : ViewModel() {
             trackShareEvent(platform, streak)
         } catch (e: Exception) {
             // Fallback to generic share if app not found
-            context.startActivity(Intent.createChooser(createGenericShareIntent(uri, caption), "Share with").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            val chooser = Intent.createChooser(createGenericShareIntent(uri, caption), "Share with")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
         }
     }
 
