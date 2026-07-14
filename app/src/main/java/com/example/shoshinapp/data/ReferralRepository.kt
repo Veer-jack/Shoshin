@@ -21,7 +21,7 @@ class ReferralRepository(
             .let { if (it.length >= 5) it.substring(0, 5) else it.padEnd(5, 'X') }
 
         while (!isUnique) {
-            val random = Random().nextInt(1000).toString().padEnd(3, '0')
+            val random = Random().nextInt(1000).toString().padStart(3, '0')
             code = "$base$random"
             
             val snapshot = firestore.collection("referralCodes").document(code).get().await()
