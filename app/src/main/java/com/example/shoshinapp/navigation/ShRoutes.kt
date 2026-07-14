@@ -22,7 +22,7 @@ object ShRoutes {
 
     // Morning flow (launched from FAB or HOME CTA)
     const val ACTIVATION      = "morning/activation"
-    const val CAMERA_VERIFY   = "morning/camera/{checkpointIndex}/{checkpointLabel}"
+    const val CAMERA_VERIFY   = "morning/camera/{checkpointIndex}/{checkpointLabel}?targets={targets}"
     const val CHECKPOINT      = "morning/checkpoint"
     const val MORNING_COMPLETE = "morning/complete"
 
@@ -69,7 +69,8 @@ object ShRoutes {
     fun otpEmail(email: String, pass: String, code: String? = null) = "otp/email/$email?pass=$pass" + (if (code != null) "&code=$code" else "")
     fun onboarding(page: Int = 0) = "onboarding/$page"
     fun routineTemplate(goal: String) = "routine_template/$goal"
-    fun cameraVerify(idx: Int, label: String) = "morning/camera/$idx/${java.net.URLEncoder.encode(label, "UTF-8")}"
+    fun cameraVerify(idx: Int, label: String, targets: List<String> = emptyList()) = 
+        "morning/camera/$idx/${java.net.URLEncoder.encode(label, "UTF-8")}?targets=${targets.joinToString(",")}"
     fun streakShare(streak: Int, habit: String, start: Long) = "streak_share/$streak/${java.net.URLEncoder.encode(habit, "UTF-8")}/$start"
     fun badgeUnlock(badgeId: String) = "badge_unlock/$badgeId"
     fun badgeDetail(badgeId: String) = "badge_detail/$badgeId"

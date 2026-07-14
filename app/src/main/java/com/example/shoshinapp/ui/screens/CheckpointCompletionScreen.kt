@@ -16,25 +16,61 @@ import com.example.shoshinapp.ui.theme.*
 import com.example.shoshinapp.utils.AnalyticsManager
 import com.example.shoshinapp.utils.LocationHelper
 import kotlinx.coroutines.launch
+import com.example.shoshinapp.data.ShoshinRepository
+import kotlinx.coroutines.flow.first
 
-private data class Checkpoint(val label: String, val type: String)
-private val CHECKPOINTS = listOf(
-    Checkpoint("Mind awake", "math"),
-    Checkpoint("Freshen up", "done"),
-    Checkpoint("Dressed", "done"),
-    Checkpoint("Out the door", "photo"),
-    Checkpoint("Walk begun", "done")
+private data class Checkpoint(
+    val label: String, 
+    val type: String, 
+    val targets: List<String> = emptyList(),
+    val hint: String = ""
+)
+
+private val TEMPLATE_CHECKPOINTS = mapOf(
+    "walk" to listOf(
+        Checkpoint("Mind awake", "math"),
+        Checkpoint("Freshen up", "photo", listOf("Sink", "Toothbrush", "Bathroom", "Water tap"), "Photo of sink or toothbrush"),
+        Checkpoint("Dressed", "photo", listOf("Person", "Clothing", "Selfie"), "Selfie in your walking gear"),
+        Checkpoint("Out the door", "photo", listOf("Tree", "Street", "Sky", "Building"), "Photo of a tree or the street"),
+        Checkpoint("Walk begun", "done")
+    ),
+    "study" to listOf(
+        Checkpoint("Mind awake", "math"),
+        Checkpoint("Freshen up", "photo", listOf("Sink", "Toothbrush", "Water tap"), "Quick freshen up photo"),
+        Checkpoint("Tea brewed", "photo", listOf("Cup", "Mug", "Tea", "Drink"), "Photo of your tea or coffee"),
+        Checkpoint("Desk ready", "photo", listOf("Book", "Laptop", "Computer", "Paper", "Desk"), "Photo of your study desk"),
+        Checkpoint("Study begun", "done")
+    ),
+    "gym" to listOf(
+        Checkpoint("Mind awake", "math"),
+        Checkpoint("Freshen up", "photo", listOf("Sink", "Toothbrush", "Towel"), "Morning refresh photo"),
+        Checkpoint("Kit on", "photo", listOf("Person", "Clothing", "Mirror"), "Selfie in gym kit"),
+        Checkpoint("Gym reached", "photo", listOf("Gym", "Weights", "Dumbbell", "Barbell", "Building"), "Photo at the gym"),
+        Checkpoint("Training begun", "done")
+    )
 )
 
 @Composable
 fun CheckpointCompletionScreen(
-    onPhotoRequired: (Int, String) -> Unit,
+    onPhotoRequired: (Int, String, List<String>) -> Unit,
     onComplete: () -> Unit,
     streakViewModel: com.example.shoshinapp.viewmodel.StreakViewModel? = null
 ) {
-    var currentIndex by remember { mutableStateOf(0) }
-    val current = CHECKPOINTS[currentIndex]
     val context = LocalContext.current
+    val repo = remember { ShoshinRepository(context) }
+    val templateKey by repo.template.collectAsState(initial = "walk")
+    val checkpoints = TEMPLATE_CHECKPOINTS[templateKey] ?: TEMPLATE_CHECKPOINTS["walk"]!!
+    
+    var currentIndex by remember { mutableStateOf(0) }
+    
+    // Auto-skip "Mind awake" if we just came from math
+    LaunchedEffect(Unit) {
+        if (checkpoints.isNotEmpty() && checkpoints[0].type == "math") {
+            currentIndex = 1
+        }
+    }
+
+    val current = checkpoints.getOrNull(currentIndex) ?: checkpoints.last()
     val scope = rememberCoroutineScope()
 
     Column(
@@ -50,7 +86,7 @@ fun CheckpointCompletionScreen(
         Text("Day ${user?.currentStreak ?: 1}", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShInk)
         Spacer(modifier = Modifier.height(32.dp))
 
-        CHECKPOINTS.forEachIndexed { index, checkpoint ->
+        checkpoints.forEachIndexed { index, checkpoint ->
             val state = when {
                 index < currentIndex -> CheckpointState.DONE
                 index == currentIndex -> CheckpointState.ACTIVE
@@ -59,9 +95,10 @@ fun CheckpointCompletionScreen(
             CheckpointRow(
                 number = index + 1,
                 label = checkpoint.label,
-                state = state
+                state = state,
+                time = if (state == CheckpointState.DONE) "Completed" else null
             )
-            if (index < CHECKPOINTS.lastIndex) {
+            if (index < checkpoints.lastIndex) {
                 HorizontalDivider(color = ShLine, thickness = 1.dp, modifier = Modifier.padding(start = 48.dp))
             }
         }
@@ -71,21 +108,19 @@ fun CheckpointCompletionScreen(
         ShoshinButton(
             onClick = {
                 if (current.type == "photo") {
-                    onPhotoRequired(currentIndex, current.label)
-                    // In a real app, you'd wait for camera return, but for testing:
-                    currentIndex++
+                    onPhotoRequired(currentIndex, current.label, current.targets)
+                    // We don't increment here, we wait for return from camera
                 } else {
-                    if (currentIndex < CHECKPOINTS.lastIndex) {
+                    if (currentIndex < checkpoints.lastIndex) {
                         currentIndex++
                     } else {
                         streakViewModel?.incrementStreak()
                         
-                        // Phase 5: Analytics and Location
                         AnalyticsManager.logCheckpointCompleted(
                             userType = "professional",
                             streak = user?.currentStreak ?: 0,
-                            hadPhoto = CHECKPOINTS.any { it.type == "photo" },
-                            timeSeconds = 0 // Placeholder
+                            hadPhoto = checkpoints.any { it.type == "photo" },
+                            timeSeconds = 0 
                         )
                         
                         scope.launch {
@@ -101,7 +136,18 @@ fun CheckpointCompletionScreen(
             },
             variant = ShButtonVariant.Accent
         ) {
-            Text(if (currentIndex < CHECKPOINTS.lastIndex) "Next Checkpoint" else "Complete Morning")
+            Text(if (currentIndex < checkpoints.lastIndex) "Next: ${checkpoints.getOrNull(currentIndex)?.label}" else "Complete Morning")
+        }
+        
+        if (current.type == "photo") {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "Verification: ${current.hint}",
+                style = ShLabelStyle,
+                color = ShFog,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
         }
     }
 }

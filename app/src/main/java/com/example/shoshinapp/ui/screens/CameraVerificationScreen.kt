@@ -21,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +54,7 @@ import java.util.UUID
 fun CameraVerificationScreen(
     checkpointIndex: Int,
     label: String,
+    targetLabels: List<String> = emptyList(),
     onCapture: () -> Unit,
     onSkip: () -> Unit,
     database: AppDatabase? = null
@@ -60,16 +62,22 @@ fun CameraVerificationScreen(
     var showCamera by remember { mutableStateOf(true) }
     var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
     var isUploading by remember { mutableStateOf(false) }
+    var isVerifying by remember { mutableStateOf(false) }
+    var verificationResult by remember { mutableStateOf<com.example.shoshinapp.utils.VerificationResult?>(null) }
     var uploadError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     
-    val photoStorageManager = remember { PhotoStorageManager(context) }
-    val shareManager = remember { SocialShareManager(context, database!!) }
+    val photoStorageManager = remember { com.example.shoshinapp.utils.PhotoStorageManager(context) }
+    val shareManager = remember { com.example.shoshinapp.utils.SocialShareManager(context, database!!) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     if (isUploading) {
         LoadingDialog(message = "Uploading proof...")
+    }
+    
+    if (isVerifying) {
+        LoadingDialog(message = "Verifying photo...")
     }
 
     ShoshinTheme(darkSurface = true) {
@@ -79,13 +87,26 @@ fun CameraVerificationScreen(
                 onPhotoCapture = { bitmap ->
                     capturedImage = bitmap
                     showCamera = false
+                    
+                    // Trigger Verification automatically
+                    if (targetLabels.isNotEmpty()) {
+                        isVerifying = true
+                        scope.launch {
+                            verificationResult = com.example.shoshinapp.utils.ImageVerificationManager.verifyImage(bitmap, targetLabels)
+                            isVerifying = false
+                        }
+                    }
                 },
                 onDismiss = onSkip
             )
         } else {
             CameraConfirmScreen(
                 bitmap = capturedImage,
+                label = label,
+                targetLabels = targetLabels,
                 isUploading = isUploading,
+                isVerifying = isVerifying,
+                verificationResult = verificationResult,
                 error = uploadError,
                 shareManager = shareManager,
                 userId = userId,
@@ -93,36 +114,20 @@ fun CameraVerificationScreen(
                     capturedImage = null
                     showCamera = true
                     uploadError = null
+                    verificationResult = null
                 },
                 onConfirm = {
                     capturedImage?.let { bitmap ->
                         isUploading = true
                         scope.launch {
-                            // 1. Capture location at time of photo
-                            val location = LocationHelper.getLastLocation(context)
-                            val lat = location?.latitude?.let {
-                                Math.round(it * 100.0) / 100.0  // Round to 2 decimal places
-                            }
-                            val long = location?.longitude?.let {
-                                Math.round(it * 100.0) / 100.0  // Round to 2 decimal places
-                            }
+                            // ... existing upload logic
+                            val location = com.example.shoshinapp.utils.LocationHelper.getLastLocation(context)
+                            val lat = location?.latitude?.let { Math.round(it * 100.0) / 100.0 }
+                            val long = location?.longitude?.let { Math.round(it * 100.0) / 100.0 }
 
-                            // 2. Log to Firebase Analytics
-                            AnalyticsManager.logLocationCaptured(
-                                lat = lat ?: 0.0,
-                                lng = long ?: 0.0,
-                                type = "checkpoint"
-                            )
+                            AnalyticsManager.logLocationCaptured(lat ?: 0.0, long ?: 0.0, "checkpoint")
+                            AnalyticsManager.logCheckpointCompleted("professional", 0, true, 0)
 
-                            // 3. Log capture to analytics
-                            AnalyticsManager.logCheckpointCompleted(
-                                userType = "professional",
-                                streak = 0,
-                                hadPhoto = true,
-                                timeSeconds = 0
-                            )
-
-                            // 4. Upload photo with location metadata
                             uploadPhotoToFirebase(
                                 bitmap = bitmap,
                                 context = context,
@@ -299,7 +304,11 @@ fun imageProxyToBitmap(image: ImageProxy): Bitmap {
 @Composable
 fun CameraConfirmScreen(
     bitmap: Bitmap?,
+    label: String,
+    targetLabels: List<String>,
     isUploading: Boolean,
+    isVerifying: Boolean,
+    verificationResult: com.example.shoshinapp.utils.VerificationResult?,
     error: String?,
     shareManager: SocialShareManager,
     userId: String,
@@ -309,10 +318,10 @@ fun CameraConfirmScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(ShPaper)
             .verticalScroll(rememberScrollState())
     ) {
-        if (!isUploading) {
+        if (!isUploading && !isVerifying) {
             TextButton(
                 onClick = onRetake, 
                 modifier = Modifier.align(Alignment.End).padding(16.dp)
@@ -322,90 +331,90 @@ fun CameraConfirmScreen(
         }
 
         if (bitmap != null) {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Captured photo",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .aspectRatio(3f / 4f)
-                    .border(1.dp, ShPaper2, RoundedCornerShape(16.dp)),
-                contentScale = ContentScale.Crop
-            )
+            Box(modifier = Modifier.padding(horizontal = 24.dp)) {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = "Captured photo",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(3f / 4f)
+                        .clip(RoundedCornerShape(24.dp))
+                        .border(1.dp, ShLine, RoundedCornerShape(24.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                
+                // Verification Badge Overlay
+                verificationResult?.let { result ->
+                    val (icon, color, text) = when (result) {
+                        is com.example.shoshinapp.utils.VerificationResult.Success -> Triple(R.drawable.ic_check, ShMatcha, "Verified: ${result.label}")
+                        is com.example.shoshinapp.utils.VerificationResult.Failure -> Triple(R.drawable.ic_info, ShVermillion, "Detection Mismatch")
+                        is com.example.shoshinapp.utils.VerificationResult.Error -> Triple(R.drawable.ic_info, ShFog, "Scan Error")
+                    }
+                    
+                    Surface(
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
+                        color = color.copy(alpha = 0.9f),
+                        shape = CircleShape
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(painterResource(icon), null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Text(text, color = Color.White, style = ShLabelStyle, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (error != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .background(ShVermillion.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                    .padding(16.dp)
-            ) {
-                Text(
-                    "Error: $error", 
-                    color = ShVermillion2, 
-                    style = MaterialTheme.typography.bodyMedium
-                )
+        // Info / Error text
+        Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+            if (isVerifying) {
+                Text("Checking image for ${targetLabels.joinToString("/")}...", color = ShFog, style = ShBodyStyle)
+            } else if (verificationResult is com.example.shoshinapp.utils.VerificationResult.Failure) {
+                Text(verificationResult.message, color = ShVermillion, style = ShBodyStyle)
+                Text("You can still confirm if the detection was incorrect.", color = ShFog, fontSize = 12.sp)
+            } else if (error != null) {
+                Text("Error: $error", color = ShVermillion, style = ShBodyStyle)
+            } else {
+                Text(label, style = ShTitleStyle.copy(fontSize = 24.sp), color = ShInk)
+                Text("Photo proof ready for validation.", style = ShBodyStyle, color = ShFog)
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
-
-        Text(
-            text = if (isUploading) "Uploading to cloud..." else "Photo ready",
-            style = MaterialTheme.typography.displayMedium.copy(fontSize = 20.sp),
-            modifier = Modifier.padding(horizontal = 24.dp),
-            color = MaterialTheme.colorScheme.onBackground
-        )
 
         Spacer(modifier = Modifier.height(32.dp))
 
         if (isUploading) {
             LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 color = ShVermillion,
-                trackColor = ShPaper2
+                trackColor = ShLine
             )
         } else {
             ShoshinButton(
                 onClick = onConfirm,
-                modifier = Modifier.padding(horizontal = 24.dp)
+                modifier = Modifier.padding(horizontal = 24.dp),
+                variant = if (verificationResult is com.example.shoshinapp.utils.VerificationResult.Success) ShButtonVariant.Accent else ShButtonVariant.Primary
             ) {
                 Text("Confirm & Continue")
             }
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            var showShareSheet by remember { mutableStateOf(false) }
             ShoshinButton(
-                variant = ShButtonVariant.Accent,
-                onClick = { showShareSheet = true },
+                variant = ShButtonVariant.Ghost,
+                onClick = { onRetake() },
                 modifier = Modifier.padding(horizontal = 24.dp)
             ) {
-                Text("Share to Social")
-            }
-
-            if (showShareSheet) {
-                SocialShareSheet(
-                    onShare = { platform ->
-                        showShareSheet = false
-                        shareManager.shareToPlatform(
-                            platform = platform,
-                            text = "Morning discipline in action! 📸 #ShoshinApp",
-                            userId = userId,
-                            postId = "camera_temp"
-                        )
-                    },
-                    onDismiss = { showShareSheet = false }
-                )
+                Text("Retake Photo")
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(48.dp))
     }
 }
 

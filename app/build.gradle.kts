@@ -84,4 +84,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("com.google.firebase:firebase-messaging:23.2.1")
+    implementation("com.google.mlkit:image-labeling:17.0.8")
 }

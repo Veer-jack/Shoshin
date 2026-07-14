@@ -639,15 +639,18 @@ fun ShoshinNavGraph(
             arguments = listOf(
                 navArgument("checkpointIndex") { type = NavType.IntType },
                 navArgument("checkpointLabel") { type = NavType.StringType },
+                navArgument("targets") { type = NavType.StringType; defaultValue = "" }
             ),
             enterTransition = { fadeIn(tween(400)) },
             exitTransition  = { fadeOut(tween(300)) },
         ) { back ->
             val idx   = back.arguments?.getInt("checkpointIndex") ?: 0
             val label = back.arguments?.getString("checkpointLabel") ?: ""
+            val targets = back.arguments?.getString("targets")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
             CameraVerificationScreen(
                 checkpointIndex = idx,
                 label           = label,
+                targetLabels    = targets,
                 onCapture = { navController.popBackStack() }, // return to Checkpoint
                 onSkip    = { navController.popBackStack() },
                 database = database
@@ -661,8 +664,8 @@ fun ShoshinNavGraph(
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) {
             CheckpointCompletionScreen(
-                onPhotoRequired = { idx, label ->
-                    navController.navigate(ShRoutes.cameraVerify(idx, label))
+                onPhotoRequired = { idx, label, targets ->
+                    navController.navigate(ShRoutes.cameraVerify(idx, label, targets))
                 },
                 onComplete = {
                     navController.navigate(ShRoutes.MORNING_COMPLETE) {
