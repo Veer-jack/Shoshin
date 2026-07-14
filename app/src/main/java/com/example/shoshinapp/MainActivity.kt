@@ -1,12 +1,15 @@
 package com.example.shoshinapp
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
 import androidx.compose.runtime.*
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.shoshinapp.data.AuthRepository
 import com.example.shoshinapp.data.ShoshinRepository
@@ -33,12 +36,17 @@ class MainActivity : ComponentActivity() {
     private lateinit var networkMonitor: NetworkStateMonitor
     private lateinit var conflictResolver: ConflictResolver
     private lateinit var shoshinRepository: ShoshinRepository
+    
+    private var navController: NavHostController? = null
+    private val currentIntent = mutableStateOf<Intent?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         
-        // Handle lock screen visibility based on API version
+        currentIntent.value = intent
+        
+        // ... (Lock screen logic)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -50,15 +58,11 @@ class MainActivity : ComponentActivity() {
             )
         }
         
-        // Enable edge-to-edge as per Shoshin design principles
         enableEdgeToEdge()
 
-        // Initialize Firebase and local database
+        // ... (Initializations)
         val firebaseAuth = FirebaseAuth.getInstance()
-        
-        // Enable reCAPTCHA flow for testing to fix "missing valid app identifier" error in debug/test environments
         firebaseAuth.firebaseAuthSettings.forceRecaptchaFlowForTesting(true)
-
         val firestore = FirebaseFirestore.getInstance()
         val database = AppDatabase.getInstance(applicationContext)
 
@@ -68,75 +72,27 @@ class MainActivity : ComponentActivity() {
         networkMonitor = NetworkStateMonitor(applicationContext)
         shoshinRepository = ShoshinRepository(applicationContext)
 
-        // Schedule background sync
         SyncWorker.scheduleSyncWork(applicationContext)
         WeeklySummaryWorker.schedule(applicationContext)
 
-        // Track App Open and Update Stats
-        lifecycleScope.launch {
-            val firebaseUser = firebaseAuth.currentUser
-            if (firebaseUser != null) {
-                val user = database.userDao().getUser(firebaseUser.uid)
-                if (user != null) {
-                    val now = System.currentTimeMillis()
-                    val daysSinceSignup = TimeUnit.MILLISECONDS.toDays(now - user.createdAt).toInt()
-                    val daysSinceLastOpen = if (user.lastOpenDate > 0) {
-                        TimeUnit.MILLISECONDS.toDays(now - user.lastOpenDate).toInt()
-                    } else 0
-                    
-                    AnalyticsManager.logAppOpened(
-                        daysSinceSignup = daysSinceSignup,
-                        daysSinceLastOpen = daysSinceLastOpen,
-                        streak = user.currentStreak,
-                        userType = "professional" // Default for now
-                    )
-
-                    // Capture location on app open
-                    val location = LocationHelper.getLastLocation(applicationContext)
-                    location?.let {
-                        AnalyticsManager.logLocationCaptured(it.latitude, it.longitude, "app_opened")
-                    }
-                    
-                    database.userDao().updateUser(user.copy(
-                        lastOpenDate = now,
-                        totalSessionCount = user.totalSessionCount + 1
-                    ))
-                }
-            }
-        }
-
-        // Notification Permission and Initialization
+        // Notification Permission
         requestNotificationPermission()
-        val notificationManager = ShoshinNotificationManager(applicationContext)
-        
-        // Handle notification click intent
-        val openCheckpoint = intent.getBooleanExtra(ShoshinNotificationManager.EXTRA_OPEN_CHECKPOINT, false)
-        val navigateTo = intent.getStringExtra("navigate_to")
-        
-        // Handle Deep Link
-        val deepLinkCode = intent.data?.lastPathSegment.takeIf { intent.data?.path?.contains("join") == true }
 
         setContent {
             ShoshinTheme {
-                val navController = rememberNavController()
+                val controller = rememberNavController()
+                navController = controller
                 
-                // If opened from notification, we could navigate to activation
-                LaunchedEffect(openCheckpoint, navigateTo) {
-                    if (openCheckpoint) {
-                        navController.navigate(com.example.shoshinapp.navigation.ShRoutes.ACTIVATION)
-                    } else if (navigateTo != null) {
-                        navController.navigate(navigateTo)
-                    }
+                val intentState by currentIntent
+                LaunchedEffect(intentState) {
+                    intentState?.let { handleIntent(it) }
                 }
-
-                // If opened from deep link, we can pass it to AuthScreen or similar
-                // For now, let's just make it available to the NavGraph
 
                 val isLoggedIn by shoshinRepository.isLoggedIn.collectAsState(initial = false)
                 val onboardingDone by shoshinRepository.onboardingDone.collectAsState(initial = false)
 
                 ShoshinNavGraph(
-                    navController = navController,
+                    navController = controller,
                     database = database,
                     shoshinRepository = shoshinRepository,
                     syncManager = syncManager,
@@ -144,9 +100,51 @@ class MainActivity : ComponentActivity() {
                     conflictResolver = conflictResolver,
                     isLoggedIn = isLoggedIn,
                     hasCompletedOnboarding = onboardingDone,
-                    deepLinkCode = deepLinkCode
+                    deepLinkCode = intent.data?.lastPathSegment.takeIf { intent.data?.path?.contains("join") == true }
                 )
             }
+        }
+
+        // Track App Open
+        lifecycleScope.launch {
+            val firebaseUser = firebaseAuth.currentUser
+            if (firebaseUser != null) {
+                database.userDao().getUser(firebaseUser.uid)?.let { user ->
+                    val now = System.currentTimeMillis()
+                    database.userDao().updateUser(user.copy(
+                        lastOpenDate = now,
+                        totalSessionCount = user.totalSessionCount + 1
+                    ))
+                    
+                    AnalyticsManager.logAppOpened(
+                        daysSinceSignup = TimeUnit.MILLISECONDS.toDays(now - user.createdAt).toInt(),
+                        daysSinceLastOpen = if (user.lastOpenDate > 0) TimeUnit.MILLISECONDS.toDays(now - user.lastOpenDate).toInt() else 0,
+                        streak = user.currentStreak,
+                        userType = "professional"
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        currentIntent.value = intent
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val openCheckpoint = intent.getBooleanExtra(ShoshinNotificationManager.EXTRA_OPEN_CHECKPOINT, false)
+        val navigateTo = intent.getStringExtra("navigate_to")
+        
+        Log.d("MainActivity", "handleIntent: openCheckpoint=$openCheckpoint, navigateTo=$navigateTo")
+        
+        if (openCheckpoint) {
+            navController?.navigate(com.example.shoshinapp.navigation.ShRoutes.ACTIVATION)
+            intent.removeExtra(ShoshinNotificationManager.EXTRA_OPEN_CHECKPOINT)
+        } else if (navigateTo != null) {
+            navController?.navigate(navigateTo)
+            intent.removeExtra("navigate_to")
         }
     }
 

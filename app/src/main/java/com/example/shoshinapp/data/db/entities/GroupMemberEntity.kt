@@ -20,13 +20,13 @@ import androidx.room.PrimaryKey
     ]
 )
 data class GroupMemberEntity(
-    @PrimaryKey val memberId: String,
+    @PrimaryKey val memberId: String = java.util.UUID.randomUUID().toString(),
     val groupId: String,
     val userId: String,
     val role: String,           // "admin", "member"
-    val currentStreak: Int,
-    val bestStreak: Int,
-    val totalCheckpoints: Int,
-    val joinedAt: Long,
-    val syncStatus: String
+    val currentStreak: Int = 0,
+    val bestStreak: Int = 0,
+    val totalCheckpoints: Int = 0,
+    val joinedAt: Long = System.currentTimeMillis(),
+    val syncStatus: String = "synced"
 )

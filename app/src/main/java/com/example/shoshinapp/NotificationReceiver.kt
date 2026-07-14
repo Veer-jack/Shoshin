@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.example.shoshinapp.data.ShoshinRepository
+import com.example.shoshinapp.data.db.AppDatabase
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -26,7 +28,7 @@ class NotificationReceiver : BroadcastReceiver() {
             }
             ShoshinNotificationManager.ACTION_NOTIFICATION_ALARM -> {
                 // Show the daily reminder
-                showDailyNotification(notificationManager, repository)
+                showDailyNotification(context, notificationManager, repository)
                 
                 // Schedule for tomorrow
                 rescheduleNotification(context, notificationManager, repository)
@@ -41,6 +43,7 @@ class NotificationReceiver : BroadcastReceiver() {
     }
 
     private fun showDailyNotification(
+        context: Context,
         notificationManager: ShoshinNotificationManager,
         repository: ShoshinRepository
     ) {
@@ -48,10 +51,30 @@ class NotificationReceiver : BroadcastReceiver() {
             val isLoggedIn = repository.isLoggedIn.first()
             if (isLoggedIn) {
                 val streak = repository.streakCount.first()
-                val title = "Time for your checkpoint! 🔥 Day $streak"
+                val title = "Time for your checkpoint! Day $streak"
                 val message = "Keep your morning routine going. Your bridge is waiting."
                 
                 notificationManager.showNotification(title, message, streak)
+
+                // Also save to history
+                try {
+                    val db = AppDatabase.getInstance(context)
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                    if (uid.isNotEmpty()) {
+                        db.notificationDao().insertNotification(
+                            com.example.shoshinapp.data.db.entities.NotificationEntity(
+                                notificationId = java.util.UUID.randomUUID().toString(),
+                                userId = uid,
+                                type = "reminder",
+                                title = title,
+                                body = message,
+                                iconRes = R.drawable.ic_bolt_heavy
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e("NotificationReceiver", "Failed to save to history", e)
+                }
             }
         }
     }

@@ -36,8 +36,23 @@ class ReferralRepository(
         ).await()
 
         // Also save to user's limits document
-        firestore.collection("users").document(userId).collection("limits").document("current")
-            .update("referralCode", code).await()
+        try {
+            val limitsRef = firestore.collection("users").document(userId).collection("limits").document("current")
+            val limitsSnap = limitsRef.get().await()
+            if (limitsSnap.exists()) {
+                limitsRef.update("referralCode", code).await()
+            } else {
+                limitsRef.set(mapOf(
+                    "referralCode" to code,
+                    "groupsJoinLimit" to 5,
+                    "groupMemberLimit" to 5,
+                    "totalReferrals" to 0,
+                    "lastUpdated" to com.google.firebase.Timestamp.now()
+                )).await()
+            }
+        } catch (e: Exception) {
+            Log.e("Referral", "Failed to update user limits with code", e)
+        }
 
         return code
     }

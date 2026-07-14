@@ -104,12 +104,15 @@ fun GroupDetailScreen(
                         .padding(16.dp)
                 ) {
                     Column {
-                        Text(
-                            "👥 Group Full (${group?.members?.size ?: 0}/${groupStats?.totalMemberCount ?: 5} members)",
-                            style = ShBodyStyle,
-                            fontWeight = FontWeight.Bold,
-                            color = ShVermillion
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(painterResource(R.drawable.ic_groups), contentDescription = null, tint = ShVermillion, modifier = Modifier.size(18.dp))
+                            Text(
+                                "Group Full (${group?.members?.size ?: 0}/${groupStats?.totalMemberCount ?: 5} members)",
+                                style = ShBodyStyle,
+                                fontWeight = FontWeight.Bold,
+                                color = ShVermillion
+                            )
+                        }
                         Text("Refer a friend to expand →", style = ShLabelStyle, color = ShVermillion)
                     }
                 }

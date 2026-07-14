@@ -10,8 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class GroupViewModel : ViewModel() {
-    private val repository = GroupRepository()
+class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
 
     private val _groups = MutableStateFlow<List<Group>>(emptyList())
     val groups: StateFlow<List<Group>> = _groups.asStateFlow()

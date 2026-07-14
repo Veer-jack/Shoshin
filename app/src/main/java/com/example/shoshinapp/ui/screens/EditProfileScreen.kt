@@ -120,7 +120,7 @@ fun EditProfileScreen(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = ShFog, modifier = Modifier.size(40.dp))
+                    Icon(painterResource(R.drawable.ic_camera), contentDescription = null, tint = ShFog, modifier = Modifier.size(40.dp))
                 }
                 
                 if (isLoading) {
@@ -140,7 +140,7 @@ fun EditProfileScreen(
                 color = ShVermillion,
                 tonalElevation = 4.dp
             ) {
-                Icon(Icons.Default.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.padding(8.dp))
+                Icon(painterResource(R.drawable.ic_plus), contentDescription = null, tint = Color.White, modifier = Modifier.padding(8.dp))
             }
         }
 

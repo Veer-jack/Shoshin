@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -63,7 +62,7 @@ fun SettingsScreen(
                     subtitle = "Receive alerts for routine starts",
                     checked = u.notificationsEnabled,
                     onCheckedChange = { viewModel.updateNotifications(it) },
-                    icon = Icons.Default.Notifications
+                    iconRes = R.drawable.ic_bell
                 )
                 
                 var showTimePicker by remember { mutableStateOf(false) }
@@ -71,7 +70,7 @@ fun SettingsScreen(
                     title = "Reminder Time",
                     subtitle = u.notificationTime,
                     onClick = { showTimePicker = true },
-                    icon = Icons.Default.Alarm
+                    iconRes = R.drawable.ic_clock
                 )
 
                 if (showTimePicker) {
@@ -101,7 +100,7 @@ fun SettingsScreen(
                     title = "Productive Window",
                     subtitle = "${u.productiveStartTime} - ${u.productiveEndTime}",
                     onClick = { showStartTimePicker = true },
-                    icon = Icons.Default.Timer
+                    iconRes = R.drawable.ic_pulse
                 )
 
                 if (showStartTimePicker) {
@@ -136,24 +135,24 @@ fun SettingsScreen(
                     title = "Invite the circle",
                     subtitle = "A month of Pro, on us",
                     onClick = { navController.navigate(ShRoutes.REFERRALS) },
-                    icon = Icons.Default.GroupAdd
+                    iconRes = R.drawable.ic_plus
                 )
                 SettingsRow(
                     title = "Help & support",
                     subtitle = "FAQ, contact, feedback",
                     onClick = { navController.navigate(ShRoutes.SUPPORT) },
-                    icon = Icons.Default.HelpOutline
+                    iconRes = R.drawable.ic_help
                 )
                 SettingsRow(
                     title = "Privacy & data",
                     subtitle = "Export, delete, privacy policy",
                     onClick = { navController.navigate(ShRoutes.DATA_PRIVACY) },
-                    icon = Icons.Default.Shield
+                    iconRes = R.drawable.ic_shield
                 )
                 SettingsRow(
                     title = "App Version",
                     subtitle = "1.0.1 (Beta)",
-                    icon = Icons.Default.Info
+                    iconRes = R.drawable.ic_info
                 )
             }
 
@@ -163,7 +162,7 @@ fun SettingsScreen(
                     title = "Log Out",
                     titleColor = ShVermillion,
                     onClick = { showLogoutDialog = true },
-                    icon = Icons.AutoMirrored.Filled.ExitToApp,
+                    iconRes = R.drawable.ic_logout,
                     iconColor = ShVermillion
                 )
             }
@@ -240,7 +239,7 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
 fun SettingsRow(
     title: String,
     subtitle: String? = null,
-    icon: ImageVector,
+    iconRes: Int,
     iconColor: Color = ShInk,
     titleColor: Color = ShInk,
     onClick: (() -> Unit)? = null
@@ -252,7 +251,7 @@ fun SettingsRow(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(22.dp))
+        Icon(painterResource(iconRes), contentDescription = null, tint = iconColor, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, color = titleColor, fontWeight = FontWeight.Medium)
@@ -261,7 +260,7 @@ fun SettingsRow(
             }
         }
         if (onClick != null) {
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ShLine2)
+            Icon(painterResource(R.drawable.ic_arrow_right), contentDescription = null, tint = ShLine2, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -272,7 +271,7 @@ fun SettingsSwitchRow(
     subtitle: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    icon: ImageVector
+    iconRes: Int
 ) {
     Row(
         modifier = Modifier
@@ -280,7 +279,7 @@ fun SettingsSwitchRow(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = ShInk, modifier = Modifier.size(22.dp))
+        Icon(painterResource(iconRes), contentDescription = null, tint = ShInk, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, color = ShInk, fontWeight = FontWeight.Medium)

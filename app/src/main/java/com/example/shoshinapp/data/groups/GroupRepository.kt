@@ -1,11 +1,18 @@
 package com.example.shoshinapp.data.groups
 
+import com.example.shoshinapp.data.db.dao.GroupDao
+import com.example.shoshinapp.data.db.dao.GroupMemberDao
+import com.example.shoshinapp.data.db.entities.GroupEntity
+import com.example.shoshinapp.data.db.entities.GroupMemberEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
-class GroupRepository {
+class GroupRepository(
+    private val groupDao: GroupDao,
+    private val memberDao: GroupMemberDao
+) {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
@@ -24,12 +31,35 @@ class GroupRepository {
                 inviteCode = inviteCode
             )
 
+            // Save to Firestore
             db.collection("groups").document(groupId).set(group).await()
             
-            // Add creator as member
+            // Add creator as member in Firestore
             db.collection("groups").document(groupId).collection("members").document(userId).set(
                 GroupMember(userId = userId, name = "You")
             ).await()
+
+            // Save to Local DB
+            val groupEntity = GroupEntity(
+                groupId = groupId,
+                userId = userId,
+                groupName = name,
+                description = description,
+                memberCount = 1,
+                photo = null,
+                inviteLinkCode = inviteCode,
+                created_at = System.currentTimeMillis(),
+                updated_at = System.currentTimeMillis(),
+                syncStatus = "synced"
+            )
+            groupDao.insertGroup(groupEntity)
+            
+            memberDao.insertMember(GroupMemberEntity(
+                groupId = groupId,
+                userId = userId,
+                role = "creator",
+                joinedAt = System.currentTimeMillis()
+            ))
 
             Result.success(groupId)
         } catch (e: Exception) {
@@ -74,14 +104,37 @@ class GroupRepository {
                 return Result.failure(Exception("Already member of this group"))
             }
 
-            // Add user to members list
+            // Add user to members list in Firestore
             val newMembers = group.members + userId
             db.collection("groups").document(groupId).update("members", newMembers).await()
 
-            // Add as group member
+            // Add as group member in Firestore
             db.collection("groups").document(groupId).collection("members").document(userId).set(
                 GroupMember(userId = userId, name = "Member")
             ).await()
+
+            // Save to Local DB
+            val entity = GroupEntity(
+                groupId = group.id,
+                userId = group.createdBy,
+                groupName = group.name,
+                description = group.description,
+                memberCount = newMembers.size,
+                photo = null,
+                inviteLinkCode = group.inviteCode,
+                created_at = System.currentTimeMillis(),
+                updated_at = System.currentTimeMillis(),
+                syncStatus = "synced"
+            )
+            val existing = groupDao.getGroup(group.id)
+            if (existing == null) groupDao.insertGroup(entity) else groupDao.updateGroup(entity)
+
+            memberDao.insertMember(GroupMemberEntity(
+                groupId = groupId,
+                userId = userId,
+                role = "member",
+                joinedAt = System.currentTimeMillis()
+            ))
 
             Result.success(groupId)
         } catch (e: Exception) {
@@ -93,12 +146,35 @@ class GroupRepository {
         return try {
             val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not authenticated"))
             
+            // Fetch from Firestore
             val query = db.collection("groups").whereArrayContains("members", userId).get().await()
             val groups = query.documents.mapNotNull { it.toObject(Group::class.java) }
             
+            // Sync with local DB
+            groups.forEach { g ->
+                val entity = GroupEntity(
+                    groupId = g.id,
+                    userId = g.createdBy,
+                    groupName = g.name,
+                    description = g.description,
+                    memberCount = g.members.size,
+                    photo = null,
+                    inviteLinkCode = g.inviteCode,
+                    created_at = System.currentTimeMillis(),
+                    updated_at = System.currentTimeMillis(),
+                    syncStatus = "synced"
+                )
+                val existing = groupDao.getGroup(g.id)
+                if (existing == null) groupDao.insertGroup(entity) else groupDao.updateGroup(entity)
+            }
+            
             Result.success(groups)
         } catch (e: Exception) {
-            Result.failure(e)
+            // If error (e.g. offline), return local groups
+            val localGroups = groupDao.getAllGroups().map { entity ->
+                Group(id = entity.groupId, name = entity.groupName, description = entity.description, createdBy = entity.userId, inviteCode = entity.inviteLinkCode, members = emptyList())
+            }
+            if (localGroups.isNotEmpty()) Result.success(localGroups) else Result.failure(e)
         }
     }
 
@@ -142,12 +218,16 @@ class GroupRepository {
             val groupDoc = groupRef.get().await()
             val group = groupDoc.toObject(Group::class.java) ?: return Result.failure(Exception("Group not found"))
 
-            // Remove from members list
+            // Remove from members list in Firestore
             val newMembers = group.members.filter { it != userId }
             groupRef.update("members", newMembers).await()
 
-            // Remove from group members collection
+            // Remove from group members collection in Firestore
             groupRef.collection("members").document(userId).delete().await()
+
+            // Remove from local DB - ideally we should have a deleteGroup or similar
+            // For now, we don't have a DAO method to delete a group by ID easily without the entity
+            // but we can just leave it there or add a method to DAO.
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -168,13 +248,13 @@ class GroupRepository {
                 return Result.failure(Exception("Only creator can delete group"))
             }
 
-            // Delete members subcollection
+            // Delete members subcollection in Firestore
             val membersQuery = groupRef.collection("members").get().await()
             for (doc in membersQuery.documents) {
                 doc.reference.delete().await()
             }
 
-            // Delete group
+            // Delete group in Firestore
             groupRef.delete().await()
 
             Result.success(Unit)

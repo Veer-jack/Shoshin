@@ -15,10 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.shoshinapp.R
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
 import com.example.shoshinapp.viewmodel.OnboardingViewModel
@@ -129,9 +131,9 @@ fun OnboardingStep1() {
         
         Spacer(Modifier.height(48.dp))
         
-        BenefitRow(Icons.Default.FlashOn, "Build Streaks", "Consistency builds momentum")
-        BenefitRow(Icons.Default.TrendingUp, "Track Progress", "See your improvements")
-        BenefitRow(Icons.Default.Groups, "Share Wins", "Celebrate with community")
+        BenefitRow(R.drawable.ic_flame, "Build Streaks", "Consistency builds momentum")
+        BenefitRow(R.drawable.ic_progress, "Track Progress", "See your improvements")
+        BenefitRow(R.drawable.ic_groups, "Share Wins", "Celebrate with community")
     }
 }
 
@@ -147,10 +149,10 @@ fun OnboardingStep2() {
         )
         Spacer(Modifier.height(32.dp))
         
-        HowItWorksRow(1, "🎯", "Set Your Intention", "Choose morning goal")
-        HowItWorksRow(2, "✅", "Complete Checkpoints", "Daily small wins")
-        HowItWorksRow(3, "🔥", "Build Your Streak", "Consistency rewarded")
-        HowItWorksRow(4, "📤", "Share Progress", "Celebrate publicly")
+        HowItWorksRow(1, R.drawable.ic_sun, "Set Your Intention", "Choose morning goal")
+        HowItWorksRow(2, R.drawable.ic_check, "Complete Checkpoints", "Daily small wins")
+        HowItWorksRow(3, R.drawable.ic_flame, "Build Your Streak", "Consistency rewarded")
+        HowItWorksRow(4, R.drawable.ic_share, "Share Progress", "Celebrate publicly")
     }
 }
 
@@ -184,7 +186,7 @@ fun OnboardingStep3(
         
         Spacer(Modifier.height(48.dp))
         
-        Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(80.dp), tint = ShInk)
+        Icon(painterResource(R.drawable.ic_clock), contentDescription = null, modifier = Modifier.size(80.dp), tint = ShInk)
         
         Spacer(Modifier.height(32.dp))
         
@@ -231,7 +233,7 @@ fun OnboardingStep3(
 }
 
 @Composable
-private fun BenefitRow(icon: ImageVector, title: String, subtitle: String) {
+private fun BenefitRow(iconRes: Int, title: String, subtitle: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -244,7 +246,7 @@ private fun BenefitRow(icon: ImageVector, title: String, subtitle: String) {
                 .background(ShSand, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = ShInk)
+            Icon(painterResource(iconRes), contentDescription = null, tint = ShInk, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.width(16.dp))
         Column {
@@ -255,7 +257,7 @@ private fun BenefitRow(icon: ImageVector, title: String, subtitle: String) {
 }
 
 @Composable
-private fun HowItWorksRow(step: Int, emoji: String, title: String, subtitle: String) {
+private fun HowItWorksRow(step: Int, iconRes: Int, title: String, subtitle: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -264,7 +266,7 @@ private fun HowItWorksRow(step: Int, emoji: String, title: String, subtitle: Str
     ) {
         Text("STEP $step", style = ShKickerStyle, modifier = Modifier.width(60.dp))
         Spacer(Modifier.width(8.dp))
-        Text(emoji, fontSize = 24.sp)
+        Icon(painterResource(iconRes), contentDescription = null, tint = ShInk, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(16.dp))
         Column {
             Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp)

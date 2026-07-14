@@ -59,9 +59,9 @@ fun ProfileScreen(
             IconButton(onClick = { navController.popBackStack() }) {
                 Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
             }
-            Text("Profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Profile (Final Build V3)", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             IconButton(onClick = { navController.navigate("settings") }) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings", tint = ShInk)
+                Icon(painterResource(R.drawable.ic_settings), contentDescription = "Settings", tint = ShInk)
             }
         }
 
@@ -70,8 +70,18 @@ fun ProfileScreen(
                 CircularProgressIndicator(color = ShVermillion)
             }
         } else if (user == null) {
-            Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
-                Text("Profile not found. Please sign in again.", color = ShFog)
+            Column(
+                modifier = Modifier.fillMaxWidth().height(400.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(painterResource(R.drawable.ic_info), null, tint = ShFog2, modifier = Modifier.size(48.dp))
+                Spacer(Modifier.height(16.dp))
+                Text("Profile not found.", color = ShFog)
+                Spacer(Modifier.height(24.dp))
+                ShoshinButton(onClick = { viewModel.loadUser() }, variant = ShButtonVariant.Ghost) {
+                    Text("Retry Loading")
+                }
             }
         } else {
             user?.let { u ->
@@ -99,7 +109,7 @@ fun ProfileScreen(
                             )
                         } else {
                             Icon(
-                                Icons.Default.Person,
+                                painterResource(R.drawable.ic_user),
                                 contentDescription = null,
                                 modifier = Modifier.size(60.dp),
                                 tint = ShFog2
@@ -157,7 +167,7 @@ fun ProfileScreen(
                                 Text(text = referralCode, style = ShNumeralStyle.copy(fontSize = 24.sp), letterSpacing = 2.sp)
                                 Text("Tap to see your rewards", style = ShLabelStyle, color = ShFog)
                             }
-                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ShLine2)
+                            Icon(painterResource(R.drawable.ic_arrow_right), contentDescription = null, tint = ShLine2, modifier = Modifier.size(24.dp))
                         }
                     }
                 }

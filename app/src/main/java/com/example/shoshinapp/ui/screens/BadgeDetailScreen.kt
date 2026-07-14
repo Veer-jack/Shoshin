@@ -139,7 +139,17 @@ fun BadgeDetailScreen(
 
 // Helper for icon mapping
 private fun getBadgeIconRes(iconName: String): Int {
-    return R.drawable.ic_trophy // Placeholder
+    return when (iconName) {
+        "streak_7", "streak_30", "streak_100", "streak_365" -> R.drawable.ic_flame
+        "milestone" -> R.drawable.ic_check
+        "groups" -> R.drawable.ic_groups
+        "influence" -> R.drawable.ic_plus
+        "sun" -> R.drawable.ic_sun
+        "thought" -> R.drawable.ic_book
+        "share" -> R.drawable.ic_share
+        "community" -> R.drawable.ic_user
+        else -> R.drawable.ic_trophy
+    }
 }
 
 private fun Color.Companion.parseColor(colorString: String): Color {

@@ -58,6 +58,7 @@ fun ShoshinNavGraph(
     val referralRepository = remember { ReferralRepository(database.userLimitsDao(), firestore) }
     val limitsRepository = remember { UserLimitsRepository(database.userLimitsDao(), firestore) }
     val contactsRepository = remember { com.example.shoshinapp.data.ContactsRepository(context) }
+    val groupRepository = remember { com.example.shoshinapp.data.groups.GroupRepository(database.groupDao(), database.groupMemberDao()) }
     
     val onboardingViewModel = viewModel<OnboardingViewModel>(factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -91,6 +92,13 @@ fun ShoshinNavGraph(
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return GroupStatsViewModel(database.groupDao()) as T
+        }
+    })
+
+    val groupViewModel = viewModel<GroupViewModel>(factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return GroupViewModel(groupRepository) as T
         }
     })
 
@@ -374,7 +382,8 @@ fun ShoshinNavGraph(
                 userRepository = userRepository,
                 streakViewModel = streakViewModel,
                 friendViewModel = friendViewModel,
-                referralViewModel = referralViewModel
+                referralViewModel = referralViewModel,
+                groupViewModel = groupViewModel
             )
         }
 
@@ -531,7 +540,7 @@ fun ShoshinNavGraph(
             enterTransition  = { slideInHorizontally(tween(320)) { it } },
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) {
-            CreateGroupScreen(navController = navController)
+            CreateGroupScreen(navController = navController, viewModel = groupViewModel)
         }
 
         // ── Group Detail ─────────────────────────────────────
@@ -542,7 +551,6 @@ fun ShoshinNavGraph(
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            val groupViewModel: GroupViewModel = viewModel()
             GroupDetailScreen(
                 navController = navController, 
                 groupId = groupId, 
@@ -713,60 +721,94 @@ private suspend fun handleNewUser(
     database: AppDatabase,
     navController: NavHostController
 ) {
-    // 1. Basic user save to DataStore
-    shoshinRepository.saveUser(name = displayName, email = email ?: "", phone = phone ?: "")
-    
-    // 2. Create or Update UserEntity in local DB and Firestore
-    val user = userRepository.getUser(userId)
-    val newUser = if (user == null || user.displayName == "New User") {
-        com.example.shoshinapp.data.db.entities.UserEntity(
-            userId = userId,
-            displayName = if (displayName == "User" && user?.displayName != null) user.displayName else displayName,
-            email = email ?: user?.email,
-            phone = phone ?: user?.phone,
-            photoUrl = user?.photoUrl,
-            inviteCode = user?.inviteCode ?: ""
-        )
-    } else {
-        user.copy(
-            email = email ?: user.email,
-            phone = phone ?: user.phone
-        )
-    }
-    userRepository.updateUser(newUser)
+    try {
+        android.util.Log.d("Auth", "handleNewUser: userId=$userId, name=$displayName")
+        
+        // 1. Basic user save to DataStore
+        shoshinRepository.saveUser(name = displayName, email = email ?: "", phone = phone ?: "")
+        
+        // 2. Create or Update UserEntity in local DB and Firestore
+        val existingUser = userRepository.getUser(userId)
+        val newUser = if (existingUser == null) {
+            com.example.shoshinapp.data.db.entities.UserEntity(
+                userId = userId,
+                displayName = displayName,
+                email = email,
+                phone = phone,
+                photoUrl = null
+            )
+        } else {
+            existingUser.copy(
+                displayName = if (existingUser.displayName == "New User" || existingUser.displayName == "User") displayName else existingUser.displayName,
+                email = email ?: existingUser.email,
+                phone = phone ?: existingUser.phone,
+                lastUpdated = System.currentTimeMillis()
+            )
+        }
+        userRepository.updateUser(newUser)
 
-    // 3. Add Welcome Notification
-    database.notificationDao().insertNotification(
-        com.example.shoshinapp.data.db.entities.NotificationEntity(
-            notificationId = java.util.UUID.randomUUID().toString(),
-            userId = userId,
-            type = "welcome",
-            title = "Welcome to Shoshin",
-            body = "Begin your morning practice today. Start with intention.",
-            iconRes = com.example.shoshinapp.R.drawable.ic_sun
-        )
-    )
+        // 3. Add Welcome Notifications
+        try {
+            val notifications = listOf(
+                com.example.shoshinapp.data.db.entities.NotificationEntity(
+                    notificationId = java.util.UUID.randomUUID().toString(),
+                    userId = userId,
+                    type = "welcome",
+                    title = "Welcome to Shoshin",
+                    body = "Begin your morning practice today. Start with intention.",
+                    iconRes = com.example.shoshinapp.R.drawable.ic_sun,
+                    timestamp = System.currentTimeMillis()
+                ),
+                com.example.shoshinapp.data.db.entities.NotificationEntity(
+                    notificationId = java.util.UUID.randomUUID().toString(),
+                    userId = userId,
+                    type = "achievement",
+                    title = "First Step Taken",
+                    body = "You've successfully created your account. The journey begins.",
+                    iconRes = com.example.shoshinapp.R.drawable.ic_bolt_heavy,
+                    timestamp = System.currentTimeMillis() - 1000
+                )
+            )
+            notifications.forEach { database.notificationDao().insertNotification(it) }
+        } catch (e: Exception) {
+            android.util.Log.e("Auth", "Failed to insert welcome notifications", e)
+        }
 
-    // 4. Generate referral code for new user
-    val newUserCode = referralRepository.generateAndSaveReferralCode(userId, displayName)
-    
-    // 5. Process entered referral code
-    if (referralCode != null) {
-        val referrerId = referralRepository.validateReferralCode(referralCode)
-        if (referrerId != null && referrerId != userId) {
-            referralRepository.deliverReferralReward(referrerId, userId)
-            AnalyticsManager.logSignupCompleted(method = if (email != null) "email" else "phone", hadReferral = true)
+        // 4. Generate referral code for new user
+        try {
+            referralRepository.generateAndSaveReferralCode(userId, displayName)
+        } catch (e: Exception) {
+            android.util.Log.e("Auth", "Failed to generate referral code", e)
+        }
+        
+        // 5. Process entered referral code
+        if (referralCode != null) {
+            try {
+                val referrerId = referralRepository.validateReferralCode(referralCode)
+                if (referrerId != null && referrerId != userId) {
+                    referralRepository.deliverReferralReward(referrerId, userId)
+                    AnalyticsManager.logSignupCompleted(method = if (email != null) "email" else "phone", hadReferral = true)
+                } else {
+                    AnalyticsManager.logSignupCompleted(method = if (email != null) "email" else "phone", hadReferral = false)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("Auth", "Failed to process referral code", e)
+            }
         } else {
             AnalyticsManager.logSignupCompleted(method = if (email != null) "email" else "phone", hadReferral = false)
         }
-    } else {
-        AnalyticsManager.logSignupCompleted(method = if (email != null) "email" else "phone", hadReferral = false)
-    }
 
-    AnalyticsManager.setUserProperties(userType = "professional", signupMethod = if (email != null) "email" else "phone", hasReferral = referralCode != null)
-    
-    // 4. Navigate
-    navController.navigate(ShRoutes.ONBOARDING) {
-        popUpTo(ShRoutes.AUTH) { inclusive = true }
+        AnalyticsManager.setUserProperties(userType = "professional", signupMethod = if (email != null) "email" else "phone", hasReferral = referralCode != null)
+        
+        // 6. Navigate (Safety: check if already navigating)
+        with(kotlinx.coroutines.Dispatchers.Main) {
+            if (navController.currentDestination?.route != ShRoutes.ONBOARDING) {
+                navController.navigate(ShRoutes.ONBOARDING) {
+                    popUpTo(ShRoutes.AUTH) { inclusive = true }
+                }
+            }
+        }
+    } catch (e: Exception) {
+        android.util.Log.e("Auth", "Critical error in handleNewUser", e)
     }
 }

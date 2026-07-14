@@ -53,7 +53,7 @@ class UserRepository(
     }
 
     suspend fun updateUser(user: UserEntity) {
-        userDao.updateUser(user)
+        userDao.insertUser(user) // Use insert with REPLACE strategy to handle both new and existing
         try {
             firestore.collection("users").document(user.userId).set(user).await()
         } catch (e: Exception) {

@@ -190,11 +190,12 @@ fun DashboardTab(
             // Hero card — ink background
             Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(ShInk).padding(24.dp)) {
                 // Enso motif
-                Box(modifier = Modifier.size(200.dp).align(Alignment.TopEnd).offset(x = 60.dp, y = (-60).dp)) {
-                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                        drawArc(color = ShVermillion.copy(alpha = 0.15f), startAngle = -90f, sweepAngle = 310f, useCenter = false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 8.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
-                    }
-                }
+                Enso(
+                    size = 200,
+                    color = ShVermillion.copy(alpha = 0.15f),
+                    strokeWidth = 8f,
+                    modifier = Modifier.align(Alignment.TopEnd).offset(x = 60.dp, y = (-60).dp)
+                )
                 Column {
                     Row(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(ShMatcha.copy(alpha = 0.15f)).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ShMatcha))
@@ -249,7 +250,7 @@ fun DashboardTab(
                         .padding(16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("⚠️", fontSize = 20.sp)
+                        Icon(painterResource(R.drawable.ic_info), contentDescription = null, tint = ShVermillion, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(12.dp))
                         Text(
                             "Complete your checkpoint to maintain your streak!",
@@ -274,13 +275,21 @@ fun DashboardTab(
                     val streakColor = streakViewModel.getStreakColor(streak)
                     val badges = streakViewModel.getMilestoneBadges(streak)
 
-                    Text(
-                        text = "🔥 $streak",
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = DmSansFamily,
-                        color = streakColor
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_flame),
+                            contentDescription = null,
+                            tint = streakColor,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(
+                            text = streak.toString(),
+                            fontSize = 48.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = DmSansFamily,
+                            color = streakColor
+                        )
+                    }
                     
                     Text(
                         text = "DAYS IN A ROW",
@@ -319,12 +328,14 @@ fun DashboardTab(
                             Text("Freeze Tokens: ", style = ShLabelStyle, color = ShFog)
                             repeat(user?.streakFreezes ?: 0) { i ->
                                 val isUsed = i < (user?.freezesUsedThisMonth ?: 0)
-                                Text(
-                                    text = "❄️",
-                                    fontSize = 18.sp,
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_bolt), // Using bolt as freeze placeholder
+                                    contentDescription = null,
                                     modifier = Modifier
                                         .padding(horizontal = 2.dp)
-                                        .alpha(if (isUsed) 0.3f else 1f)
+                                        .size(18.dp)
+                                        .alpha(if (isUsed) 0.3f else 1f),
+                                    tint = ShInk
                                 )
                             }
                         }
@@ -403,7 +414,7 @@ fun DashboardTab(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_pulse), // Using pulse icon as placeholder for clock
+                            painter = painterResource(id = R.drawable.ic_clock),
                             contentDescription = "Clock",
                             tint = ShVermillion,
                             modifier = Modifier.size(28.dp)
@@ -438,7 +449,7 @@ fun DashboardTab(
                 variant = ShButtonVariant.Accent,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(painterResource(R.drawable.ic_bolt), null, modifier = Modifier.size(20.dp), tint = Color.White)
+                Icon(painterResource(R.drawable.ic_bolt_heavy), null, modifier = Modifier.size(20.dp), tint = Color.White)
                 Spacer(Modifier.width(10.dp))
                 Text("Begin Morning Practice", fontWeight = FontWeight.Bold)
             }

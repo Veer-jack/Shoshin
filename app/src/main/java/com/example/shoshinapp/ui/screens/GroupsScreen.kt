@@ -24,25 +24,23 @@ import com.example.shoshinapp.navigation.ShRoutes
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
 
-private data class Member(
-    val initial: String,
-    val name: String,
-    val status: String,
-    val streak: Int,
-    val isYou: Boolean = false
-)
-
 @Composable
 fun GroupsScreen(
     navController: NavController,
-    referralViewModel: com.example.shoshinapp.viewmodel.ReferralViewModel? = null
+    referralViewModel: com.example.shoshinapp.viewmodel.ReferralViewModel? = null,
+    groupViewModel: com.example.shoshinapp.viewmodel.GroupViewModel? = null
 ) {
     val limits by referralViewModel?.limits?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
-    val joinedCount = 0 // Real count should be fetched from DB
-    val maxJoin = limits?.groupsJoinLimit ?: 5
     
-    val practicingCount = 0
-    val members = emptyList<Member>() // Removed dummy data SH_POD
+    val groups by groupViewModel?.groups?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
+    val isLoading by groupViewModel?.isLoading?.collectAsState() ?: remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        groupViewModel?.loadGroups()
+    }
+
+    val joinedCount = groups.size
+    val maxJoin = limits?.groupsJoinLimit ?: 5
 
     Column(
         modifier = Modifier
@@ -80,15 +78,18 @@ fun GroupsScreen(
 
         // WARNING BANNER (Feature 4.4)
         if (maxJoin - joinedCount <= 1) {
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(ShVermillion.copy(alpha = 0.1f))
                     .clickable { navController.navigate(ShRoutes.REFERRALS) }
-                    .padding(vertical = 8.dp, horizontal = 24.dp)
+                    .padding(vertical = 8.dp, horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                Icon(painterResource(R.drawable.ic_info), contentDescription = null, tint = ShVermillion, modifier = Modifier.size(16.dp))
                 Text(
-                    "⚠️ ${maxJoin - joinedCount} group slot remaining. Refer a friend to unlock more →",
+                    "${maxJoin - joinedCount} group slot remaining. Refer a friend to unlock more →",
                     style = ShLabelStyle,
                     color = ShVermillion
                 )
@@ -101,141 +102,39 @@ fun GroupsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
         ) {
-            // ... (rest of the file)
+            Spacer(Modifier.height(24.dp))
 
-            if (members.isEmpty()) {
+            if (groups.isEmpty()) {
                 EmptyState(
                     title = "Solitude is peace, but a circle is power",
                     description = "Join or create a circle to rise with others and keep each other accountable.",
                     iconRes = R.drawable.ic_groups,
                     actionLabel = "Create a Circle",
-                    onAction = { navController.navigate("create_group") }
+                    onAction = { navController.navigate(ShRoutes.CREATE_GROUP) }
                 )
             } else {
-                // Wake Board Card
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(ShInk)
-                        .padding(22.dp)
-                ) {
-                    // Enso motif background
-                    Box(
-                        modifier = Modifier
-                            .size(150.dp)
-                            .align(Alignment.TopEnd)
-                            .offset(x = 34.dp, y = (-34).dp)
-                    ) {
-                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                            drawArc(
-                                color = ShVermillion.copy(alpha = 0.35f),
-                                startAngle = -90f,
-                                sweepAngle = 320f,
-                                useCenter = false,
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                    width = 6.dp.toPx(),
-                                    cap = androidx.compose.ui.graphics.StrokeCap.Round
-                                )
-                            )
-                        }
-                    }
-
-                    Column {
-                        Kicker(
-                            "This morning · 5:30 AM",
-                            color = ShNightText.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(bottom = 10.dp)
-                        )
-                        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                "$practicingCount",
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = DmSansFamily,
-                                color = ShPaper
-                            )
-                            Text(
-                                "of ${members.size} have begun",
-                                fontSize = 22.sp,
-                                fontFamily = CormorantFamily,
-                                color = ShNightText.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-                        }
-                        Text(
-                            "You rose with others in your circle. Sit together at dawn.",
-                            fontSize = 13.5.sp,
-                            color = ShNightText.copy(alpha = 0.7f),
-                            fontFamily = DmSansFamily,
-                            modifier = Modifier.padding(top = 10.dp)
-                        )
-                    }
+                Text("YOUR CIRCLES", style = ShKickerStyle, color = ShFog, modifier = Modifier.padding(bottom = 16.dp))
+                
+                groups.forEach { group ->
+                    GroupCard(
+                        name = group.name,
+                        description = group.description,
+                        memberCount = group.members.size,
+                        onClick = { navController.navigate(ShRoutes.groupDetail(group.id)) }
+                    )
+                    Spacer(Modifier.height(16.dp))
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Members List Card
-                ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
-                        members.forEachIndexed { index, member ->
-                            MemberRow(member, onClick = { 
-                                // Navigate to Friend Profile (except if it's you)
-                                if (!member.isYou) {
-                                    navController.navigate(ShRoutes.friendProfile(member.initial)) // Using initial as mock ID
-                                }
-                            })
-                            if (index < members.lastIndex) {
-                                HorizontalDivider(color = ShLine, thickness = 1.dp)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Action Buttons
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    // Leaderboard Button
+                    // Create Button
                     Surface(
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp)
-                            .clickable { navController.navigate(ShRoutes.groupLeaderboard("dawn-circle")) },
-                        color = Color.Transparent,
-                        shape = RoundedCornerShape(14.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.5.dp, ShLine2)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_sun), // ic_crown placeholder
-                                contentDescription = null,
-                                tint = ShFog,
-                                modifier = Modifier.size(19.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Leaderboard", fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = ShFog)
-                        }
-                    }
-
-                    // Invite Button
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp)
-                            .clickable { 
-                                val message = "Join my circle on Shoshin! We keep our mornings together. Download the app to begin: https://shoshin.app/join/dawn-circle"
-                                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(android.content.Intent.EXTRA_TEXT, message)
-                                }
-                                val context = navController.context
-                                context.startActivity(android.content.Intent.createChooser(intent, "Invite to circle"))
-                            },
+                            .clickable { navController.navigate(ShRoutes.CREATE_GROUP) },
                         color = Color.Transparent,
                         shape = RoundedCornerShape(14.dp),
                         border = androidx.compose.foundation.BorderStroke(1.5.dp, ShLine2)
@@ -248,84 +147,45 @@ fun GroupsScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_plus),
                                 contentDescription = null,
-                                tint = ShFog,
+                                tint = ShInk,
                                 modifier = Modifier.size(19.dp)
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text("Invite", fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = ShFog)
+                            Text("Create", fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = ShInk)
+                        }
+                    }
+
+                    // Join Button
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                            .clickable { 
+                                // Show join dialog or navigate to join
+                                // For now, maybe just a placeholder
+                            },
+                        color = ShInk,
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_groups),
+                                contentDescription = null,
+                                tint = ShPaper,
+                                modifier = Modifier.size(19.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Join with code", fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = ShPaper)
                         }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(48.dp))
-        }
-    }
-}
-
-@Composable
-private fun MemberRow(member: Member, onClick: () -> Unit = {}) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Avatar
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(if (member.isYou) ShInk else ShSand),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = member.initial,
-                style = ShH2Style,
-                color = if (member.isYou) ShPaper else ShInk,
-                fontSize = 17.sp
-            )
-        }
-
-        Spacer(Modifier.width(14.dp))
-
-        // Info
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = member.name,
-                style = ShH2Style.copy(fontSize = 15.sp),
-                color = ShInk
-            )
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.padding(top = 3.dp)) {
-                val statusColor = when (member.status) {
-                    "practicing" -> ShMatcha
-                    "resting" -> ShFog
-                    else -> ShFog2
-                }
-                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(statusColor))
-                Text(
-                    text = member.status.replaceFirstChar { it.uppercase() },
-                    style = ShKickerStyle.copy(fontSize = 12.sp, letterSpacing = 0.sp),
-                    color = statusColor,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-
-        // Streak
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_flame),
-                contentDescription = null,
-                tint = ShVermillion,
-                modifier = Modifier.size(15.dp)
-            )
-            Text(
-                text = member.streak.toString(),
-                style = ShNumeralStyle.copy(fontSize = 15.sp),
-                color = ShInk
-            )
         }
     }
 }

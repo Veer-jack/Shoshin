@@ -138,7 +138,7 @@ class ShareCardGenerator(private val context: Context) {
 
         // 3. Draw Streak Section
         textPaint.textSize = 220f
-        val streakText = "🔥 $streak"
+        val streakText = "$streak"
         canvas.drawText(streakText, (cardWidth / 2).toFloat(), 480f, textPaint)
 
         textPaint.textSize = 60f

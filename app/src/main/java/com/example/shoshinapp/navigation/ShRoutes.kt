@@ -77,4 +77,5 @@ object ShRoutes {
     fun groupInvite(groupId: String) = "group_invite/$groupId"
     fun groupPreview(groupId: String) = "group_preview/$groupId"
     fun groupLeaderboard(groupId: String) = "group_leaderboard/$groupId"
+    fun groupDetail(groupId: String) = "group_detail/$groupId"
 }

@@ -23,7 +23,7 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         loadUser()
     }
 
-    private fun loadUser() {
+    fun loadUser() {
         val uid = repository.userId ?: return
         viewModelScope.launch {
             _isLoading.value = true

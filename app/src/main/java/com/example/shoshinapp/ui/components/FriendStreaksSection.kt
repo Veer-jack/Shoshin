@@ -10,9 +10,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.shoshinapp.R
 import com.example.shoshinapp.data.models.Friend
 import com.example.shoshinapp.ui.theme.*
 
@@ -31,11 +33,14 @@ fun FriendStreaksSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "👥 YOUR COMMUNITY ($totalCount friends)",
-                    style = ShKickerStyle,
-                    color = ShFog
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(painterResource(R.drawable.ic_groups), null, modifier = Modifier.size(16.dp), tint = ShFog)
+                    Text(
+                        text = "YOUR COMMUNITY ($totalCount friends)",
+                        style = ShKickerStyle,
+                        color = ShFog
+                    )
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -95,7 +100,12 @@ fun FriendStreakRow(friend: Friend, onClick: () -> Unit) {
         
         Spacer(Modifier.width(12.dp))
         
-        Text("🔥", fontSize = 16.sp)
+        Icon(
+            painter = painterResource(id = R.drawable.ic_flame),
+            contentDescription = null,
+            tint = ShVermillion,
+            modifier = Modifier.size(16.dp)
+        )
         
         Spacer(Modifier.width(8.dp))
         

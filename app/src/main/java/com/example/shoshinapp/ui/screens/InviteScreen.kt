@@ -73,7 +73,7 @@ fun InviteScreen(
             IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
                 Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
             }
-            Text("Add a friend", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
+            Text("Invite friends", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
         }
 
         // Search Bar
@@ -183,7 +183,7 @@ fun SuggestedFriendRow(user: UserSummary, onInvite: () -> Unit) {
         Column(modifier = Modifier.weight(1f)) {
             Text(user.userName, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = ShInk)
             val subLabel = if (user.activityStatus == "On Shoshin") {
-                "On Shoshin 🔥 ${user.currentStreak} days"
+                "On Shoshin — ${user.currentStreak} days"
             } else {
                 "In your contacts"
             }

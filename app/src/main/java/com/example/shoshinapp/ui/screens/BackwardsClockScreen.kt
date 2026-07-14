@@ -158,15 +158,15 @@ fun ProgressSection(
 
 @Composable
 fun MotivationalMessage(timeRemaining: TimeRemaining) {
-    val (text, icon) = when {
-        timeRemaining.percentDayRemaining > 75 -> "🌅 Fresh start! Make it count!" to "🎯"
-        timeRemaining.percentDayRemaining > 50 -> "💪 Keep pushing! Half day left!" to "🔥"
-        timeRemaining.percentDayRemaining > 25 -> "⏳ Final stretch! You've got this!" to "⚡"
-        else -> "🌙 Night's coming soon! Last push!" to "🛌"
+    val (text, iconRes) = when {
+        timeRemaining.percentDayRemaining > 75 -> "🌅 Fresh start! Make it count!" to R.drawable.ic_sun
+        timeRemaining.percentDayRemaining > 50 -> "💪 Keep pushing! Half day left!" to R.drawable.ic_flame
+        timeRemaining.percentDayRemaining > 25 -> "⏳ Final stretch! You've got this!" to R.drawable.ic_bolt_heavy
+        else -> "🌙 Night's coming soon! Last push!" to R.drawable.ic_moon
     }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(icon, fontSize = 40.sp)
+        Icon(painterResource(iconRes), contentDescription = null, modifier = Modifier.size(40.dp), tint = ShInk)
         Spacer(Modifier.height(12.dp))
         Text(
             text = text,

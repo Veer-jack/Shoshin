@@ -192,8 +192,8 @@ private fun LeaderboardRow(entry: LeaderboardEntry) {
         
         // Trend Icon
         val (trendIcon, trendColor) = when (entry.trend) {
-            "up" -> R.drawable.ic_sun to ShMatcha // Need ic_arrowUp
-            "down" -> R.drawable.ic_sun to ShVermillion // Need ic_arrowDown
+            "up" -> R.drawable.ic_arrow_up to ShMatcha
+            "down" -> R.drawable.ic_arrow_down to ShVermillion
             else -> R.drawable.ic_check to ShFog2
         }
         Icon(painterResource(trendIcon), null, modifier = Modifier.size(14.dp), tint = trendColor)

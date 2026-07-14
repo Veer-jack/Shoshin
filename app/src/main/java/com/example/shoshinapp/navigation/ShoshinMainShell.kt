@@ -33,7 +33,8 @@ fun ShoshinMainShell(
     userRepository: com.example.shoshinapp.data.user.UserRepository,
     streakViewModel: com.example.shoshinapp.viewmodel.StreakViewModel,
     friendViewModel: com.example.shoshinapp.viewmodel.FriendStreaksViewModel? = null,
-    referralViewModel: com.example.shoshinapp.viewmodel.ReferralViewModel? = null
+    referralViewModel: com.example.shoshinapp.viewmodel.ReferralViewModel? = null,
+    groupViewModel: com.example.shoshinapp.viewmodel.GroupViewModel? = null
 ) {
     val innerNav = rememberNavController()
     val currentBackStack by innerNav.currentBackStackEntryAsState()
@@ -80,7 +81,8 @@ fun ShoshinMainShell(
             composable(ShRoutes.GROUPS) {
                 GroupsScreen(
                     navController = rootNavController,
-                    referralViewModel = referralViewModel
+                    referralViewModel = referralViewModel,
+                    groupViewModel = groupViewModel
                 )
             }
 

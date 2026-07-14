@@ -7,12 +7,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.shoshinapp.R
 import com.example.shoshinapp.data.db.AppDatabase
 import com.example.shoshinapp.data.db.entities.ReflectionEntity
 import com.example.shoshinapp.ui.components.*
@@ -85,20 +88,29 @@ fun EditorScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (saveStatus.isNotEmpty()) {
+            val isSuccess = saveStatus.contains("Saved")
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        if (saveStatus.contains("✅")) Matcha.copy(alpha = 0.1f) else Vermillion.copy(alpha = 0.1f),
+                        if (isSuccess) Matcha.copy(alpha = 0.1f) else Vermillion.copy(alpha = 0.1f),
                         RoundedCornerShape(12.dp)
                     )
                     .padding(16.dp)
             ) {
-                Text(
-                    text = saveStatus,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (saveStatus.contains("✅")) Matcha else Vermillion2
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Icon(
+                        painter = painterResource(if (isSuccess) R.drawable.ic_check else R.drawable.ic_info),
+                        contentDescription = null,
+                        tint = if (isSuccess) Matcha else Vermillion2,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = saveStatus,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isSuccess) Matcha else Vermillion2
+                    )
+                }
             }
         }
 
@@ -111,7 +123,7 @@ fun EditorScreen(
                     scope.launch {
                         saveReflectionToFirebase(text, userId, database!!) { success ->
                             isSaving = false
-                            saveStatus = if (success) "✅ Saved (syncing...)" else "❌ Failed"
+                            saveStatus = if (success) "Saved (syncing...)" else "Failed"
                         }
                     }
                 } else {
@@ -123,7 +135,7 @@ fun EditorScreen(
             Text(if (isSaving) "Saving..." else "Save Reflection")
         }
 
-        if (saveStatus.contains("✅")) {
+        if (saveStatus.contains("Saved")) {
             Spacer(modifier = Modifier.height(16.dp))
             var showShareSheet by remember { mutableStateOf(false) }
             

@@ -127,8 +127,8 @@ class ShareViewModel(private val context: Context) : ViewModel() {
 
     private fun getCaption(platform: String, streak: Int): String {
         return when (platform) {
-            "Twitter" -> "Day $streak of my morning routine! 🔥 Consistency is key. #ShoshinApp #MorningHabits"
-            else -> "Day $streak of my morning routine! 🔥 I'm building consistency with Shoshin App. #MorningHabits"
+            "Twitter" -> "Day $streak of my morning routine! Consistency is key. #ShoshinApp #MorningHabits"
+            else -> "Day $streak of my morning routine! I'm building consistency with Shoshin App. #MorningHabits"
         }
     }
 
