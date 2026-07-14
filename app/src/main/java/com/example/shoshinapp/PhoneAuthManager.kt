@@ -53,6 +53,10 @@ class PhoneAuthManager(private val auth: FirebaseAuth) {
 
         try {
             Log.d(TAG, "Initiating PhoneAuthProvider.verifyPhoneNumber...")
+            
+            // Force reCAPTCHA flow for testing
+            auth.firebaseAuthSettings.forceRecaptchaFlowForTesting(true)
+
             val options = PhoneAuthOptions.newBuilder(auth)
                 .setPhoneNumber(formattedPhone)
                 .setTimeout(60L, TimeUnit.SECONDS)

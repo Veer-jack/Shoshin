@@ -83,4 +83,54 @@ The NoSQL structure in Firestore is optimized for fast lookups and real-time upd
 - **Firebase App Check**: Security & Play Integrity (managed via reCAPTCHA in test).
 
 ---
-*Created for Shoshin Technical Documentation — 2024*
+*Created for Shoshin Technical Documentation — 2026*
+*Last Updated: July 2026 (Phases 0-5 Complete)*
+
+## 5. Complete Database Schema (Updated - Phases 0-5)
+
+### New Tables Added:
+
+| Table Name | Primary Key | Key Fields | Purpose |
+| :--- | :--- | :--- | :--- |
+| **user_limits** | `userId` | `groupsJoinLimit`, `groupMemberLimit`, `totalReferrals`, `referralCode` | Referral reward tracking |
+| **friends** | `(currentUserId, friendId)` | `friendName`, `friendStreak`, `activityStatus` | Friend streak display |
+| **friend_requests** | `requestId` | `fromUserId`, `toUserId`, `status` | Pending friend requests |
+| **streak_freezes** | `userId` | `freezesAvailable`, `freezesUsedThisMonth`, `nextResetDate` | Streak freeze tracking |
+| **referral_history** | `referralId` | `referrerId`, `newUserId`, `joinedDate` | Who referred who |
+
+### Updated Firestore Structure:
+
+- **`users/{userId}/friends/{friendId}`**: Friend streak data
+- **`users/{userId}/limits`**: Group join and member limits  
+- **`users/{userId}/friendRequests/{requestId}`**: Pending requests
+- **`groupLinks/{linkCode}`**: Group invite link mapping
+
+## 6. Security Rules Strategy
+
+- Users can only read/write their own documents
+- Group members can read group posts
+- Only group admin can delete group
+- referralCodes collection is read-only for all users
+- No user can read another user's private data
+
+## 7. Conflict Resolution
+
+- Last-write-wins for user profile updates
+- Server timestamp used as source of truth
+- Streak data: Local wins (user is source of truth)
+- Group posts: Server wins (social content)
+
+## 8. Database Migration Strategy
+
+- Room database version incremented on every schema change
+- Migration scripts in AppDatabase.kt
+- Current version: 3
+- Fallback: destructive migration in debug only
+
+## 9. OTP Authentication Note
+
+- Phone OTP: Works via Play Integrity (Play Store builds only)
+- Development: Use Firebase test phone numbers
+- Web OTP: Works via reCAPTCHA (confirmed working)
+- Email OTP: Works on real device with real email
+
