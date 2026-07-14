@@ -11,6 +11,8 @@ data class PhotoEntity(
     val firebaseUrl: String?,
     val date: String,
     val timestamp: Long,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val syncStatus: String = "pending",
     val lastUpdated: Long = System.currentTimeMillis()
 )

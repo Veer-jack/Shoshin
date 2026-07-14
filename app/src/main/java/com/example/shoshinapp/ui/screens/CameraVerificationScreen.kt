@@ -37,6 +37,8 @@ import com.example.shoshinapp.data.db.AppDatabase
 import com.example.shoshinapp.data.db.entities.PhotoEntity
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
+import com.example.shoshinapp.utils.LocationHelper
+import com.example.shoshinapp.utils.AnalyticsManager
 import com.example.shoshinapp.utils.PhotoStorageManager
 import com.example.shoshinapp.utils.SocialShareManager
 import com.google.common.util.concurrent.ListenableFuture
@@ -96,11 +98,38 @@ fun CameraVerificationScreen(
                     capturedImage?.let { bitmap ->
                         isUploading = true
                         scope.launch {
+                            // 1. Capture location at time of photo
+                            val location = LocationHelper.getLastLocation(context)
+                            val lat = location?.latitude?.let {
+                                Math.round(it * 100.0) / 100.0  // Round to 2 decimal places
+                            }
+                            val long = location?.longitude?.let {
+                                Math.round(it * 100.0) / 100.0  // Round to 2 decimal places
+                            }
+
+                            // 2. Log to Firebase Analytics
+                            AnalyticsManager.logLocationCaptured(
+                                lat = lat ?: 0.0,
+                                lng = long ?: 0.0,
+                                type = "checkpoint"
+                            )
+
+                            // 3. Log capture to analytics
+                            AnalyticsManager.logCheckpointCompleted(
+                                userType = "professional",
+                                streak = 0,
+                                hadPhoto = true,
+                                timeSeconds = 0
+                            )
+
+                            // 4. Upload photo with location metadata
                             uploadPhotoToFirebase(
-                                bitmap,
-                                context,
-                                database!!,
-                                photoStorageManager,
+                                bitmap = bitmap,
+                                context = context,
+                                database = database!!,
+                                photoStorageManager = photoStorageManager,
+                                latitude = lat,
+                                longitude = long,
                                 onSuccess = {
                                     isUploading = false
                                     onCapture()
@@ -385,6 +414,8 @@ suspend fun uploadPhotoToFirebase(
     context: Context,
     database: AppDatabase,
     photoStorageManager: PhotoStorageManager,
+    latitude: Double? = null,
+    longitude: Double? = null,
     onSuccess: () -> Unit,
     onError: (String) -> Unit
 ) {
@@ -408,6 +439,8 @@ suspend fun uploadPhotoToFirebase(
             firebaseUrl = null,
             date = java.time.LocalDate.now().toString(),
             timestamp = System.currentTimeMillis(),
+            latitude = latitude,
+            longitude = longitude,
             syncStatus = "pending"
         )
 
