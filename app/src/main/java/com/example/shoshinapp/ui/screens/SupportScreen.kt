@@ -71,7 +71,7 @@ fun SupportScreen(
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(painterResource(R.drawable.ic_sun), null, modifier = Modifier.size(18.dp), tint = ShFog)
+            Icon(painterResource(R.drawable.ic_search), null, modifier = Modifier.size(18.dp), tint = ShFog)
             Spacer(Modifier.width(10.dp))
             Text("Search for help", fontSize = 15.sp, color = ShFog2)
         }
@@ -83,7 +83,7 @@ fun SupportScreen(
             Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
                 SupportRow(icon = R.drawable.ic_mail, title = "Message support", sub = "Usually replies within a day")
                 HorizontalDivider(color = ShLine)
-                SupportRow(icon = R.drawable.ic_info, title = "Report a problem", sub = "Bugs, crashes, unexpected behaviour")
+                SupportRow(icon = R.drawable.ic_help, title = "Report a problem", sub = "Bugs, crashes, unexpected behaviour")
             }
         }
 

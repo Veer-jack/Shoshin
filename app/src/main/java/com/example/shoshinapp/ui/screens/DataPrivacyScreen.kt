@@ -19,7 +19,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.shoshinapp.R
 import com.example.shoshinapp.navigation.ShRoutes
 import com.example.shoshinapp.ui.components.*
@@ -61,7 +60,7 @@ fun DataPrivacyScreen(
             Kicker("Your data", modifier = Modifier.padding(start = 4.dp, bottom = 10.dp))
             ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                    PrivacyRow(icon = R.drawable.ic_sun, title = "Export my data", sub = "Mornings, checkpoints, streaks as a file") // ic_download placeholder
+                    PrivacyRow(icon = R.drawable.ic_download, title = "Export my data", sub = "Mornings, checkpoints, streaks as a file")
                     HorizontalDivider(color = ShLine)
                     PrivacyRow(icon = R.drawable.ic_shield, title = "Privacy policy", sub = "How Shoshin handles your information")
                 }
@@ -73,7 +72,7 @@ fun DataPrivacyScreen(
             ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
                     PrivacyRow(
-                        icon = R.drawable.ic_info, // ic_trash placeholder
+                        icon = R.drawable.ic_trash,
                         title = "Delete account", 
                         sub = "Permanently erase all your data",
                         danger = true,
@@ -109,7 +108,7 @@ fun DataPrivacyScreen(
                                 .background(ShVermillion.copy(alpha = 0.1f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(painterResource(R.drawable.ic_info), null, modifier = Modifier.size(24.dp), tint = ShVermillion)
+                            Icon(painterResource(R.drawable.ic_trash), null, modifier = Modifier.size(24.dp), tint = ShVermillion)
                         }
                         
                         Spacer(Modifier.height(16.dp))

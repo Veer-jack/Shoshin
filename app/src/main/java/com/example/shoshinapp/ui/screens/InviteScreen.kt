@@ -65,7 +65,7 @@ fun InviteScreen(
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(painterResource(R.drawable.ic_sun), null, modifier = Modifier.size(18.dp), tint = ShFog) // ic_search placeholder
+            Icon(painterResource(R.drawable.ic_search), null, modifier = Modifier.size(18.dp), tint = ShFog)
             Spacer(Modifier.width(10.dp))
             BasicTextField(
                 value = query,

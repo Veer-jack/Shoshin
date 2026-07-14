@@ -112,7 +112,7 @@ private fun Podium(top3: List<LeaderboardEntry>) {
             ) {
                 if (isFirst) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_sun), // ic_crown placeholder
+                        painter = painterResource(R.drawable.ic_crown),
                         null,
                         modifier = Modifier.size(22.dp),
                         tint = ShVermillion
@@ -160,7 +160,7 @@ private fun LeaderboardRow(entry: LeaderboardEntry) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(if (entry.isYou) ShPaper2 else Color.Transparent)
-            .padding(horizontal = if (entry.isYou) 10.dp else 0.dp, vertical = 12.dp),
+            .padding(horizontal = if (entry.isYou) { 10.dp } else 0.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -189,15 +189,10 @@ private fun LeaderboardRow(entry: LeaderboardEntry) {
         )
         
         // Trend Icon
-        val trendIcon = when (entry.trend) {
-            "up" -> R.drawable.ic_sun // ic_arrowUp placeholder
-            "down" -> R.drawable.ic_sun // ic_arrowDown placeholder
-            else -> R.drawable.ic_check
-        }
-        val trendColor = when (entry.trend) {
-            "up" -> ShMatcha
-            "down" -> ShVermillion
-            else -> ShFog2
+        val (trendIcon, trendColor) = when (entry.trend) {
+            "up" -> R.drawable.ic_sun to ShMatcha // Need ic_arrowUp
+            "down" -> R.drawable.ic_sun to ShVermillion // Need ic_arrowDown
+            else -> R.drawable.ic_check to ShFog2
         }
         Icon(painterResource(trendIcon), null, modifier = Modifier.size(14.dp), tint = trendColor)
         

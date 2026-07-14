@@ -80,7 +80,7 @@ fun ReferralScreen(
                         .background(Color.White.copy(alpha = 0.08f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(painterResource(R.drawable.ic_sun), null, modifier = Modifier.size(26.dp), tint = ShVermillion) // ic_gift placeholder
+                    Icon(painterResource(R.drawable.ic_gift), null, modifier = Modifier.size(26.dp), tint = ShVermillion)
                 }
                 Spacer(Modifier.height(16.dp))
                 Text("A month of Pro, on us", fontSize = 24.sp, color = ShPaper, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
