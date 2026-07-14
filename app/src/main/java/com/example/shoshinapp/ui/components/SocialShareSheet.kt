@@ -27,7 +27,10 @@ val PLATFORMS = listOf(
     SharePlatform("WhatsApp", R.drawable.ic_mail, Color(0xFF25D366)),
     SharePlatform("Snapchat", R.drawable.ic_bolt, Color(0xFFFFFC00)),
     SharePlatform("Facebook", R.drawable.ic_profile, Color(0xFF1877F2)),
-    SharePlatform("Twitter", R.drawable.ic_share, Color(0xFF1DA1F2))
+    SharePlatform("Twitter", R.drawable.ic_share, Color(0xFF1DA1F2)),
+    SharePlatform("Telegram", R.drawable.ic_share, Color(0xFF0088CC)),
+    SharePlatform("TikTok", R.drawable.ic_bolt, Color(0xFF010101)),
+    SharePlatform("More", R.drawable.ic_grid, Color(0xFF666666))
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -15,21 +15,31 @@ class InviteViewModel(
     private val contactsRepository: ContactsRepository
 ) : ViewModel() {
 
+    private val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
     private val _suggestedFriends = MutableStateFlow<List<UserSummary>>(emptyList())
     val suggestedFriends: StateFlow<List<UserSummary>> = _suggestedFriends.asStateFlow()
 
     private val _searchResults = MutableStateFlow<List<UserSummary>>(emptyList())
     val searchResults: StateFlow<List<UserSummary>> = _searchResults.asStateFlow()
 
-    fun loadContacts() {
+    fun loadAndMatchContacts() {
         viewModelScope.launch {
             try {
-                val contacts = contactsRepository.fetchContacts()
-                _suggestedFriends.value = contacts
+                val rawContacts = contactsRepository.fetchContacts()
+                val (onShoshin, notOnShoshin) = contactsRepository
+                    .matchContactsWithShoshinUsers(rawContacts, firestore)
+
+                // Show Shoshin users first then contacts
+                _suggestedFriends.value = onShoshin + notOnShoshin
             } catch (e: Exception) {
                 // Handle permission or other errors
             }
         }
+    }
+
+    fun loadContacts() {
+        loadAndMatchContacts()
     }
 
     fun searchFriends(query: String) {

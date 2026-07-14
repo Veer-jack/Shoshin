@@ -182,7 +182,12 @@ fun SuggestedFriendRow(user: UserSummary, onInvite: () -> Unit) {
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(user.userName, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = ShInk)
-            Text("In your contacts", fontSize = 12.5.sp, color = ShFog)
+            val subLabel = if (user.activityStatus == "On Shoshin") {
+                "On Shoshin 🔥 ${user.currentStreak} days"
+            } else {
+                "In your contacts"
+            }
+            Text(subLabel, fontSize = 12.5.sp, color = ShFog)
         }
         Button(
             onClick = onInvite,
@@ -190,7 +195,8 @@ fun SuggestedFriendRow(user: UserSummary, onInvite: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = ShInk, contentColor = ShPaper),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text("Invite", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+            val buttonText = if (user.activityStatus == "On Shoshin") "Add" else "Invite"
+            Text(buttonText, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
