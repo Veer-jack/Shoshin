@@ -39,7 +39,10 @@ class ReferralViewModel(
     }
 
     fun getShareMessage(): String {
-        val code = _limits.value?.referralCode ?: ""
-        return "Join me on Shoshin and use my referral code $code when you sign up! We both get bigger groups. Download: https://shoshin.app/join/$code"
+        val code = _limits.value?.referralCode
+        if (code.isNullOrEmpty()) {
+            return "Join me on Shoshin - the morning habit app that actually works! Download: https://shoshin.app"
+        }
+        return "Join me on Shoshin and use my referral code $code when you sign up! We both unlock more groups. Download: https://shoshin.app/join/$code"
     }
 }

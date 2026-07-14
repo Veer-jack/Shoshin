@@ -31,6 +31,8 @@ data class UserEntity(
     val referredByUserId: String? = null,
     val friendCount: Int = 0,
     val pendingRequestCount: Int = 0,
+    val isPro: Boolean = false,
+    val proExpiryDate: Long = 0,
     val lastSyncTime: Long = 0,
     val lastOpenDate: Long = 0,
     val totalSessionCount: Int = 0,

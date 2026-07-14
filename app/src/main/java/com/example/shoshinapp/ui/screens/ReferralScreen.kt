@@ -83,10 +83,10 @@ fun ReferralScreen(
                     Icon(painterResource(R.drawable.ic_gift), null, modifier = Modifier.size(26.dp), tint = ShVermillion)
                 }
                 Spacer(Modifier.height(16.dp))
-                Text("A month of Pro, on us", fontSize = 24.sp, color = ShPaper, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Text("Instant slots + Pro", fontSize = 24.sp, color = ShPaper, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Invite someone who needs a reason to rise. When they keep their first 7 mornings, you both earn 30 days of Shoshin Pro.",
+                    "Invite a friend to unlock 5 more groups immediately. When they keep their first 7 mornings, you both earn 30 days of Shoshin Pro.",
                     fontSize = 14.sp,
                     color = ShPaper.copy(alpha = 0.65f),
                     textAlign = TextAlign.Center,
