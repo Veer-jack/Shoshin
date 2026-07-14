@@ -32,9 +32,31 @@ fun InviteScreen(
     navController: NavController,
     viewModel: InviteViewModel
 ) {
+    val context = LocalContext.current
     var query by remember { mutableStateOf("") }
     val searchResults by viewModel.searchResults.collectAsState()
     val suggestions by viewModel.suggestedFriends.collectAsState()
+
+    // Permission handling
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.loadContacts()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.READ_CONTACTS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            viewModel.loadContacts()
+        } else {
+            permissionLauncher.launch(android.Manifest.permission.READ_CONTACTS)
+        }
+    }
     
     Column(
         modifier = Modifier
@@ -76,18 +98,27 @@ fun InviteScreen(
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = androidx.compose.ui.text.TextStyle(fontFamily = DmSansFamily, fontSize = 15.sp, color = ShInk),
                 decorationBox = { innerTextField ->
-                    if (query.isEmpty()) {
-                        Text("Search by name or number", fontSize = 15.sp, color = ShFog2)
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (query.isEmpty()) {
+                            Text("Search contacts", fontSize = 15.sp, color = ShFog2)
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 }
             )
         }
 
         Spacer(Modifier.height(20.dp))
 
+        val inviteLink = viewModel.getInviteLink()
         ShoshinButton(
-            onClick = { /* Share link */ },
+            onClick = { 
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_TEXT, "Join me on Shoshin! Build your morning consistency: $inviteLink")
+                }
+                context.startActivity(android.content.Intent.createChooser(intent, "Share invite link"))
+            },
             variant = ShButtonVariant.Ghost,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -98,24 +129,37 @@ fun InviteScreen(
 
         Spacer(Modifier.height(22.dp))
 
-        Kicker("Suggested", modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
+        Kicker("From your contacts", modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
 
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                val listToDisplay = if (query.length >= 2) searchResults else suggestions
-                listToDisplay.forEachIndexed { i, user ->
-                    SuggestedFriendRow(user)
-                    if (i < listToDisplay.lastIndex) HorizontalDivider(color = ShLine)
+        ShoshinCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            val listToDisplay = if (query.length >= 2) searchResults else suggestions
+            if (listToDisplay.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No contacts found", style = ShLabelStyle, color = ShFog)
+                }
+            } else {
+                androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
+                    items(listToDisplay.size) { index ->
+                        val user = listToDisplay[index]
+                        SuggestedFriendRow(user) {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_TEXT, "Hey ${user.userName}, join me on Shoshin! $inviteLink")
+                            }
+                            context.startActivity(android.content.Intent.createChooser(intent, "Invite ${user.userName}"))
+                        }
+                        if (index < listToDisplay.lastIndex) HorizontalDivider(color = ShLine)
+                    }
                 }
             }
         }
         
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(24.dp))
     }
 }
 
 @Composable
-fun SuggestedFriendRow(user: UserSummary) {
+fun SuggestedFriendRow(user: UserSummary, onInvite: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -138,10 +182,10 @@ fun SuggestedFriendRow(user: UserSummary) {
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(user.userName, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = ShInk)
-            Text("In your contacts", fontSize = 12.5.sp, color = ShFog) // Meta info
+            Text("In your contacts", fontSize = 12.5.sp, color = ShFog)
         }
         Button(
-            onClick = { /* Invite */ },
+            onClick = onInvite,
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(containerColor = ShInk, contentColor = ShPaper),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)

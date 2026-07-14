@@ -27,7 +27,7 @@ fun GroupPreviewScreen(
     navController: NavController,
     groupId: String
 ) {
-    val previewMembers = listOf("M", "R", "S")
+    val previewMembers = emptyList<String>() // Removed dummy members
 
     Column(
         modifier = Modifier
@@ -41,7 +41,7 @@ fun GroupPreviewScreen(
             horizontalArrangement = Arrangement.End
         ) {
             IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(22.dp)) {
-                Icon(painterResource(R.drawable.ic_plus), contentDescription = "Close", modifier = Modifier.rotate(45f), tint = ShFog) // ic_close placeholder
+                Icon(painterResource(R.drawable.ic_close), contentDescription = "Close", tint = ShFog)
             }
         }
 
@@ -68,21 +68,23 @@ fun GroupPreviewScreen(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     // Member Avatars
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    ) {
-                        previewMembers.forEachIndexed { i, initial ->
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .offset(x = if (i > 0) ((-12) * i).dp else 0.dp)
-                                    .border(3.dp, ShInk, CircleShape)
-                                    .clip(CircleShape)
-                                    .background(ShSand),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(initial, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = ShInk, fontFamily = DmSansFamily)
+                    if (previewMembers.isNotEmpty()) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        ) {
+                            previewMembers.forEachIndexed { i, initial ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .offset(x = if (i > 0) ((-12) * i).dp else 0.dp)
+                                        .border(3.dp, ShInk, CircleShape)
+                                        .clip(CircleShape)
+                                        .background(ShSand),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(initial, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = ShInk, fontFamily = DmSansFamily)
+                                }
                             }
                         }
                     }
@@ -90,7 +92,7 @@ fun GroupPreviewScreen(
                     Kicker("You've been invited to", color = ShPaper.copy(alpha = 0.6f), modifier = Modifier.padding(bottom = 8.dp))
                     Text("Dawn Circle", style = ShTitleStyle.copy(fontSize = 28.sp, color = ShPaper), textAlign = TextAlign.Center)
                     Text(
-                        "5 members · Rising together since March",
+                        "Rising together since March", // Simplified
                         fontSize = 13.5.sp,
                         color = ShPaper.copy(alpha = 0.7f),
                         modifier = Modifier.padding(top = 10.dp)
@@ -104,8 +106,8 @@ fun GroupPreviewScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                ShoshinStat(value = "86%", label = "Group consistency")
-                ShoshinStat(value = "22", label = "Avg streak")
+                ShoshinStat(value = "--", label = "Group consistency")
+                ShoshinStat(value = "--", label = "Avg streak")
             }
         }
 

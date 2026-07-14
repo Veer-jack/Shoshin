@@ -27,14 +27,20 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         val uid = repository.userId ?: return
         viewModelScope.launch {
             _isLoading.value = true
-            val userEntity = repository.getUser(uid)
-            _user.value = userEntity
-            
-            // Also collect flow for real-time updates from local DB
-            repository.getUserFlow(uid).collect {
-                _user.value = it
+            try {
+                // Try to get user from local or remote
+                val userEntity = repository.getUser(uid)
+                _user.value = userEntity
+                
+                // Subscribe to real-time updates
+                repository.getUserFlow(uid).collect {
+                    _user.value = it
+                    _isLoading.value = false
+                }
+            } catch (e: Exception) {
+                _error.value = e.message
+                _isLoading.value = false
             }
-            _isLoading.value = false
         }
     }
 

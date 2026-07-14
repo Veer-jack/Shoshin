@@ -99,8 +99,6 @@ fun FriendProfileScreen(
         // Info Rows
         ShoshinCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                ProfileRow(icon = R.drawable.ic_groups, title = "Dawn Circle", sub = "Shared accountability group", hasChevron = true)
-                HorizontalDivider(color = ShLine)
                 ProfileRow(icon = R.drawable.ic_check, title = "Following", sub = "You'll see their morning activity")
             }
         }

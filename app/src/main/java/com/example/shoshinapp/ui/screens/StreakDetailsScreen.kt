@@ -118,27 +118,32 @@ fun StreakDetailsScreen(
                 Column(modifier = Modifier.padding(22.dp)) {
                     Text("Streak by month", style = ShTitleStyle.copy(fontSize = 18.sp), modifier = Modifier.padding(bottom = 18.dp))
                     
-                    Row(
-                        modifier = Modifier.fillMaxWidth().height(90.dp),
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        val trendData = listOf("Apr" to 0.7f, "May" to 0.9f, "Jun" to 0.62f, "Jul" to 0.86f)
-                        trendData.forEachIndexed { i, (month, value) ->
-                            Column(
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
-                                verticalArrangement = Arrangement.Bottom,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(value)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(if (i == trendData.lastIndex) ShVermillion else ShMatcha)
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(month, style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
+                    val trendData = emptyList<Pair<String, Float>>()
+                    
+                    if (trendData.isEmpty()) {
+                        Text("No monthly data yet. Keep your streak alive to see trends.", style = ShBodyStyle, color = ShFog)
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().height(90.dp),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            trendData.forEachIndexed { i, (month, value) ->
+                                Column(
+                                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                                    verticalArrangement = Arrangement.Bottom,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .fillMaxHeight(value)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (i == trendData.lastIndex) ShVermillion else ShMatcha)
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(month, style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
+                                }
                             }
                         }
                     }

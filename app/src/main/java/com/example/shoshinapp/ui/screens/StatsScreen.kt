@@ -52,13 +52,13 @@ fun StatsScreen(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             StatCard(
                 modifier = Modifier.weight(1f),
-                value = (allTimeStats?.totalActivations ?: 148).toString(),
+                value = (allTimeStats?.totalActivations ?: 0).toString(),
                 label = "Total mornings",
                 icon = R.drawable.ic_sun
             )
             StatCard(
                 modifier = Modifier.weight(1f),
-                value = (allTimeStats?.bestStreak ?: 31).toString(),
+                value = (allTimeStats?.bestStreak ?: 0).toString(),
                 label = "Best streak",
                 icon = R.drawable.ic_flame
             )
@@ -67,13 +67,13 @@ fun StatsScreen(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             StatCard(
                 modifier = Modifier.weight(1f),
-                value = "91%",
+                value = allTimeStats?.onTimeRate ?: "0%",
                 label = "On-time rate",
                 icon = R.drawable.ic_clock
             )
             StatCard(
                 modifier = Modifier.weight(1f),
-                value = (allTimeStats?.totalCheckpoints ?: 740).toString(),
+                value = (allTimeStats?.totalCheckpoints ?: 0).toString(),
                 label = "Checkpoints kept",
                 icon = R.drawable.ic_check
             )
@@ -88,11 +88,11 @@ fun StatsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                ShoshinStat(value = "05:34", label = "Avg wake")
+                ShoshinStat(value = "--:--", label = "Avg wake")
                 Box(modifier = Modifier.width(1.dp).height(30.dp).background(ShLine))
-                ShoshinStat(value = "21", unit = "min", label = "Avg bridge")
+                ShoshinStat(value = "--", unit = "min", label = "Avg bridge")
                 Box(modifier = Modifier.width(1.dp).height(30.dp).background(ShLine))
-                ShoshinStat(value = "98", unit = "%", label = "Photo proof", color = ShMatcha)
+                ShoshinStat(value = "--", unit = "%", label = "Photo proof", color = ShMatcha)
             }
         }
 
@@ -102,35 +102,7 @@ fun StatsScreen(
         Kicker("Time spent by path", modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
         ShoshinCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(22.dp)) {
-                val paths = listOf(
-                    Triple("Morning Walk", 62, ShVermillion),
-                    Triple("Deep Study", 28, ShMatcha),
-                    Triple("Strength", 10, ShMatcha)
-                )
-                
-                paths.forEachIndexed { i, (name, pct, color) ->
-                    Column(modifier = Modifier.padding(bottom = if (i < paths.lastIndex) 16.dp else 0.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(name, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = ShInk)
-                            Text("$pct%", fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShInk)
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(ShSand)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(pct / 100f)
-                                    .fillMaxHeight()
-                                    .background(color)
-                            )
-                        }
-                    }
-                }
+                Text("No data yet. Begin your morning practice to see insights.", style = ShBodyStyle, color = ShFog)
             }
         }
 

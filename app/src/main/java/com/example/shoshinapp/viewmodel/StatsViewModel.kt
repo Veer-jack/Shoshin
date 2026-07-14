@@ -53,7 +53,7 @@ class StatsViewModel(
                     badgesEarned = badges.count { !it.isLocked },
                     totalActivations = user?.totalActivations ?: 0,
                     bestStreak = user?.bestStreak ?: 0,
-                    onTimeRate = "91%" // Mock
+                    onTimeRate = "0%" // Default to 0% if no data
                 )
             }.collect { stats ->
                 _allTimeStats.value = stats

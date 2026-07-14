@@ -19,25 +19,8 @@ class GroupStatsViewModel(
     val stats: StateFlow<GroupStats?> = _stats.asStateFlow()
 
     fun loadGroupData(groupId: String) {
-        // In a real app, this would fetch from a repository that syncs with Firestore
-        // For now, mock some members for the specification
-        _members.value = listOf(
-            UserSummary("1", "Sarah", null, 31, 142, 8, "Active today", System.currentTimeMillis()),
-            UserSummary("2", "John", null, 23, 110, 5, "Active today", System.currentTimeMillis()),
-            UserSummary("3", "Emma", null, 15, 88, 4, "Active today", System.currentTimeMillis()),
-            UserSummary("4", "Mike", null, 12, 45, 3, "Not yet today", System.currentTimeMillis() - 86400000),
-            UserSummary("5", "Alex", null, 8, 22, 2, "Missed yesterday", System.currentTimeMillis() - 86400000 * 2)
-        )
-        
-        _stats.value = GroupStats(
-            groupId = groupId,
-            activeMembersThisWeek = 6,
-            totalMemberCount = 8,
-            averageStreak = 18.0,
-            totalCheckpointsThisMonth = 142,
-            groupAgeInDays = 60,
-            topPerformers = _members.value.take(3),
-            lastUpdated = System.currentTimeMillis()
-        )
+        // Dummy data removed. Real data will be loaded when repositories are linked.
+        _members.value = emptyList()
+        _stats.value = null
     }
 }

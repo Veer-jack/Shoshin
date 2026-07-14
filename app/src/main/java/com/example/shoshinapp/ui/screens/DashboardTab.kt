@@ -367,9 +367,10 @@ fun DashboardTab(
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        RingProgress(percentage = 86, size = 52, strokeWidth = 5f, valueText = "86", color = ShInk, trackColor = ShSand)
+                        val consistency = 0 // Removed mock 86%
+                        RingProgress(percentage = consistency, size = 52, strokeWidth = 5f, valueText = consistency.toString(), color = ShInk, trackColor = ShSand)
                         Column {
-                            Text("86%", fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShInk)
+                            Text("$consistency%", fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShInk)
                             Text("CONSISTENCY", fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShFog, letterSpacing = 1.sp)
                         }
                     }

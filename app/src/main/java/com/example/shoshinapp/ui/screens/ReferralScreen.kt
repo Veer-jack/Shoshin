@@ -140,7 +140,7 @@ fun ReferralScreen(
                     Text("Invited so far", style = ShTitleStyle.copy(fontSize = 18.sp))
                     Text(
                         text = buildAnnotatedString {
-                            append((limits?.totalReferrals ?: 2).toString())
+                            append((limits?.totalReferrals ?: 0).toString())
                             withStyle(style = SpanStyle(color = ShFog2, fontWeight = FontWeight.Medium)) {
                                 append("/5")
                             }
@@ -152,7 +152,7 @@ fun ReferralScreen(
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val referrals = limits?.totalReferrals ?: 2
+                    val referrals = limits?.totalReferrals ?: 0
                     repeat(5) { i ->
                         Box(
                             modifier = Modifier
@@ -175,7 +175,13 @@ fun ReferralScreen(
         Spacer(Modifier.height(22.dp))
 
         ShoshinButton(
-            onClick = { /* Share link */ },
+            onClick = { 
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_TEXT, viewModel.getShareMessage())
+                }
+                context.startActivity(android.content.Intent.createChooser(intent, "Share invite link"))
+            },
             variant = ShButtonVariant.Accent,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -187,7 +193,14 @@ fun ReferralScreen(
         Spacer(Modifier.height(12.dp))
         
         ShoshinButton(
-            onClick = { /* Email invite */ },
+            onClick = { 
+                val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+                    data = android.net.Uri.parse("mailto:")
+                    putExtra(android.content.Intent.EXTRA_SUBJECT, "Join me on Shoshin")
+                    putExtra(android.content.Intent.EXTRA_TEXT, viewModel.getShareMessage())
+                }
+                context.startActivity(android.content.Intent.createChooser(intent, "Invite by email"))
+            },
             variant = ShButtonVariant.Ghost,
             modifier = Modifier.fillMaxWidth()
         ) {

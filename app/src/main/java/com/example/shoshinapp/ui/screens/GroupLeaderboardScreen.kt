@@ -31,13 +31,7 @@ fun GroupLeaderboardScreen(
     val scrollState = rememberScrollState()
     var selectedTimeframe by remember { mutableStateOf(0) }
 
-    val leaderboard = listOf(
-        LeaderboardEntry(1, "M", "Mei", 31, "up"),
-        LeaderboardEntry(2, "S", "Sofia", 22, "same"),
-        LeaderboardEntry(3, "A", "Arjun (you)", 14, "up", isYou = true),
-        LeaderboardEntry(4, "R", "Rahul", 9, "down"),
-        LeaderboardEntry(5, "K", "Kenji", 5, "down")
-    )
+    val leaderboard = emptyList<LeaderboardEntry>() // Removed SH_LEADERBOARD dummy data
 
     Column(
         modifier = Modifier
@@ -75,16 +69,24 @@ fun GroupLeaderboardScreen(
         Spacer(Modifier.height(32.dp))
 
         // Podium Top 3
-        Podium(leaderboard.take(3))
+        if (leaderboard.isNotEmpty()) {
+            Podium(leaderboard.take(3))
+        }
 
         Spacer(Modifier.height(24.dp))
 
         // Full List
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                leaderboard.forEachIndexed { i, entry ->
-                    LeaderboardRow(entry)
-                    if (i < leaderboard.lastIndex) HorizontalDivider(color = ShLine)
+        ShoshinCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            if (leaderboard.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Leaderboard is quiet. Invite someone to begin!", style = ShLabelStyle, color = ShFog, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(24.dp))
+                }
+            } else {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
+                    leaderboard.forEachIndexed { i, entry ->
+                        LeaderboardRow(entry)
+                        if (i < leaderboard.lastIndex) HorizontalDivider(color = ShLine)
+                    }
                 }
             }
         }

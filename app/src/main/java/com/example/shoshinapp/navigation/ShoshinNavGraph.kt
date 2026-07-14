@@ -57,6 +57,7 @@ fun ShoshinNavGraph(
     val friendRepository = remember { FriendRepository(database.friendDao(), firestore) }
     val referralRepository = remember { ReferralRepository(database.userLimitsDao(), firestore) }
     val limitsRepository = remember { UserLimitsRepository(database.userLimitsDao(), firestore) }
+    val contactsRepository = remember { com.example.shoshinapp.data.ContactsRepository(context) }
     
     val onboardingViewModel = viewModel<OnboardingViewModel>(factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -96,7 +97,7 @@ fun ShoshinNavGraph(
     val inviteViewModel = viewModel<InviteViewModel>(factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return InviteViewModel(userRepository) as T
+            return InviteViewModel(userRepository, contactsRepository) as T
         }
     })
 
@@ -155,6 +156,7 @@ fun ShoshinNavGraph(
                         email = account?.email,
                         referralCode = null, // Google sign in doesn't have a field for this yet in current UI
                         referralRepository = referralRepository,
+                        userRepository = userRepository,
                         shoshinRepository = shoshinRepository,
                         navController = navController
                     )
@@ -243,7 +245,7 @@ fun ShoshinNavGraph(
                 referralCode = referralCode,
                 onSuccess = { userId, contact, code ->
                     scope.launch {
-                        handleNewUser(userId, "User", contact, null, code, referralRepository, shoshinRepository, navController)
+                        handleNewUser(userId, "User", contact, null, code, referralRepository, userRepository, shoshinRepository, navController)
                     }
                 }
             )
@@ -272,7 +274,7 @@ fun ShoshinNavGraph(
                 referralCode = referralCode,
                 onSuccess = { userId, contact, code ->
                     scope.launch {
-                        handleNewUser(userId, "User", null, contact, code, referralRepository, shoshinRepository, navController)
+                        handleNewUser(userId, "User", null, contact, code, referralRepository, userRepository, shoshinRepository, navController)
                     }
                 }
             )
@@ -675,16 +677,30 @@ private suspend fun handleNewUser(
     email: String?,
     referralCode: String?,
     referralRepository: ReferralRepository,
+    userRepository: UserRepository,
     shoshinRepository: ShoshinRepository,
     navController: NavHostController
 ) {
-    // 1. Basic user save
+    // 1. Basic user save to DataStore
     shoshinRepository.saveUser(name = displayName, email = email ?: "", phone = phone ?: "")
     
-    // 2. Generate referral code for new user
+    // 2. Create UserEntity in local DB and Firestore if it doesn't exist
+    val existingUser = userRepository.getUser(userId)
+    if (existingUser == null) {
+        val newUser = com.example.shoshinapp.data.db.entities.UserEntity(
+            userId = userId,
+            displayName = displayName,
+            email = email,
+            phone = phone,
+            photoUrl = null
+        )
+        userRepository.updateUser(newUser)
+    }
+
+    // 3. Generate referral code for new user
     val newUserCode = referralRepository.generateAndSaveReferralCode(userId, displayName)
     
-    // 3. Process entered referral code
+    // 4. Process entered referral code
     if (referralCode != null) {
         val referrerId = referralRepository.validateReferralCode(referralCode)
         if (referrerId != null && referrerId != userId) {

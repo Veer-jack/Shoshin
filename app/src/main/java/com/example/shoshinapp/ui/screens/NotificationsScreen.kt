@@ -34,14 +34,7 @@ fun NotificationsScreen(
     navController: NavController
 ) {
     val scrollState = rememberScrollState()
-    val notifications = listOf(
-        NotificationItem(R.drawable.ic_flame, "14 mornings kept", "You're one away from tying your best streak.", "Today · 6:02 AM", true),
-        NotificationItem(R.drawable.ic_bell, "Wind-down reminder", "Set tomorrow's alarm before you sleep.", "Yesterday · 9:30 PM", true),
-        NotificationItem(R.drawable.ic_groups, "Mei rose at 5:28 AM", "Two of five in your circle have begun.", "Yesterday · 5:35 AM", false),
-        NotificationItem(R.drawable.ic_trophy, "Badge earned: Early riser", "Five mornings before 6 AM in a row.", "2 days ago", false),
-        NotificationItem(R.drawable.ic_shield, "71-Day Discipline: Day 21", "You've entered the Reinforcement phase.", "3 days ago", false),
-        NotificationItem(R.drawable.ic_info, "Shoshin Pro renews soon", "Your annual plan renews on 12 Jul.", "5 days ago", false)
-    )
+    val notifications = emptyList<NotificationItem>() // Removed dummy notifications
 
     Column(
         modifier = Modifier

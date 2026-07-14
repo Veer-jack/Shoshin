@@ -134,7 +134,7 @@ fun ProfileScreen(
 
                 Spacer(Modifier.height(40.dp))
 
-                // Referral Section (Feature 4.2)
+                // Referral Section
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                     Kicker("YOUR REFERRAL CODE", color = ShInk)
                     Spacer(Modifier.height(12.dp))
@@ -149,12 +149,8 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                val userLimits by badgeViewModel?.userId?.let { uid -> 
-                                    // This is a bit hacky, normally should use a dedicated ViewModel
-                                    remember { mutableStateOf("VINAY142") } // Mock for now
-                                } ?: remember { mutableStateOf("...") }
-                                
-                                Text(text = "VINAY142", style = ShNumeralStyle.copy(fontSize = 24.sp), letterSpacing = 2.sp)
+                                val referralCode = u.inviteCode.ifEmpty { "TAP TO GEN" }
+                                Text(text = referralCode, style = ShNumeralStyle.copy(fontSize = 24.sp), letterSpacing = 2.sp)
                                 Text("Tap to see your rewards", style = ShLabelStyle, color = ShFog)
                             }
                             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ShLine2)
@@ -164,7 +160,7 @@ fun ProfileScreen(
 
                 Spacer(Modifier.height(40.dp))
 
-                // Badges Section (Feature 2.1)
+                // Badges Section
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -184,7 +180,6 @@ fun ProfileScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Show first 4 badges (mix of unlocked and locked)
                             badges.take(4).forEach { badge ->
                                 Box(
                                     modifier = Modifier
@@ -249,7 +244,11 @@ fun ProfileScreen(
 }
 
 private fun Color.Companion.parseColor(colorString: String): Color {
-    return Color(android.graphics.Color.parseColor(colorString))
+    return try {
+        Color(android.graphics.Color.parseColor(colorString))
+    } catch (e: Exception) {
+        ShVermillion // Default
+    }
 }
 
 @Composable

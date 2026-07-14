@@ -30,6 +30,20 @@ class UserRepository(
                 user = doc.toObject(UserEntity::class.java)
                 if (user != null) {
                     userDao.insertUser(user)
+                } else {
+                    // Create minimal profile if none exists but user is authenticated
+                    val firebaseUser = auth.currentUser
+                    if (firebaseUser != null && firebaseUser.uid == uid) {
+                        val newUser = UserEntity(
+                            userId = uid,
+                            displayName = firebaseUser.displayName ?: "New User",
+                            email = firebaseUser.email,
+                            phone = firebaseUser.phoneNumber,
+                            photoUrl = firebaseUser.photoUrl?.toString()
+                        )
+                        updateUser(newUser)
+                        user = newUser
+                    }
                 }
             } catch (e: Exception) {
                 // Log error

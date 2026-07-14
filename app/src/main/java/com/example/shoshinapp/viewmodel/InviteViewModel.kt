@@ -2,6 +2,7 @@ package com.example.shoshinapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.shoshinapp.data.ContactsRepository
 import com.example.shoshinapp.data.models.UserSummary
 import com.example.shoshinapp.data.user.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,7 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class InviteViewModel(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val contactsRepository: ContactsRepository
 ) : ViewModel() {
 
     private val _suggestedFriends = MutableStateFlow<List<UserSummary>>(emptyList())
@@ -19,17 +21,15 @@ class InviteViewModel(
     private val _searchResults = MutableStateFlow<List<UserSummary>>(emptyList())
     val searchResults: StateFlow<List<UserSummary>> = _searchResults.asStateFlow()
 
-    init {
-        loadSuggestions()
-    }
-
-    private fun loadSuggestions() {
-        // Mock suggestions
-        _suggestedFriends.value = listOf(
-            UserSummary("10", "Mike Johnson", null, 15, 87, 4, "Active", 0),
-            UserSummary("11", "Sarah Lee", null, 23, 110, 5, "Active", 0),
-            UserSummary("12", "Emma Wilson", null, 7, 45, 3, "Building", 0)
-        )
+    fun loadContacts() {
+        viewModelScope.launch {
+            try {
+                val contacts = contactsRepository.fetchContacts()
+                _suggestedFriends.value = contacts
+            } catch (e: Exception) {
+                // Handle permission or other errors
+            }
+        }
     }
 
     fun searchFriends(query: String) {
@@ -42,8 +42,7 @@ class InviteViewModel(
     }
 
     fun getUserInviteCode(): String {
-        // This would come from UserEntity in a real app
-        return "VINAY142"
+        return userRepository.userId?.take(8)?.uppercase() ?: ""
     }
 
     fun getInviteLink(): String {

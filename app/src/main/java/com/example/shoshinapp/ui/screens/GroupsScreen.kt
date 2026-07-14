@@ -32,25 +32,17 @@ private data class Member(
     val isYou: Boolean = false
 )
 
-private val SH_POD = listOf(
-    Member("A", "Arjun (you)", "practicing", 14, true),
-    Member("M", "Mei", "practicing", 31),
-    Member("R", "Rahul", "practicing", 9),
-    Member("S", "Sofia", "resting", 22),
-    Member("K", "Kenji", "sleeping", 5)
-)
-
 @Composable
 fun GroupsScreen(
     navController: NavController,
     referralViewModel: com.example.shoshinapp.viewmodel.ReferralViewModel? = null
 ) {
     val limits by referralViewModel?.limits?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
-    val joinedCount = 4 // Mocked for now
+    val joinedCount = 0 // Real count should be fetched from DB
     val maxJoin = limits?.groupsJoinLimit ?: 5
     
-    val practicingCount = SH_POD.count { it.status == "practicing" }
-    val members = SH_POD // In real app, this would be dynamic
+    val practicingCount = 0
+    val members = emptyList<Member>() // Removed dummy data SH_POD
 
     Column(
         modifier = Modifier
@@ -235,7 +227,15 @@ fun GroupsScreen(
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp)
-                            .clickable { navController.navigate(ShRoutes.groupInvite("dawn-circle")) },
+                            .clickable { 
+                                val message = "Join my circle on Shoshin! We keep our mornings together. Download the app to begin: https://shoshin.app/join/dawn-circle"
+                                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_TEXT, message)
+                                }
+                                val context = navController.context
+                                context.startActivity(android.content.Intent.createChooser(intent, "Invite to circle"))
+                            },
                         color = Color.Transparent,
                         shape = RoundedCornerShape(14.dp),
                         border = androidx.compose.foundation.BorderStroke(1.5.dp, ShLine2)
