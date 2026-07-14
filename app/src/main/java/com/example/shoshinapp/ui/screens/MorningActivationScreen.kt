@@ -21,14 +21,38 @@ import java.util.*
 import java.text.SimpleDateFormat
 
 private data class Problem(val question: String, val answer: Int)
-private val PROBLEMS = listOf(Problem("47 + 68", 115), Problem("13 × 6", 78), Problem("84 − 27", 57))
+
+private fun generateProblems(): List<Problem> {
+    val random = Random()
+    return listOf(
+        // 1. Addition (Double Digit)
+        run {
+            val a = 20 + random.nextInt(70)
+            val b = 20 + random.nextInt(70)
+            Problem("$a + $b", a + b)
+        },
+        // 2. Subtraction (Result positive)
+        run {
+            val a = 50 + random.nextInt(49)
+            val b = 10 + random.nextInt(40)
+            Problem("$a − $b", a - b)
+        },
+        // 3. Multiplication (Single * Small Double)
+        run {
+            val a = 3 + random.nextInt(10) // 3 to 12
+            val b = 2 + random.nextInt(7)  // 2 to 8
+            Problem("$a × $b", a * b)
+        }
+    )
+}
 
 @Composable
 fun MorningActivationScreen(onBegin: () -> Unit) {
+    val problems = remember { generateProblems() }
     var step  by remember { mutableStateOf(0) }
     var entry by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
-    val prob  = PROBLEMS[step]
+    val prob  = problems[step]
 
     val calendar = Calendar.getInstance()
     val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(calendar.time)
@@ -39,7 +63,7 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
             "del" -> { entry = entry.dropLast(1); error = false }
             "ok"  -> {
                 if (entry.toIntOrNull() == prob.answer) {
-                    if (step < PROBLEMS.lastIndex) { step++; entry = ""; error = false }
+                    if (step < problems.lastIndex) { step++; entry = ""; error = false }
                     else onBegin()
                 } else { error = true; entry = "" }
             }
@@ -66,7 +90,7 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
                 // Challenge
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Box(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(ShNightText.copy(alpha = 0.06f)).padding(horizontal = 16.dp, vertical = 7.dp).padding(bottom = 16.dp)) {
-                        Text("MIND AWAKE · ${step+1} OF ${PROBLEMS.size}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = ShNightMuted, letterSpacing = 1.5.sp)
+                        Text("MIND AWAKE · ${step+1} OF ${problems.size}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = ShNightMuted, letterSpacing = 1.5.sp)
                     }
                     Kicker("Solve to begin", color = ShVermillion); Spacer(Modifier.height(14.dp))
                     Text(prob.question, fontSize = 56.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShNightText, letterSpacing = (-0.5).sp)
