@@ -24,6 +24,9 @@ import androidx.navigation.NavController
 import com.example.shoshinapp.R
 import com.example.shoshinapp.ui.components.*
 import com.example.shoshinapp.ui.theme.*
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun SupportScreen(
@@ -31,6 +34,7 @@ fun SupportScreen(
 ) {
     var expandedIndex by remember { mutableStateOf<Int?>(null) }
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
     val faqs = listOf(
         "What happens if I miss a morning?" to "Nothing punishing. Your streak resets, but your total mornings kept stays on record. A miss is not a failure — begin again tomorrow.",
@@ -81,9 +85,33 @@ fun SupportScreen(
         // Contact Rows
         ShoshinCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                SupportRow(icon = R.drawable.ic_mail, title = "Message support", sub = "Usually replies within a day")
+                SupportRow(
+                    icon = R.drawable.ic_mail, 
+                    title = "Message support", 
+                    sub = "Usually replies within a day",
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:")
+                            putExtra(Intent.EXTRA_EMAIL, arrayOf("cobwebtechnologies1@gmail.com"))
+                            putExtra(Intent.EXTRA_SUBJECT, "Shoshin App Support")
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Contact Support"))
+                    }
+                )
                 HorizontalDivider(color = ShLine)
-                SupportRow(icon = R.drawable.ic_help, title = "Report a problem", sub = "Bugs, crashes, unexpected behaviour")
+                SupportRow(
+                    icon = R.drawable.ic_help, 
+                    title = "Report a problem", 
+                    sub = "Bugs, crashes, unexpected behaviour",
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:")
+                            putExtra(Intent.EXTRA_EMAIL, arrayOf("cobwebtechnologies1@gmail.com"))
+                            putExtra(Intent.EXTRA_SUBJECT, "Shoshin App - Bug Report")
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Report a Problem"))
+                    }
+                )
             }
         }
 
@@ -117,11 +145,16 @@ fun SupportScreen(
 }
 
 @Composable
-private fun SupportRow(icon: Int, title: String, sub: String) {
+private fun SupportRow(
+    icon: Int, 
+    title: String, 
+    sub: String,
+    onClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { }
+            .clickable { onClick() }
             .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
