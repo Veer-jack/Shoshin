@@ -78,7 +78,7 @@ class ShareCardGenerator(private val context: Context) {
             color = Color.parseColor("#F2F1EC")
             alpha = 165 // ~0.65 opacity
             textSize = 50f
-            textAlign = Paint.Align.CENTER
+            textAlign = Paint.Align.LEFT // Use LEFT for StaticLayout alignment
             isAntiAlias = true
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         }
@@ -224,12 +224,14 @@ class ShareCardGenerator(private val context: Context) {
         paint: TextPaint,
         width: Int
     ) {
+        paint.textAlign = Paint.Align.LEFT // Must be LEFT for StaticLayout positioning
         val staticLayout = StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
             .setAlignment(Layout.Alignment.ALIGN_CENTER)
             .setMaxLines(3)
             .build()
 
         canvas.save()
+        // Center the entire layout block at (x, y)
         canvas.translate(x - width / 2, y)
         staticLayout.draw(canvas)
         canvas.restore()

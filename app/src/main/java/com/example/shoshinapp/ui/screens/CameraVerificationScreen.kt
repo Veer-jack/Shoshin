@@ -161,27 +161,48 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
     }
     
     var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
-    var previewView: PreviewView? by remember { mutableStateOf(null) }
+    val previewView = remember { mutableStateOf<PreviewView?>(null) }
+
+    // Check permissions
+    var hasPermission by remember {
+        mutableStateOf(
+            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    if (!hasPermission) {
+        val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+        ) { hasPermission = it }
+        
+        LaunchedEffect(Unit) { launcher.launch(android.Manifest.permission.CAMERA) }
+        
+        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+            Text("Camera permission required", color = Color.White)
+        }
+        return
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         AndroidView(
             factory = { ctx ->
                 PreviewView(ctx).also {
-                    previewView = it
+                    previewView.value = it
                 }
             },
             modifier = Modifier.fillMaxSize()
         )
 
-        LaunchedEffect(previewView) {
-            Log.d("CameraVerification", "LaunchedEffect triggered with previewView: $previewView")
+        LaunchedEffect(previewView.value) {
+            val view = previewView.value ?: return@LaunchedEffect
+            Log.d("CameraVerification", "LaunchedEffect triggered with previewView: $view")
             val cameraProvider = withContext(Dispatchers.IO) {
                 cameraProviderFuture.get()
             }
             Log.d("CameraVerification", "CameraProvider obtained")
             
             val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView?.surfaceProvider)
+                it.setSurfaceProvider(view.surfaceProvider)
             }
             imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)

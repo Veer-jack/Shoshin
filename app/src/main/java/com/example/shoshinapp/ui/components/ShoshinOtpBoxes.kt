@@ -29,7 +29,7 @@ fun ShoshinOtpBoxes(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.Center, // Center the boxes
     ) {
         repeat(length) { index ->
             val char   = value.getOrNull(index)?.toString() ?: ""
@@ -38,9 +38,8 @@ fun ShoshinOtpBoxes(
 
             Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .aspectRatio(0.8f)
-                    .widthIn(max = 50.dp)
+                    .padding(horizontal = 4.dp) // Smaller gap for fewer boxes
+                    .size(width = 46.dp, height = 58.dp) // Fixed size instead of weight
                     .background(
                         color = if (dark) ShNight3 else ShPaper2,
                         shape = RoundedCornerShape(12.dp),
