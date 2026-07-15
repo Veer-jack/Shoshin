@@ -156,15 +156,16 @@ fun DashboardTab(
                         )
                     }
 
-                    // Manual Sync Button
+                    // Share Button (Top right, replaces manual sync icon as per user hint)
                     IconButton(
-                        onClick = { scope.launch { syncManager.syncAll() } },
-                        enabled = !isOffline && syncState !is SyncState.Syncing
+                        onClick = { 
+                            navController.navigate(ShRoutes.streakShare(streak, t.name, user?.streakStartDate ?: 0L))
+                        }
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_pulse),
-                            contentDescription = "Sync Now",
-                            tint = if (syncState is SyncState.Syncing) ShVermillion else ShInk
+                            painter = painterResource(id = R.drawable.ic_share),
+                            contentDescription = "Share Streak",
+                            tint = ShInk
                         )
                     }
 

@@ -91,18 +91,34 @@ class ShareViewModel(private val context: Context) : ViewModel() {
             "Twitter" -> createShareIntent("com.twitter.android", uri, caption)
             "Facebook" -> createShareIntent("com.facebook.katana", uri, caption)
             "WhatsApp" -> createShareIntent("com.whatsapp", uri, caption)
+            "Telegram" -> createShareIntent("org.telegram.messenger", uri, caption)
             else -> createGenericShareIntent(uri, caption)
         }
 
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        
         try {
-            context.startActivity(intent)
+            val chooser = if (platform == "More" || intent.`package` == null) {
+                Intent.createChooser(intent, "Share with").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            } else {
+                intent
+            }
+            context.startActivity(chooser)
             trackShareEvent(platform, streak)
         } catch (e: Exception) {
-            // Fallback to generic share if app not found
-            val chooser = Intent.createChooser(createGenericShareIntent(uri, caption), "Share with")
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(chooser)
+            Log.e("Share", "Failed to share to $platform", e)
+            // Final fallback to generic chooser without package
+            try {
+                val fallback = createGenericShareIntent(uri, caption).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(Intent.createChooser(fallback, "Share with").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } catch (e2: Exception) {
+                Log.e("Share", "Total failure sharing", e2)
+            }
         }
     }
 
