@@ -86,7 +86,7 @@ fun ReferralScreen(
                 Text("Instant slots + Pro", fontSize = 24.sp, color = ShPaper, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Invite a friend to unlock 5 more groups immediately. When they keep their first 7 mornings, you both earn 30 days of Shoshin Pro.",
+                    "Share your code. When your friend signs up, you BOTH instantly unlock +5 groups to join and +5 members per group. No waiting!",
                     fontSize = 14.sp,
                     color = ShPaper.copy(alpha = 0.65f),
                     textAlign = TextAlign.Center,
