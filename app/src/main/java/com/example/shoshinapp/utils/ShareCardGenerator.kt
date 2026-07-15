@@ -66,7 +66,11 @@ class ShareCardGenerator(private val context: Context) {
         // 5. Main Value (Big Number or Text)
         val mainPaint = TextPaint().apply {
             color = Color.parseColor("#F2F1EC") // ShPaper
-            textSize = if (mainValue.length > 5) 120f else 220f
+            textSize = when {
+                mainValue.length > 12 -> 80f
+                mainValue.length > 5 -> 140f
+                else -> 220f
+            }
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
@@ -78,11 +82,10 @@ class ShareCardGenerator(private val context: Context) {
             color = Color.parseColor("#F2F1EC")
             alpha = 165 // ~0.65 opacity
             textSize = 50f
-            textAlign = Paint.Align.LEFT // Use LEFT for StaticLayout alignment
             isAntiAlias = true
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         }
-        drawMultiLineText(canvas, subValue, (cardWidth / 2).toFloat(), 680f, subPaint, 800)
+        drawMultiLineText(canvas, subValue, (cardWidth / 2).toFloat(), 680f, subPaint, 920)
 
         // 7. "初心" (Shoshin) in JP
         val jpPaint = TextPaint().apply {
@@ -224,15 +227,15 @@ class ShareCardGenerator(private val context: Context) {
         paint: TextPaint,
         width: Int
     ) {
-        paint.textAlign = Paint.Align.LEFT // Must be LEFT for StaticLayout positioning
         val staticLayout = StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
             .setAlignment(Layout.Alignment.ALIGN_CENTER)
             .setMaxLines(3)
             .build()
 
         canvas.save()
-        // Center the entire layout block at (x, y)
-        canvas.translate(x - width / 2, y)
+        // The x provided is the center. StaticLayout draws from 0 to width.
+        // So we translate to x - width/2 to center the layout block.
+        canvas.translate(x - width / 2f, y)
         staticLayout.draw(canvas)
         canvas.restore()
     }

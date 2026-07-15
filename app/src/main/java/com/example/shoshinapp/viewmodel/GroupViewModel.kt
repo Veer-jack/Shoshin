@@ -36,6 +36,9 @@ class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
     private val _groupFull = MutableStateFlow<String?>(null)
     val groupFull: StateFlow<String?> = _groupFull.asStateFlow()
 
+    private val _creationSuccess = MutableStateFlow(false)
+    val creationSuccess: StateFlow<Boolean> = _creationSuccess.asStateFlow()
+
     fun loadGroups() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -49,13 +52,20 @@ class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
     fun createGroup(name: String, description: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            _creationSuccess.value = false
             val result = repository.createGroup(name, description)
             result.onSuccess {
+                _creationSuccess.value = true
                 loadGroups()
             }
             result.onFailure { _error.value = it.message }
             _isLoading.value = false
         }
+    }
+
+    fun resetCreationState() {
+        _creationSuccess.value = false
+        _error.value = null
     }
 
     fun joinGroup(inviteCode: String) {

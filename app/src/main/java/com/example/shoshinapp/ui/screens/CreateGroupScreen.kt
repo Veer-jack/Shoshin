@@ -22,15 +22,24 @@ fun CreateGroupScreen(navController: NavController, viewModel: GroupViewModel = 
     var description by remember { mutableStateOf("") }
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val success by viewModel.creationSuccess.collectAsState()
+
+    // Pop on success
+    LaunchedEffect(success) {
+        if (success) {
+            viewModel.resetCreationState()
+            navController.popBackStack()
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Paper)
+            .background(ShPaper) // Fixed consistency with other screens
             .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {
-        Text("Create Group", style = MaterialTheme.typography.displayMedium, color = Ink)
+        Text("Create Group", style = ShTitleStyle, color = ShInk)
         Spacer(modifier = Modifier.height(24.dp))
 
         ShoshinTextField(
@@ -58,11 +67,10 @@ fun CreateGroupScreen(navController: NavController, viewModel: GroupViewModel = 
         ShoshinButton(
             onClick = {
                 viewModel.createGroup(name, description)
-                navController.popBackStack()
             },
             enabled = name.isNotEmpty() && !isLoading
         ) {
-            Text("Create")
+            Text(if (isLoading) "Creating..." else "Create")
         }
     }
 }

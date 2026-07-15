@@ -195,36 +195,45 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
 
         LaunchedEffect(previewView.value) {
             val view = previewView.value ?: return@LaunchedEffect
-            Log.d("CameraVerification", "LaunchedEffect triggered with previewView: $view")
-            val cameraProvider = withContext(Dispatchers.IO) {
-                cameraProviderFuture.get()
-            }
-            Log.d("CameraVerification", "CameraProvider obtained")
+            android.util.Log.d("CameraVerification", "LaunchedEffect triggered with previewView: $view")
             
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(view.surfaceProvider)
-            }
-            imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .build()
-
-            val cameraSelector = if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
-                CameraSelector.DEFAULT_BACK_CAMERA
-            } else {
-                CameraSelector.DEFAULT_FRONT_CAMERA
-            }
-
             try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    cameraSelector,
-                    preview,
-                    imageCapture
-                )
-                Log.d("CameraVerification", "Camera bound to lifecycle: $cameraSelector")
+                val cameraProvider = withContext(Dispatchers.IO) {
+                    cameraProviderFuture.get()
+                }
+                android.util.Log.d("CameraVerification", "CameraProvider obtained")
+                
+                val preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(view.surfaceProvider)
+                }
+                
+                imageCapture = ImageCapture.Builder()
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                    .setTargetRotation(view.display.rotation) // Sync with display rotation
+                    .build()
+
+                val cameraSelector = if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                } else if (cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)) {
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+                } else {
+                    null
+                }
+
+                if (cameraSelector != null) {
+                    cameraProvider.unbindAll()
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        cameraSelector,
+                        preview,
+                        imageCapture
+                    )
+                    android.util.Log.d("CameraVerification", "Camera bound successfully: $cameraSelector")
+                } else {
+                    android.util.Log.e("CameraVerification", "No camera selector found")
+                }
             } catch (e: Exception) {
-                Log.e("CameraPreviewUI", "Use case binding failed", e)
+                android.util.Log.e("CameraPreviewUI", "Camera initialization failed", e)
             }
         }
 

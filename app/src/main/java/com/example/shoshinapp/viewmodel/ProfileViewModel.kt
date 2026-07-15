@@ -61,8 +61,10 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
     fun uploadPicture(bitmap: Bitmap) {
         viewModelScope.launch {
             _isLoading.value = true
+            android.util.Log.d("Profile", "Starting image upload...")
             val result = repository.uploadProfilePicture(bitmap)
             result.onSuccess { url ->
+                android.util.Log.d("Profile", "Upload success: $url")
                 val currentUser = _user.value
                 if (currentUser != null) {
                     val updatedUser = currentUser.copy(
@@ -73,7 +75,8 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
                 }
             }
             result.onFailure {
-                _error.value = it.message
+                android.util.Log.e("Profile", "Upload failed", it)
+                _error.value = "Upload failed: ${it.localizedMessage}"
             }
             _isLoading.value = false
         }
