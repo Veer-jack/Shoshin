@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,7 +30,9 @@ fun DataPrivacyScreen(
     navController: NavController
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showExportSuccess by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -60,9 +63,29 @@ fun DataPrivacyScreen(
             Kicker("Your data", modifier = Modifier.padding(start = 4.dp, bottom = 10.dp))
             ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                    PrivacyRow(icon = R.drawable.ic_download, title = "Export my data", sub = "Mornings, checkpoints, streaks as a file")
+                    PrivacyRow(
+                        icon = R.drawable.ic_download, 
+                        title = "Export my data", 
+                        sub = "Mornings, checkpoints, streaks as a file",
+                        onClick = {
+                            // Simple export logic for now
+                            val exportText = "Shoshin Data Export\nGenerated: ${java.util.Date()}\n\n" +
+                                             "Practice consistency and beginner's mind every morning."
+                            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_SUBJECT, "Shoshin Data Export")
+                                putExtra(android.content.Intent.EXTRA_TEXT, exportText)
+                            }
+                            context.startActivity(android.content.Intent.createChooser(intent, "Export Data"))
+                        }
+                    )
                     HorizontalDivider(color = ShLine)
-                    PrivacyRow(icon = R.drawable.ic_shield, title = "Privacy policy", sub = "How Shoshin handles your information")
+                    PrivacyRow(
+                        icon = R.drawable.ic_shield, 
+                        title = "Privacy policy", 
+                        sub = "How Shoshin handles your information",
+                        onClick = { navController.navigate(ShRoutes.PRIVACY) }
+                    )
                 }
             }
 
