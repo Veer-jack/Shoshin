@@ -238,8 +238,8 @@ fun ShoshinNavGraph(
                 onPhoneContinue = { phone, code ->
                     navController.navigate(ShRoutes.otpPhone(phone, code))
                 },
-                onEmailContinue = { email, pass, code ->
-                    navController.navigate(ShRoutes.otpEmail(email, pass, code))
+                onEmailContinue = { name, email, pass, code ->
+                    navController.navigate(ShRoutes.otpEmail(email, pass, code, name))
                 },
                 onGoogleSignIn = {
                     isGoogleLoading = true
@@ -292,11 +292,12 @@ fun ShoshinNavGraph(
 
         // ── Email OTP ────────────────────────────────────────
         composable(
-            route     = ShRoutes.OTP_EMAIL + "?pass={pass}&code={code}",
+            route     = ShRoutes.OTP_EMAIL + "?pass={pass}&code={code}&name={name}",
             arguments = listOf(
                 navArgument("email") { type = NavType.StringType },
                 navArgument("pass") { type = NavType.StringType; defaultValue = "" },
-                navArgument("code") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("code") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("name") { type = NavType.StringType; defaultValue = "User" }
             ),
             enterTransition  = { slideInHorizontally(tween(320)) { it } },
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
@@ -304,6 +305,7 @@ fun ShoshinNavGraph(
             val email = back.arguments?.getString("email") ?: ""
             val pass = back.arguments?.getString("pass") ?: ""
             val referralCode = back.arguments?.getString("code")
+            val name = back.arguments?.getString("name") ?: "User"
             OTPVerifyScreen(
                 navController = navController,
                 shoshinRepository = shoshinRepository,
@@ -313,7 +315,7 @@ fun ShoshinNavGraph(
                 referralCode = referralCode,
                 onSuccess = { userId, contact, code ->
                     scope.launch {
-                        handleNewUser(userId, "User", null, contact, code, referralRepository, userRepository, shoshinRepository, database, navController)
+                        handleNewUser(userId, name, null, contact, code, referralRepository, userRepository, shoshinRepository, database, navController)
                     }
                 }
             )

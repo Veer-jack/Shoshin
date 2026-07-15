@@ -59,6 +59,7 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
     val dateStr = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(calendar.time)
 
     fun press(k: String) {
+        val targetLen = prob.answer.toString().length
         when (k) {
             "del" -> { entry = entry.dropLast(1); error = false }
             "ok"  -> {
@@ -67,7 +68,7 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
                     else onBegin()
                 } else { error = true; entry = "" }
             }
-            else  -> if (entry.length < 4) { entry += k; error = false }
+            else  -> if (entry.length < targetLen) { entry += k; error = false }
         }
     }
 
@@ -96,7 +97,8 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
                     Text(prob.question, fontSize = 56.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShNightText, letterSpacing = (-0.5).sp)
                     Spacer(Modifier.height(20.dp))
                     
-                    ShoshinOtpBoxes(value = entry, length = 4, dark = true, modifier = Modifier.padding(horizontal = 40.dp))
+                    val targetLen = prob.answer.toString().length
+                    ShoshinOtpBoxes(value = entry, length = targetLen, dark = true, modifier = Modifier.padding(horizontal = 40.dp))
                     
                     Spacer(Modifier.height(12.dp))
                     if (error) Text("Not yet. Breathe, look again.", fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = ShVermillion)

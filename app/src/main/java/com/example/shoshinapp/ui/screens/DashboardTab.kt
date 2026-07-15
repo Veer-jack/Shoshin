@@ -188,7 +188,14 @@ fun DashboardTab(
             }
 
             // Hero card — ink background
-            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(ShInk).padding(24.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(ShInk)
+                    .clickable { navController.navigate(ShRoutes.CLOCK) } // Make Hero clickable to see full clock
+                    .padding(24.dp)
+            ) {
                 // Enso motif
                 Enso(
                     size = 200,
@@ -197,10 +204,19 @@ fun DashboardTab(
                     modifier = Modifier.align(Alignment.TopEnd).offset(x = 60.dp, y = (-60).dp)
                 )
                 Column {
-                    Row(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(ShMatcha.copy(alpha = 0.15f)).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ShMatcha))
-                        Text("SET FOR DAWN", fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShMatcha, letterSpacing = 1.sp)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Row(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(ShMatcha.copy(alpha = 0.15f)).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ShMatcha))
+                            Text("SET FOR DAWN", fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShMatcha, letterSpacing = 1.sp)
+                        }
+                        
+                        // Mini Reverse Timer in Hero
+                        Text(
+                            text = "Life counting down →",
+                            style = ShLabelStyle.copy(fontSize = 11.sp, color = ShPaper.copy(alpha = 0.5f))
+                        )
                     }
+
                     Spacer(Modifier.height(20.dp))
                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("05:30", fontSize = 64.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShPaper, letterSpacing = (-2).sp)

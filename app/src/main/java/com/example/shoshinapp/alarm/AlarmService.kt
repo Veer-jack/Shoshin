@@ -10,6 +10,11 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.example.shoshinapp.MainActivity
 import com.example.shoshinapp.R
+import com.example.shoshinapp.data.ShoshinRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class AlarmService : Service() {
 
@@ -26,6 +31,7 @@ class AlarmService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val routineName = intent?.getStringExtra("routine_name") ?: "Morning Walk"
+        val repo = ShoshinRepository(applicationContext)
 
         // Start foreground with notification
         val launchIntent = Intent(this, MainActivity::class.java).apply {
@@ -51,19 +57,31 @@ class AlarmService : Service() {
 
         startForeground(NOTIF_ID, notification)
 
-        // Play alarm sound
-        val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-        mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            )
-            setDataSource(applicationContext, alarmUri)
-            isLooping = true
-            prepare()
-            start()
+        // Play alarm sound with user settings
+        CoroutineScope(Dispatchers.IO).launch {
+            val tone = repo.alarmTone.first()
+            val intensity = repo.alarmIntensity.first()
+            val volume = intensity / 10f
+
+            val alarmUri = when (tone) {
+                "Forest" -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                "Rising Sun" -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                else -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            }
+
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                setDataSource(applicationContext, alarmUri)
+                setVolume(volume, volume)
+                isLooping = true
+                prepare()
+                start()
+            }
         }
 
         return START_NOT_STICKY

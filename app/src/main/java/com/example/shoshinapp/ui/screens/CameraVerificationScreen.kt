@@ -174,9 +174,12 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
         )
 
         LaunchedEffect(previewView) {
+            Log.d("CameraVerification", "LaunchedEffect triggered with previewView: $previewView")
             val cameraProvider = withContext(Dispatchers.IO) {
                 cameraProviderFuture.get()
             }
+            Log.d("CameraVerification", "CameraProvider obtained")
+            
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView?.surfaceProvider)
             }
@@ -184,7 +187,11 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
 
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            val cameraSelector = if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
+                CameraSelector.DEFAULT_BACK_CAMERA
+            } else {
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            }
 
             try {
                 cameraProvider.unbindAll()
@@ -194,6 +201,7 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
                     preview,
                     imageCapture
                 )
+                Log.d("CameraVerification", "Camera bound to lifecycle: $cameraSelector")
             } catch (e: Exception) {
                 Log.e("CameraPreviewUI", "Use case binding failed", e)
             }

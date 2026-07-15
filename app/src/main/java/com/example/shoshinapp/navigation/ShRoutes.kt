@@ -5,7 +5,7 @@ object ShRoutes {
     const val SPLASH          = "splash"
     const val AUTH            = "auth"
     const val OTP_PHONE       = "otp/phone/{phoneNumber}?code={code}"
-    const val OTP_EMAIL       = "otp/email/{email}?pass={pass}&code={code}"
+    const val OTP_EMAIL       = "otp/email/{email}?pass={pass}&code={code}&name={name}"
     const val ONBOARDING      = "onboarding" // Simplified as it's now internal state
     const val PERMISSIONS     = "permissions"
     const val GOAL_SELECTION  = "goal_selection"
@@ -66,7 +66,8 @@ object ShRoutes {
 
     // Helpers
     fun otpPhone(number: String, code: String? = null)  = "otp/phone/$number" + (if (code != null) "?code=$code" else "")
-    fun otpEmail(email: String, pass: String, code: String? = null) = "otp/email/$email?pass=$pass" + (if (code != null) "&code=$code" else "")
+    fun otpEmail(email: String, pass: String, code: String? = null, name: String = "User") = 
+        "otp/email/$email?pass=$pass" + (if (code != null) "&code=$code" else "") + "&name=${java.net.URLEncoder.encode(name, "UTF-8")}"
     fun onboarding(page: Int = 0) = "onboarding/$page"
     fun routineTemplate(goal: String) = "routine_template/$goal"
     fun cameraVerify(idx: Int, label: String, targets: List<String> = emptyList()) = 

@@ -1,9 +1,12 @@
 package com.example.shoshinapp.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
@@ -21,7 +24,7 @@ enum class AuthInputMode { Phone, Email }
 @Composable
 fun AuthScreen(
     onPhoneContinue: (phoneNumber: String, referralCode: String?) -> Unit,
-    onEmailContinue: (email: String, pass: String, referralCode: String?) -> Unit,
+    onEmailContinue: (name: String, email: String, pass: String, referralCode: String?) -> Unit,
     onGoogleSignIn: () -> Unit,
     onPrivacyClick: () -> Unit,
     onTermsClick: () -> Unit,
@@ -32,10 +35,12 @@ fun AuthScreen(
     var inputMode by remember { mutableStateOf(AuthInputMode.Phone) }
     var phoneInput by remember { mutableStateOf("") }
     var emailInput by remember { mutableStateOf("") }
+    var nameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
     var referralCodeInput by remember { mutableStateOf(initialReferralCode ?: "") }
     
     var emailError by remember { mutableStateOf<String?>(null) }
+    var nameError by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var referralError by remember { mutableStateOf<String?>(null) }
@@ -102,16 +107,24 @@ fun AuthScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
+        // Logo in top-left corner (Three bars)
+        Row(
+            modifier = Modifier.padding(24.dp).align(Alignment.TopStart),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Box(modifier = Modifier.width(8.dp).height(14.dp).background(ShInk.copy(alpha = 0.5f), RoundedCornerShape(2.dp)))
+            Box(modifier = Modifier.width(8.dp).height(22.dp).background(ShMatcha, RoundedCornerShape(2.dp)))
+            Box(modifier = Modifier.width(8.dp).height(32.dp).background(ShVermillion, RoundedCornerShape(2.dp)))
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
                 .systemBarsPadding(),
         ) {
-            // Logo
-            Spacer(Modifier.height(24.dp))
-            ShoshinLogoMark(size = 40.dp)
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(72.dp))
 
             // Headline
             Text(
@@ -185,6 +198,27 @@ fun AuthScreen(
                 AuthInputMode.Email -> {
                     Column {
                         ShoshinTextField(
+                            value       = nameInput,
+                            onValueChange = { 
+                                nameInput = it
+                                nameError = null
+                            },
+                            label       = "Full Name",
+                            placeholder = "e.g. Arjun Kumar",
+                            enabled     = !isGoogleLoading
+                        )
+                        nameError?.let {
+                            Text(
+                                text = it,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                            )
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        ShoshinTextField(
                             value       = emailInput,
                             onValueChange = { 
                                 emailInput = it
@@ -254,7 +288,12 @@ fun AuthScreen(
                         AuthInputMode.Email -> {
                             val isEmailValid = validateEmail(emailInput)
                             val isPassValid = validatePassword(passwordInput)
-                            if (isEmailValid && isPassValid) onEmailContinue(emailInput, passwordInput, code)
+                            val isNameValid = nameInput.isNotBlank()
+                            if (!isNameValid) nameError = "Please enter your name"
+                            
+                            if (isEmailValid && isPassValid && isNameValid) {
+                                onEmailContinue(nameInput, emailInput, passwordInput, code)
+                            }
                         }
                     }
                 },

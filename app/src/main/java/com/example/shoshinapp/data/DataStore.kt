@@ -21,6 +21,8 @@ object PrefsKeys {
     val STREAK_DATE   = stringPreferencesKey("streak_date")
     val ALARM_HOUR    = intPreferencesKey("alarm_hour")
     val ALARM_MINUTE  = intPreferencesKey("alarm_minute")
+    val ALARM_TONE    = stringPreferencesKey("alarm_tone")
+    val ALARM_INTENSITY = intPreferencesKey("alarm_intensity") // 1-10
     val ALARM_SET     = booleanPreferencesKey("alarm_set")
     val ONBOARDING    = booleanPreferencesKey("onboarding_done")
 }
@@ -45,6 +47,12 @@ class ShoshinRepository(private val context: Context) {
 
     val alarmMinute: Flow<Int> = context.dataStore.data
         .map { it[PrefsKeys.ALARM_MINUTE] ?: 30 }
+
+    val alarmTone: Flow<String> = context.dataStore.data
+        .map { it[PrefsKeys.ALARM_TONE] ?: "Standard" }
+
+    val alarmIntensity: Flow<Int> = context.dataStore.data
+        .map { it[PrefsKeys.ALARM_INTENSITY] ?: 7 }
 
     val onboardingDone: Flow<Boolean> = context.dataStore.data
         .map { it[PrefsKeys.ONBOARDING] ?: false }
@@ -71,6 +79,13 @@ class ShoshinRepository(private val context: Context) {
             prefs[PrefsKeys.ALARM_HOUR]   = hour
             prefs[PrefsKeys.ALARM_MINUTE] = minute
             prefs[PrefsKeys.ALARM_SET]    = true
+        }
+    }
+
+    suspend fun saveAlarmSettings(tone: String, intensity: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[PrefsKeys.ALARM_TONE] = tone
+            prefs[PrefsKeys.ALARM_INTENSITY] = intensity
         }
     }
 

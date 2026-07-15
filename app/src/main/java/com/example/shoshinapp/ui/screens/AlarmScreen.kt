@@ -34,6 +34,8 @@ fun AlarmScreen(navController: NavController, template: String = "walk") {
     var minute     by remember { mutableStateOf(30) }
     var windDown   by remember { mutableStateOf(true) }
     var difficulty by remember { mutableStateOf("Standard") }
+    var selectedTone by remember { mutableStateOf("Zen Bell") }
+    var intensity by remember { mutableStateOf(7) }
     val days       = remember { mutableStateListOf(1, 2, 3, 4, 5) }
     val dayLabels  = listOf("S","M","T","W","T","F","S")
 
@@ -81,6 +83,56 @@ fun AlarmScreen(navController: NavController, template: String = "walk") {
 
             Spacer(Modifier.height(14.dp))
 
+            // Alarm Tone
+            ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Kicker("Alarm Tone")
+                    Spacer(Modifier.height(12.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Zen Bell", "Forest", "Rising Sun").forEach { tone ->
+                            val on = selectedTone == tone
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(11.dp))
+                                    .background(if (on) Ink else Paper2)
+                                    .border(1.dp, if (on) Ink else Line, RoundedCornerShape(11.dp))
+                                    .clickable { selectedTone = tone }
+                                    .padding(vertical = 11.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(tone, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = DMSans, color = if (on) Paper else Fog)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            // Intensity
+            ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Kicker("Intensity")
+                        Text("$intensity/10", style = ShLabelStyle, color = Ink, fontWeight = FontWeight.Bold)
+                    }
+                    Slider(
+                        value = intensity.toFloat(),
+                        onValueChange = { intensity = it.toInt() },
+                        valueRange = 1f..10f,
+                        steps = 8,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ShVermillion,
+                            activeTrackColor = ShVermillion,
+                            inactiveTrackColor = Line
+                        )
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
             // Difficulty
             ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -116,6 +168,7 @@ fun AlarmScreen(navController: NavController, template: String = "walk") {
             ShoshinButton(onClick = {
                 scope.launch {
                     repo.saveAlarm(hour, minute)
+                    repo.saveAlarmSettings(selectedTone, intensity)
                     AlarmScheduler.schedule(context, hour, minute, "Morning Practice")
                 }
                 navController.popBackStack()
