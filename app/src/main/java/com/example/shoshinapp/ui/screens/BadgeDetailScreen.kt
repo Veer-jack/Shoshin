@@ -37,7 +37,7 @@ fun BadgeDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
     ) {

@@ -39,7 +39,7 @@ fun RoutineTemplateScreen(goalKey: String, onContinue: (String) -> Unit) {
     val repo    = remember { ShoshinRepository(context) }
     val scope   = rememberCoroutineScope()
 
-    Column(modifier = Modifier.fillMaxSize().background(ShPaper)) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
             Kicker("Step 2 of 2", color = ShVermillion)
             Spacer(Modifier.height(8.dp))

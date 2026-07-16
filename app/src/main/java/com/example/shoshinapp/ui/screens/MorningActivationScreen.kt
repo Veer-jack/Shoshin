@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -73,46 +75,88 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
     }
 
     ShoshinTheme(darkSurface = true) {
-        Box(modifier = Modifier.fillMaxSize().background(ShNight)) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().background(ShNight)) {
+            val isLandscape = maxWidth > maxHeight
+            
             // Enso
-            Box(modifier = Modifier.size(300.dp).align(Alignment.Center)) {
+            Box(modifier = Modifier.size(if (isLandscape) 200.dp else 300.dp).align(Alignment.Center)) {
                 androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                     drawArc(color = ShVermillion.copy(alpha = 0.10f), startAngle = -90f, sweepAngle = 310f, useCenter = false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 9.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
                 }
             }
 
-            Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-                // Clock
-                Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(timeStr, fontSize = 48.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShNightText, letterSpacing = 1.sp)
-                    Text(dateStr.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = ShNightMuted, letterSpacing = 2.sp)
-                }
-
-                // Challenge
-                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Box(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(ShNightText.copy(alpha = 0.06f)).padding(horizontal = 16.dp, vertical = 7.dp).padding(bottom = 16.dp)) {
-                        Text("MIND AWAKE · ${step+1} OF ${problems.size}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = ShNightMuted, letterSpacing = 1.5.sp)
+            if (isLandscape) {
+                Row(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+                    // Left Column: Clock
+                    Column(
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(timeStr, fontSize = 56.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShNightText, letterSpacing = 1.sp)
+                        Text(dateStr.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = ShNightMuted, letterSpacing = 2.sp)
                     }
-                    Kicker("Solve to begin", color = ShVermillion); Spacer(Modifier.height(14.dp))
-                    Text(prob.question, fontSize = 56.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShNightText, letterSpacing = (-0.5).sp)
-                    Spacer(Modifier.height(20.dp))
                     
-                    val targetLen = prob.answer.toString().length
-                    ShoshinOtpBoxes(value = entry, length = targetLen, dark = true, modifier = Modifier.padding(horizontal = 40.dp))
-                    
-                    Spacer(Modifier.height(12.dp))
-                    if (error) Text("Not yet. Breathe, look again.", fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = ShVermillion)
+                    // Right Column: Challenge & Keypad
+                    Column(
+                        modifier = Modifier.weight(1.5f).fillMaxHeight().verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Spacer(Modifier.height(24.dp))
+                        Box(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(ShNightText.copy(alpha = 0.06f)).padding(horizontal = 16.dp, vertical = 7.dp)) {
+                            Text("MIND AWAKE · ${step+1} OF ${problems.size}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = ShNightMuted)
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Text(prob.question, fontSize = 48.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShNightText)
+                        
+                        val targetLen = prob.answer.toString().length
+                        ShoshinOtpBoxes(value = entry, length = targetLen, dark = true, modifier = Modifier.padding(horizontal = 40.dp, vertical = 16.dp))
+                        
+                        ShoshinKeypad(
+                            onDigit = { press(it) },
+                            onClear = { press("del") },
+                            onOk = { press("ok") },
+                            modifier = Modifier.width(360.dp).padding(16.dp)
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
                 }
+            } else {
+                // Portrait (existing)
+                Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+                    // Clock
+                    Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(timeStr, fontSize = 48.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShNightText, letterSpacing = 1.sp)
+                        Text(dateStr.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = ShNightMuted, letterSpacing = 2.sp)
+                    }
 
-                // Keypad
-                ShoshinKeypad(
-                    onDigit = { press(it) },
-                    onClear = { press("del") },
-                    onOk = { press("ok") },
-                    modifier = Modifier.padding(24.dp)
-                )
-                
-                Text("Snooze rests until your mind wakes.", fontSize = 13.sp, color = ShNightMuted, fontFamily = DmSansFamily, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
+                    // Challenge
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                        Box(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(ShNightText.copy(alpha = 0.06f)).padding(horizontal = 16.dp, vertical = 7.dp).padding(bottom = 16.dp)) {
+                            Text("MIND AWAKE · ${step+1} OF ${problems.size}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = ShNightMuted, letterSpacing = 1.5.sp)
+                        }
+                        Kicker("Solve to begin", color = ShVermillion); Spacer(Modifier.height(14.dp))
+                        Text(prob.question, fontSize = 56.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShNightText, letterSpacing = (-0.5).sp)
+                        Spacer(Modifier.height(20.dp))
+                        
+                        val targetLen = prob.answer.toString().length
+                        ShoshinOtpBoxes(value = entry, length = targetLen, dark = true, modifier = Modifier.padding(horizontal = 40.dp))
+                        
+                        Spacer(Modifier.height(12.dp))
+                        if (error) Text("Not yet. Breathe, look again.", fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = ShVermillion)
+                    }
+
+                    // Keypad
+                    ShoshinKeypad(
+                        onDigit = { press(it) },
+                        onClear = { press("del") },
+                        onOk = { press("ok") },
+                        modifier = Modifier.padding(24.dp)
+                    )
+                    
+                    Text("Snooze rests until your mind wakes.", fontSize = 13.sp, color = ShNightMuted, fontFamily = DmSansFamily, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
+                }
             }
         }
     }

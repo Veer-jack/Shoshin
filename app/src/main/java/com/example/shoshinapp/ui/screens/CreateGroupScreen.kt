@@ -35,7 +35,7 @@ fun CreateGroupScreen(navController: NavController, viewModel: GroupViewModel = 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper) // Fixed consistency with other screens
+            .background(MaterialTheme.colorScheme.background) // Fixed consistency with other screens
             .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {

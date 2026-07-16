@@ -47,7 +47,7 @@ fun ShareScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(scrollState)
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {

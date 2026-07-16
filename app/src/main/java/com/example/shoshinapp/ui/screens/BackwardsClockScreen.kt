@@ -34,7 +34,7 @@ fun BackwardsClockScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper)
+            .background(MaterialTheme.colorScheme.background)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

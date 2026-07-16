@@ -41,7 +41,7 @@ fun ShoshinMainShell(
     val currentRoute = currentBackStack?.destination?.route
 
     Scaffold(
-        containerColor = ShPaper,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             ShoshinBottomBar(
                 currentRoute = currentRoute,

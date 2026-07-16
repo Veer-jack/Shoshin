@@ -39,7 +39,7 @@ fun BadgeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 24.dp)
     ) {
         // App Bar

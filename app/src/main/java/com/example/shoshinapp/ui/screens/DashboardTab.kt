@@ -82,7 +82,7 @@ fun DashboardTab(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Offline indicator
         OfflineIndicator(isOffline = !isOffline)

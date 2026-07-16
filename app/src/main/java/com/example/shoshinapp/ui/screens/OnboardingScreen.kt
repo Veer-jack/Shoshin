@@ -37,7 +37,7 @@ fun OnboardingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper)
+            .background(MaterialTheme.colorScheme.background)
             .systemBarsPadding()
     ) {
         // Header with Skip

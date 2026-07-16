@@ -1,5 +1,6 @@
 package com.example.shoshinapp.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
@@ -26,7 +27,25 @@ private val ShLightColorScheme = lightColorScheme(
     scrim            = ShScrim,
 )
 
-// Dark used only for specific screens — not a true dark mode theme
+// Shoshin Dark Color Scheme
+private val ShDarkColorScheme = darkColorScheme(
+    primary          = ShVermillion,
+    onPrimary        = Color.White,
+    primaryContainer = ShVermillion2,
+    secondary        = ShMatcha,
+    onSecondary      = Color.White,
+    background       = Color(0xFF121212), // Deep dark for system dark mode
+    onBackground     = Color(0xFFF2F1EC),
+    surface          = Color(0xFF1E1E1E),
+    onSurface        = Color(0xFFF2F1EC),
+    surfaceVariant   = Color(0xFF2C2C2E),
+    onSurfaceVariant = Color(0xFFA2A2A7),
+    outline          = Color(0xFF3A3A3C),
+    outlineVariant   = Color(0xFF48484A),
+    error            = ShError,
+)
+
+// Dark used only for specific screens (e.g., Morning Activation)
 private val ShNightColorScheme = darkColorScheme(
     primary          = ShVermillion,
     onPrimary        = Color.White,
@@ -42,11 +61,18 @@ private val ShNightColorScheme = darkColorScheme(
 
 @Composable
 fun ShoshinTheme(
-    darkSurface: Boolean = false, // pass true only for night screens
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkSurface: Boolean = false, // pass true only for specific full-dark screens
     content: @Composable () -> Unit,
 ) {
+    val colorScheme = when {
+        darkSurface -> ShNightColorScheme
+        darkTheme -> ShDarkColorScheme
+        else -> ShLightColorScheme
+    }
+
     MaterialTheme(
-        colorScheme = if (darkSurface) ShNightColorScheme else ShLightColorScheme,
+        colorScheme = colorScheme,
         typography  = ShTypography,
         shapes      = ShShapes,
         content     = content,

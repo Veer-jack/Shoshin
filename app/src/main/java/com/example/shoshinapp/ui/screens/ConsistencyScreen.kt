@@ -32,7 +32,7 @@ fun ConsistencyScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
         // Header
@@ -50,7 +50,7 @@ fun ConsistencyScreen(navController: NavController) {
                     fontSize = 32.sp,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = CormorantFamily,
-                    color = ShPaper
+                    color = Color.White
                 )
                 Text(
                     "Keep the momentum going",

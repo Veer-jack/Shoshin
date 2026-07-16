@@ -40,7 +40,7 @@ fun LegalScreen(navController: NavController, assetPath: String, title: String) 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Row(
             modifier = Modifier

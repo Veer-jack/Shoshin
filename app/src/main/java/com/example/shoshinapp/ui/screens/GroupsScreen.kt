@@ -45,7 +45,7 @@ fun GroupsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // ... (Header Box remains same)
         

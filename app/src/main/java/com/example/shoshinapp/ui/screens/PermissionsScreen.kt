@@ -44,7 +44,7 @@ fun PermissionsScreen(onContinue: () -> Unit) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(ShPaper)) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.weight(1f).padding(horizontal = 24.dp, vertical = 32.dp)) {
             // ... (Title/Subtitle)
             Kicker(stringResource(R.string.perms_kicker), color = ShVermillion)
