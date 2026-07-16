@@ -81,43 +81,55 @@ class ShareViewModel(private val context: Context) : ViewModel() {
 
     fun shareToPlatform(platform: String, streak: Int) {
         val bitmap = _shareBitmap.value ?: return
-        val file = cardGenerator.saveBitmapToFile(bitmap, "shoshin_share_${System.currentTimeMillis()}") ?: return
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-
-        val caption = getCaption(platform, streak)
-        
-        val intent = when (platform) {
-            "Instagram" -> createShareIntent("com.instagram.android", uri, caption)
-            "Twitter" -> createShareIntent("com.twitter.android", uri, caption)
-            "Facebook" -> createShareIntent("com.facebook.katana", uri, caption)
-            "WhatsApp" -> createShareIntent("com.whatsapp", uri, caption)
-            "Telegram" -> createShareIntent("org.telegram.messenger", uri, caption)
-            else -> createGenericShareIntent(uri, caption)
-        }
-
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        val filename = "shoshin_share_${System.currentTimeMillis()}"
+        val file = cardGenerator.saveBitmapToFile(bitmap, filename) ?: return
         
         try {
-            val chooser = if (platform == "More" || intent.`package` == null) {
-                Intent.createChooser(intent, "Share with").apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-            } else {
-                intent
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val caption = getCaption(platform, streak)
+            
+            val baseIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_TEXT, caption)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(chooser)
+
+            val targetPackage = when (platform) {
+                "Instagram" -> "com.instagram.android"
+                "Twitter" -> "com.twitter.android"
+                "Facebook" -> "com.facebook.katana"
+                "WhatsApp" -> "com.whatsapp"
+                "Telegram" -> "org.telegram.messenger"
+                else -> null
+            }
+
+            val finalIntent = if (targetPackage != null) {
+                baseIntent.setPackage(targetPackage)
+                baseIntent
+            } else {
+                Intent.createChooser(baseIntent, "Share your practice")
+            }
+
+            finalIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(finalIntent)
             trackShareEvent(platform, streak)
         } catch (e: Exception) {
             Log.e("Share", "Failed to share to $platform", e)
-            // Final fallback to generic chooser without package
+            // Ultimate fallback
             try {
-                val fallback = createGenericShareIntent(uri, caption).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/png"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_TEXT, getCaption("More", streak))
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                context.startActivity(Intent.createChooser(fallback, "Share with").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                val chooser = Intent.createChooser(fallbackIntent, "Share with")
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooser)
             } catch (e2: Exception) {
-                Log.e("Share", "Total failure sharing", e2)
+                Log.e("Share", "Ultimate failure", e2)
             }
         }
     }

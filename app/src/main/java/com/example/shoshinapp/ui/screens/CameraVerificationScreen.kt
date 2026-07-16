@@ -197,6 +197,9 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
             val view = previewView.value ?: return@LaunchedEffect
             android.util.Log.d("CameraVerification", "LaunchedEffect triggered with previewView: $view")
             
+            // Small delay to ensure view is ready
+            delay(500)
+            
             try {
                 val cameraProvider = withContext(Dispatchers.IO) {
                     cameraProviderFuture.get()
@@ -209,7 +212,7 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
                 
                 imageCapture = ImageCapture.Builder()
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                    .setTargetRotation(view.display.rotation) // Sync with display rotation
+                    .setTargetRotation(view.display?.rotation ?: android.view.Surface.ROTATION_0)
                     .build()
 
                 val cameraSelector = if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {

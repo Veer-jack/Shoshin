@@ -21,7 +21,7 @@ class SocialShareManager(private val context: Context, private val database: App
         if (imagePath != null) {
             val file = File(imagePath)
             if (file.exists()) {
-                val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
                 intent.putExtra(Intent.EXTRA_STREAM, uri)
                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }

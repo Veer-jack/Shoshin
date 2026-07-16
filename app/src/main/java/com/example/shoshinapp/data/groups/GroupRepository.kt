@@ -32,14 +32,17 @@ class GroupRepository(
             )
 
             // Save to Firestore
+            android.util.Log.d("GroupRepo", "Saving group to Firestore...")
             db.collection("groups").document(groupId).set(group).await()
             
             // Add creator as member in Firestore
+            android.util.Log.d("GroupRepo", "Adding creator as member in Firestore...")
             db.collection("groups").document(groupId).collection("members").document(userId).set(
                 GroupMember(userId = userId, name = "You")
             ).await()
 
             // Save to Local DB
+            android.util.Log.d("GroupRepo", "Saving group to Local DB...")
             val groupEntity = GroupEntity(
                 groupId = groupId,
                 userId = userId,
@@ -54,6 +57,7 @@ class GroupRepository(
             )
             groupDao.insertGroup(groupEntity)
             
+            android.util.Log.d("GroupRepo", "Saving member to Local DB...")
             memberDao.insertMember(GroupMemberEntity(
                 groupId = groupId,
                 userId = userId,
@@ -63,6 +67,7 @@ class GroupRepository(
 
             Result.success(groupId)
         } catch (e: Exception) {
+            android.util.Log.e("GroupRepo", "Failed to create group", e)
             Result.failure(e)
         }
     }
