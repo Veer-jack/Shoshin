@@ -414,6 +414,7 @@ fun ShoshinButton(
     trailingIcon: @Composable (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     pressedColor: Color? = null,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 24.dp),
     content: @Composable RowScope.() -> Unit
 ) {
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -461,7 +462,7 @@ fun ShoshinButton(
         ),
         border = border,
         elevation = null,
-        contentPadding = PaddingValues(horizontal = 24.dp),
+        contentPadding = contentPadding,
         interactionSource = interactionSource
     ) {
         if (leadingIcon != null) {

@@ -13,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -165,15 +167,23 @@ fun AlarmScreen(navController: NavController, template: String = "walk") {
         }
 
         Column(modifier = Modifier.padding(20.dp)) {
-            ShoshinButton(onClick = {
-                scope.launch {
-                    repo.saveAlarm(hour, minute)
-                    repo.saveAlarmSettings(selectedTone, intensity)
-                    AlarmScheduler.schedule(context, hour, minute, "Morning Practice")
-                }
-                navController.popBackStack()
-            }, variant = ShButtonVariant.Primary) {
-                Text("Arm for tomorrow")
+            val interactionSource = remember { MutableInteractionSource() }
+            
+            ShoshinButton(
+                onClick = {
+                    scope.launch {
+                        repo.saveAlarm(hour, minute)
+                        repo.saveAlarmSettings(selectedTone, intensity)
+                        AlarmScheduler.schedule(context, hour, minute, "Morning Practice")
+                    }
+                    navController.popBackStack()
+                }, 
+                variant = ShButtonVariant.Accent,
+                modifier = Modifier.fillMaxWidth(),
+                interactionSource = interactionSource,
+                pressedColor = Color.Black
+            ) {
+                Text("Arm for tomorrow", color = Color.White)
             }
         }
     }

@@ -463,11 +463,18 @@ fun DashboardTab(
 
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Kicker("The Bridge", color = ShVermillion, modifier = Modifier.weight(1f))
-                Row(modifier = Modifier.weight(2f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.weight(1.5f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(painterResource(R.drawable.ic_walk), null, modifier = Modifier.size(18.dp), tint = ShInk)
                     Text("Morning Walk", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onBackground)
                 }
-                Text("Edit", fontSize = 14.sp, color = ShVermillion, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, modifier = Modifier.clickable { navController.navigate("routine_editor") })
+                ShoshinButton(
+                    onClick = { navController.navigate("routine_editor") },
+                    variant = ShButtonVariant.Ghost,
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    Text("Edit Path", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ShVermillion)
+                }
             }
 
             ShoshinCard(modifier = Modifier.fillMaxWidth()) {

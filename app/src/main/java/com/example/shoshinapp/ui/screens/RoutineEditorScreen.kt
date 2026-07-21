@@ -126,9 +126,10 @@ fun RoutineEditorScreen(navController: NavController) {
         ShoshinButton(
             onClick = { navController.popBackStack() },
             variant = ShButtonVariant.Accent,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            pressedColor = Color.Black
         ) {
-            Text("Save path")
+            Text("Save path", color = Color.White)
         }
 
         Spacer(Modifier.height(48.dp))
