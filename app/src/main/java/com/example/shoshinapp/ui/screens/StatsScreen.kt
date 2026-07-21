@@ -43,9 +43,9 @@ fun StatsScreen(
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
+                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
             }
-            Text("Your stats", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
+            Text("Your stats", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
         }
 
         // 2x2 Grid
@@ -89,9 +89,9 @@ fun StatsScreen(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 ShoshinStat(value = "--:--", label = "Avg wake")
-                Box(modifier = Modifier.width(1.dp).height(30.dp).background(ShLine))
+                Box(modifier = Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.outline))
                 ShoshinStat(value = "--", unit = "min", label = "Avg bridge")
-                Box(modifier = Modifier.width(1.dp).height(30.dp).background(ShLine))
+                Box(modifier = Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.outline))
                 ShoshinStat(value = "--", unit = "%", label = "Photo proof", color = ShMatcha)
             }
         }
@@ -102,7 +102,7 @@ fun StatsScreen(
         Kicker("Time spent by path", modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
         ShoshinCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(22.dp)) {
-                Text("No data yet. Begin your morning practice to see insights.", style = ShBodyStyle, color = ShFog)
+                Text("No data yet. Begin your morning practice to see insights.", style = ShBodyStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -119,10 +119,10 @@ private fun StatCard(
 ) {
     ShoshinCard(modifier = modifier) {
         Column(modifier = Modifier.padding(18.dp)) {
-            Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = ShFog)
+            Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(12.dp))
-            Text(value, fontSize = 26.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShInk)
-            Kicker(label, modifier = Modifier.padding(top = 3.dp), color = ShFog)
+            Text(value, fontSize = 26.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onSurface)
+            Kicker(label, modifier = Modifier.padding(top = 3.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

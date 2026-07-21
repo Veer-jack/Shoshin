@@ -26,7 +26,7 @@ fun MorningCompleteScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ShPaper2) // Design spec uses paper-2 for completion
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -76,7 +76,7 @@ fun MorningCompleteScreen(
             fontSize = 32.sp,
             fontWeight = FontWeight.SemiBold,
             fontFamily = CormorantFamily,
-            color = ShInk,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
         )
 
@@ -85,7 +85,7 @@ fun MorningCompleteScreen(
         Text(
             "Five checkpoints, twenty-two minutes. The hardest part of the day is already behind you.",
             fontSize = 15.sp,
-            color = ShFog,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontFamily = DmSansFamily,
             textAlign = TextAlign.Center,
             modifier = Modifier.width(290.dp)
@@ -101,9 +101,9 @@ fun MorningCompleteScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SummaryStat(value = "05:30", label = "Started")
-                Box(Modifier.width(1.dp).height(30.dp).background(ShLine))
+                Box(Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.outline))
                 SummaryStat(value = "22", unit = "min", label = "Bridge")
-                Box(Modifier.width(1.dp).height(30.dp).background(ShLine))
+                Box(Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.outline))
                 SummaryStat(value = "5/5", label = "Kept", color = ShMatcha)
             }
         }
@@ -122,7 +122,7 @@ fun MorningCompleteScreen(
                 "15 mornings kept",
                 style = ShLabelStyle,
                 fontWeight = FontWeight.Bold,
-                color = ShInk
+                color = MaterialTheme.colorScheme.onBackground
             )
             ShoshinPill(label = "+1", variant = ShPillVariant.Matcha)
         }
@@ -131,7 +131,8 @@ fun MorningCompleteScreen(
 
         ShoshinButton(
             onClick = onShare,
-            variant = ShButtonVariant.Accent
+            variant = ShButtonVariant.Accent,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Icon(painterResource(R.drawable.ic_share), contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(10.dp))
@@ -142,7 +143,8 @@ fun MorningCompleteScreen(
 
         ShoshinButton(
             onClick = onClose,
-            variant = ShButtonVariant.Primary
+            variant = ShButtonVariant.Primary,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Carry it into the day")
         }
@@ -152,7 +154,7 @@ fun MorningCompleteScreen(
         Text(
             "Return again tomorrow.",
             style = ShLabelStyle,
-            color = ShFog2,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
         )
 
@@ -162,13 +164,15 @@ fun MorningCompleteScreen(
 
 @Composable
 private fun SummaryStat(value: String, unit: String? = null, label: String, color: Color = ShInk) {
+    val finalColor = if (color == ShInk) MaterialTheme.colorScheme.onSurface else color
+    
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, style = ShNumeralStyle.copy(fontSize = 24.sp, color = color))
+            Text(value, style = ShNumeralStyle.copy(fontSize = 24.sp, color = finalColor))
             if (unit != null) {
-                Text(unit, style = ShNumeralStyle.copy(fontSize = 12.sp, color = ShFog), modifier = Modifier.padding(bottom = 3.dp, start = 2.dp))
+                Text(unit, style = ShNumeralStyle.copy(fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant), modifier = Modifier.padding(bottom = 3.dp, start = 2.dp))
             }
         }
-        Text(label.uppercase(), style = ShKickerStyle.copy(fontSize = 9.sp, letterSpacing = 1.sp))
+        Text(label.uppercase(), style = ShKickerStyle.copy(fontSize = 9.sp, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
     }
 }

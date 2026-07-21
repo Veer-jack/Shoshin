@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shoshinapp.R
 import com.example.shoshinapp.navigation.ShRoutes
@@ -48,10 +49,10 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
+                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
             }
             Spacer(Modifier.width(16.dp))
-            Text("Settings", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Settings", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
         }
 
         user?.let { u ->
@@ -126,6 +127,46 @@ fun SettingsScreen(
                         },
                         title = "End Time"
                     )
+                }
+            }
+
+            // Appearance
+            val themeViewModel: ThemeViewModel = viewModel()
+            val themeMode by themeViewModel.mode.collectAsState()
+
+            SettingsSection(title = "Appearance") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Theme", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
+                        Text(themeMode.name.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    
+                    var expanded by remember { mutableStateOf(false) }
+                    Box {
+                        TextButton(onClick = { expanded = true }) {
+                            Text("Change", color = ShVermillion)
+                        }
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            ShThemeMode.entries.forEach { mode ->
+                                DropdownMenuItem(
+                                    text = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }, color = MaterialTheme.colorScheme.onSurface) },
+                                    onClick = {
+                                        themeViewModel.setMode(mode)
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -240,8 +281,8 @@ fun SettingsRow(
     title: String,
     subtitle: String? = null,
     iconRes: Int,
-    iconColor: Color = ShInk,
-    titleColor: Color = ShInk,
+    iconColor: Color = MaterialTheme.colorScheme.onBackground,
+    titleColor: Color = MaterialTheme.colorScheme.onBackground,
     onClick: (() -> Unit)? = null
 ) {
     Row(
@@ -279,10 +320,10 @@ fun SettingsSwitchRow(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(painterResource(iconRes), contentDescription = null, tint = ShInk, modifier = Modifier.size(22.dp))
+        Icon(painterResource(iconRes), contentDescription = null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = ShInk, fontWeight = FontWeight.Medium)
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Medium)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = ShFog)
         }
         Switch(

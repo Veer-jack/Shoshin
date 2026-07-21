@@ -47,11 +47,36 @@ fun GroupsScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // ... (Header Box remains same)
+        // Header
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(ShInk)
+                .padding(horizontal = 24.dp, vertical = 32.dp)
+        ) {
+            Column {
+                Kicker("Community", color = ShVermillion)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Your Circles",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = CormorantFamily,
+                    color = Color.White
+                )
+                Text(
+                    "Rise together, stay accountable.",
+                    fontSize = 15.sp,
+                    color = ShFog,
+                    fontFamily = DmSansFamily,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
         
         // LIMIT DISPLAY (Feature 4.4)
         Surface(
-            color = ShInk,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
@@ -62,11 +87,11 @@ fun GroupsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("MY GROUPS", style = ShKickerStyle, color = ShPaper.copy(alpha = 0.6f))
+                    Text("MY GROUPS", style = ShKickerStyle, color = MaterialTheme.colorScheme.background.copy(alpha = 0.6f))
                     Text(
                         "Joined: $joinedCount of $maxJoin",
                         style = ShBodyStyle,
-                        color = ShPaper,
+                        color = MaterialTheme.colorScheme.background,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -105,15 +130,16 @@ fun GroupsScreen(
             Spacer(Modifier.height(24.dp))
 
             if (groups.isEmpty()) {
-                EmptyState(
-                    title = "Solitude is peace, but a circle is power",
-                    description = "Join or create a circle to rise with others and keep each other accountable.",
-                    iconRes = R.drawable.ic_groups,
+                EdgeLayout(
+                    icon = R.drawable.ic_groups,
+                    kicker = "Solitude is peace, but a circle is power",
+                    title = "Find your circle",
+                    body = "Join or create a circle to rise with others and keep each other accountable.",
                     actionLabel = "Create a Circle",
                     onAction = { navController.navigate(ShRoutes.CREATE_GROUP) }
                 )
             } else {
-                Text("YOUR CIRCLES", style = ShKickerStyle, color = ShFog, modifier = Modifier.padding(bottom = 16.dp))
+                Text("YOUR CIRCLES", style = ShKickerStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 16.dp))
                 
                 groups.forEach { group ->
                     GroupCard(
@@ -129,58 +155,24 @@ fun GroupsScreen(
 
                 // Action Buttons
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    // Create Button
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp)
-                            .clickable { navController.navigate(ShRoutes.CREATE_GROUP) },
-                        color = Color.Transparent,
-                        shape = RoundedCornerShape(14.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.5.dp, ShLine2)
+                    ShoshinButton(
+                        onClick = { navController.navigate(ShRoutes.CREATE_GROUP) },
+                        variant = ShButtonVariant.Ghost,
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_plus),
-                                contentDescription = null,
-                                tint = ShInk,
-                                modifier = Modifier.size(19.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Create", fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = ShInk)
-                        }
+                        Icon(painterResource(id = R.drawable.ic_plus), null, modifier = Modifier.size(19.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Create")
                     }
 
-                    // Join Button
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp)
-                            .clickable { 
-                                // Show join dialog or navigate to join
-                                // For now, maybe just a placeholder
-                            },
-                        color = ShInk,
-                        shape = RoundedCornerShape(14.dp)
+                    ShoshinButton(
+                        onClick = { /* Join code logic */ },
+                        variant = ShButtonVariant.Primary,
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_groups),
-                                contentDescription = null,
-                                tint = ShPaper,
-                                modifier = Modifier.size(19.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Join with code", fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = ShPaper)
-                        }
+                        Icon(painterResource(id = R.drawable.ic_groups), null, modifier = Modifier.size(19.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Join")
                     }
                 }
             }

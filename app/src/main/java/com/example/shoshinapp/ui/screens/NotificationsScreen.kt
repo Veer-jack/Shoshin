@@ -4,14 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,9 +51,9 @@ fun NotificationsScreen(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                 }
-                Text("Notifications", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
+                Text("Notifications", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
             }
             TextButton(onClick = { scope.launch { database.notificationDao().clearAll(userId) } }) {
                 Text("Clear all", color = ShVermillion, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp)
@@ -63,15 +61,18 @@ fun NotificationsScreen(
         }
 
         if (notifications.isEmpty()) {
-            Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Text("All caught up", style = ShLabelStyle, color = ShFog)
-            }
+            EdgeLayout(
+                icon = R.drawable.ic_bell,
+                kicker = "All caught up",
+                title = "Nothing new",
+                body = "We'll let you know when your circle rises or a badge is earned."
+            )
         } else {
             ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
                     notifications.forEachIndexed { i, item ->
                         NotificationRow(item)
-                        if (i < notifications.lastIndex) HorizontalDivider(color = ShLine)
+                        if (i < notifications.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                     }
                 }
             }
@@ -94,13 +95,13 @@ private fun NotificationRow(item: NotificationEntity) {
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(if (!item.isRead) ShVermillion.copy(alpha = 0.08f) else ShPaper2),
+                .background(if (!item.isRead) ShVermillion.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 painter = painterResource(item.iconRes),
                 contentDescription = null,
-                tint = if (!item.isRead) ShVermillion else ShInk,
+                tint = if (!item.isRead) ShVermillion else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -111,7 +112,7 @@ private fun NotificationRow(item: NotificationEntity) {
                     text = item.title,
                     fontSize = 15.sp,
                     fontWeight = if (!item.isRead) FontWeight.SemiBold else FontWeight.Medium,
-                    color = ShInk
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (!item.isRead) {
                     Box(modifier = Modifier.size(6.dp).background(ShVermillion, CircleShape))
@@ -121,7 +122,7 @@ private fun NotificationRow(item: NotificationEntity) {
             Text(
                 text = item.body,
                 fontSize = 14.sp,
-                color = ShFog,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 18.sp
             )
             Spacer(Modifier.height(4.dp))
@@ -129,7 +130,7 @@ private fun NotificationRow(item: NotificationEntity) {
             Text(
                 text = dateStr,
                 fontSize = 11.5.sp,
-                color = ShFog2
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
     }

@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
 
         // ... (Initializations)
         val firebaseAuth = FirebaseAuth.getInstance()
-        firebaseAuth.firebaseAuthSettings.forceRecaptchaFlowForTesting(true)
+        // firebaseAuth.firebaseAuthSettings.forceRecaptchaFlowForTesting(true)
         val firestore = FirebaseFirestore.getInstance()
         val database = AppDatabase.getInstance(applicationContext)
 

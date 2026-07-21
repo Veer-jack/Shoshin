@@ -11,16 +11,18 @@ firebaseAuth = "23.2.1"
 firebaseFirestore = "25.1.4"
 firebaseStorage = "21.0.2"
 firebaseAppCheck = "18.0.0"
-firebaseAnalytics = "22.0.2"
-playServicesAuth = "21.3.0"
-playServicesLocation = "21.2.0"
+firebaseAnalytics = "22.5.0"
+firebaseMessaging = "24.1.2"
+firebaseBom = "34.16.0"
+playServicesAuth = "21.6.0"
+playServicesLocation = "21.4.0"
 coroutinesPlayServices = "1.7.3"
 room = "2.6.1"
 work = "2.8.1"
 gson = "2.10.1"
-kotlin = "2.1.0"
+kotlin = "2.1.0-RC2"
 googleServices = "4.4.2"
-ksp = "2.1.0-1.0.29"
+ksp = "2.1.0-RC2-1.0.28"
 composeBom = "2024.02.01"
 datastore = "1.1.1"
 coil = "2.6.0"
@@ -32,6 +34,7 @@ guava = "33.0.0-android"
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+google-mlkit-image-labeling = { group = "com.google.mlkit", name = "image-labeling", version = "17.0.9" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -50,6 +53,8 @@ firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx", ver
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestore" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorage" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx", version.ref = "firebaseAnalytics" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx", version.ref = "firebaseMessaging" }
 firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity", version.ref = "firebaseAppCheck" }
 firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug", version.ref = "firebaseAppCheck" }
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }

@@ -11,7 +11,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.Color
 import com.example.shoshinapp.ui.components.ShoshinButton
+import com.example.shoshinapp.ui.components.ShButtonVariant
 import com.example.shoshinapp.ui.components.ShoshinTextField
 import com.example.shoshinapp.ui.theme.*
 import com.example.shoshinapp.viewmodel.GroupViewModel
@@ -64,13 +68,22 @@ fun CreateGroupScreen(navController: NavController, viewModel: GroupViewModel = 
             Spacer(modifier = Modifier.height(16.dp))
         }
 
+        val interactionSource = remember { MutableInteractionSource() }
+
         ShoshinButton(
             onClick = {
                 viewModel.createGroup(name, description)
             },
-            enabled = name.isNotEmpty() && !isLoading
+            variant = ShButtonVariant.Accent,
+            enabled = name.isNotEmpty() && !isLoading,
+            modifier = Modifier.fillMaxWidth(),
+            interactionSource = interactionSource,
+            pressedColor = Color.Black
         ) {
-            Text(if (isLoading) "Creating..." else "Create")
+            Text(
+                text = if (isLoading) "Creating..." else "Create",
+                color = Color.White
+            )
         }
     }
 }

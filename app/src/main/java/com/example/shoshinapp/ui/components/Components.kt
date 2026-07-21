@@ -1,8 +1,11 @@
 package com.example.shoshinapp.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,7 +33,7 @@ fun ShoshinKeypad(
     modifier: Modifier = Modifier,
     dark: Boolean = true
 ) {
-    val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "ok")
+    val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "0", "del")
     Column(modifier = modifier) {
         keys.chunked(3).forEach { row ->
             Row(
@@ -39,7 +43,7 @@ fun ShoshinKeypad(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 row.forEach { k ->
-                    val isOk = k == "ok"
+                    val isSpecial = k == "del" || k == "+"
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -47,24 +51,24 @@ fun ShoshinKeypad(
                             .clip(RoundedCornerShape(14.dp))
                             .background(
                                 when {
-                                    isOk -> ShVermillion
+                                    k == "del" -> ShVermillion
                                     dark -> ShNightText.copy(alpha = 0.05f)
-                                    else -> ShPaper2
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
                                 }
                             )
                             .border(
                                 width = 1.dp,
                                 color = when {
-                                    isOk -> ShVermillion
+                                    k == "del" -> ShVermillion
                                     dark -> ShNightText.copy(alpha = 0.08f)
-                                    else -> ShLine
+                                    else -> MaterialTheme.colorScheme.outline
                                 },
                                 shape = RoundedCornerShape(14.dp)
                             )
                             .clickable {
                                 when (k) {
                                     "del" -> onClear()
-                                    "ok" -> onOk()
+                                    "+" -> onDigit("+")
                                     else -> onDigit(k)
                                 }
                             },
@@ -74,21 +78,22 @@ fun ShoshinKeypad(
                             "del" -> Icon(
                                 painter = painterResource(id = R.drawable.ic_backspace),
                                 contentDescription = "Delete",
-                                tint = if (dark) ShNightText else ShInk,
+                                tint = ShPaper,
                                 modifier = Modifier.size(22.dp)
                             )
-                            "ok" -> Icon(
-                                painter = painterResource(id = R.drawable.ic_check),
-                                contentDescription = "OK",
-                                tint = ShPaper,
-                                modifier = Modifier.size(24.dp)
+                            "+" -> Text(
+                                text = "+",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = DmSansFamily,
+                                color = if (dark) ShNightText else MaterialTheme.colorScheme.onSurface
                             )
                             else -> Text(
                                 text = k,
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = DmSansFamily,
-                                color = if (dark) ShNightText else ShInk
+                                color = if (dark) ShNightText else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -111,7 +116,7 @@ fun ShoshinCard(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        border   = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border   = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(content = content)
@@ -148,17 +153,17 @@ fun CheckpointRow(
 ) {
     val nodeColor = when (state) {
         CheckpointState.DONE   -> ShMatcha
-        CheckpointState.ACTIVE -> ShInk
+        CheckpointState.ACTIVE -> MaterialTheme.colorScheme.onBackground
         CheckpointState.PENDING -> Color.Transparent
     }
     val nodeBorder = when (state) {
         CheckpointState.DONE   -> ShMatcha
-        CheckpointState.ACTIVE -> ShInk
-        CheckpointState.PENDING -> ShLine2
+        CheckpointState.ACTIVE -> MaterialTheme.colorScheme.onBackground
+        CheckpointState.PENDING -> MaterialTheme.colorScheme.outline
     }
     val labelColor = when (state) {
-        CheckpointState.DONE, CheckpointState.PENDING -> ShFog
-        CheckpointState.ACTIVE -> ShInk
+        CheckpointState.DONE, CheckpointState.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
+        CheckpointState.ACTIVE -> MaterialTheme.colorScheme.onBackground
     }
 
     Row(
@@ -179,9 +184,9 @@ fun CheckpointRow(
                 text = if (state == CheckpointState.DONE) "✓" else number.toString(),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (state == CheckpointState.DONE) ShPaper
-                        else if (state == CheckpointState.ACTIVE) ShInk
-                        else ShFog
+                color = if (state == CheckpointState.DONE) Color.White
+                        else if (state == CheckpointState.ACTIVE) MaterialTheme.colorScheme.background
+                        else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Spacer(Modifier.width(14.dp))
@@ -197,7 +202,7 @@ fun CheckpointRow(
             Text(
                 text = it,
                 fontSize = 12.sp,
-                color = ShFog2,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 fontFamily = DmSansFamily
             )
         }
@@ -228,30 +233,30 @@ fun SettingsRow(
                 fontSize = 15.5.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = DmSansFamily,
-                color = if (danger) ShVermillion else ShInk
+                color = if (danger) ShVermillion else MaterialTheme.colorScheme.onSurface
             )
             subtitle?.let {
                 Text(
                     text = it,
                     fontSize = 12.5.sp,
-                    color = ShFog,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontFamily = DmSansFamily,
                     modifier = Modifier.padding(top = 1.dp)
                 )
             }
         }
         value?.let {
-            Text(text = it, fontSize = 14.sp, color = ShFog, fontFamily = DmSansFamily)
+            Text(text = it, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = DmSansFamily)
             Spacer(Modifier.width(4.dp))
         }
         toggle?.let {
             ShoshinToggle(checked = it, onCheckedChange = { v -> onToggle?.invoke(v) })
         }
         if (onClick != null && toggle == null) {
-            Text(text = "›", fontSize = 18.sp, color = ShFog2)
+            Text(text = "›", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
         }
     }
-    HorizontalDivider(color = ShLine, thickness = 1.dp)
+    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 1.dp)
 }
 
 // ── Ring Progress ─────────────────────────────────────────────
@@ -266,6 +271,9 @@ fun RingProgress(
     trackColor: Color = ShSand,
     dark: Boolean = false
 ) {
+    val finalColor = if (color == ShInk) MaterialTheme.colorScheme.onBackground else color
+    val finalTrackColor = if (trackColor == ShSand) MaterialTheme.colorScheme.surfaceVariant else trackColor
+    
     Box(
         modifier = Modifier.size(size.dp),
         contentAlignment = Alignment.Center
@@ -273,7 +281,7 @@ fun RingProgress(
         androidx.compose.foundation.Canvas(modifier = Modifier.size(size.dp)) {
             val sweepAngle = (percentage / 100f) * 360f
             drawArc(
-                color = trackColor,
+                color = finalTrackColor,
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -283,7 +291,7 @@ fun RingProgress(
                 )
             )
             drawArc(
-                color = color,
+                color = finalColor,
                 startAngle = -90f,
                 sweepAngle = sweepAngle,
                 useCenter = false,
@@ -299,7 +307,7 @@ fun RingProgress(
                 fontSize = (size * 0.26).sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = DmSansFamily,
-                color = if (dark) ShNightText else ShInk
+                color = if (dark) ShNightText else MaterialTheme.colorScheme.onBackground
             )
             label?.let {
                 Text(
@@ -307,7 +315,7 @@ fun RingProgress(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 1.5.sp,
-                    color = ShFog,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontFamily = DmSansFamily
                 )
             }
@@ -331,8 +339,15 @@ fun StreakGrid(
                 row.forEach { i ->
                     val isDone    = i < done
                     val isToday   = i == todayIdx
-                    val bg        = when { isDone -> ShInk; else -> if (dark) ShNight3 else ShSurface }
-                    val borderClr = when { isToday -> ShVermillion; isDone -> ShInk; else -> ShLine }
+                    val bg        = when { 
+                        isDone -> MaterialTheme.colorScheme.onBackground
+                        else -> if (dark) ShNight3 else MaterialTheme.colorScheme.surface 
+                    }
+                    val borderClr = when { 
+                        isToday -> ShVermillion
+                        isDone -> MaterialTheme.colorScheme.onBackground
+                        else -> MaterialTheme.colorScheme.outline 
+                    }
                     val borderW   = if (isToday) 2.dp else 1.dp
                     Box(
                         modifier = Modifier
@@ -347,7 +362,11 @@ fun StreakGrid(
                             text = if (isDone) "✓" else (i + 1).toString(),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = when { isDone -> ShPaper; isToday -> ShVermillion; else -> ShFog }
+                            color = when { 
+                                isDone -> MaterialTheme.colorScheme.background
+                                isToday -> ShVermillion
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant 
+                            }
                         )
                     }
                 }
@@ -382,6 +401,149 @@ fun Enso(
     }
 }
 
+// ── ShoshinButton ─────────────────────────────────────────────
+enum class ShButtonVariant { Primary, Accent, Ghost, Matcha, Dark }
+
+@Composable
+fun ShoshinButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    variant: ShButtonVariant = ShButtonVariant.Primary,
+    enabled: Boolean = true,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    pressedColor: Color? = null,
+    content: @Composable RowScope.() -> Unit
+) {
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.985f else 1f,
+        animationSpec = androidx.compose.animation.core.tween(120),
+        label = "button_scale",
+    )
+
+    val defaultContainerColor = when (variant) {
+        ShButtonVariant.Primary -> MaterialTheme.colorScheme.onBackground
+        ShButtonVariant.Accent -> ShVermillion
+        ShButtonVariant.Ghost -> Color.White
+        ShButtonVariant.Dark -> MaterialTheme.colorScheme.surfaceVariant
+        ShButtonVariant.Matcha -> ShMatcha
+    }
+    
+    val containerColor = if (isPressed && pressedColor != null) pressedColor else defaultContainerColor
+
+    val contentColor = when (variant) {
+        ShButtonVariant.Primary -> MaterialTheme.colorScheme.background
+        ShButtonVariant.Accent -> Color.White
+        ShButtonVariant.Ghost -> MaterialTheme.colorScheme.onBackground
+        ShButtonVariant.Dark -> MaterialTheme.colorScheme.onSurface
+        ShButtonVariant.Matcha -> Color.White
+    }
+    val border = if (variant == ShButtonVariant.Ghost) {
+        androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
+    } else if (variant == ShButtonVariant.Dark) {
+        androidx.compose.foundation.BorderStroke(1.dp, ShNightBorder)
+    } else null
+
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .height(56.dp)
+            .scale(scale),
+        enabled = enabled,
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+            disabledContainerColor = containerColor.copy(alpha = 0.5f),
+            disabledContentColor = contentColor.copy(alpha = 0.5f)
+        ),
+        border = border,
+        elevation = null,
+        contentPadding = PaddingValues(horizontal = 24.dp),
+        interactionSource = interactionSource
+    ) {
+        if (leadingIcon != null) {
+            leadingIcon()
+            Spacer(Modifier.width(8.dp))
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            content = content
+        )
+        if (trailingIcon != null) {
+            Spacer(Modifier.width(8.dp))
+            trailingIcon()
+        }
+    }
+}
+
+// ── EdgeLayout (Empty / Offline / Error) ──────────────────────
+@Composable
+fun EdgeLayout(
+    icon: Int,
+    kicker: String,
+    title: String,
+    body: String,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Motif background
+        Box(
+            modifier = Modifier.size(200.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Enso(size = 200, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        Spacer(Modifier.height(32.dp))
+        
+        Kicker(kicker, color = ShVermillion)
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = title,
+            style = ShTitleStyle.copy(fontSize = 28.sp),
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = body,
+            style = ShBodyStyle,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+        
+        if (actionLabel != null && onAction != null) {
+            Spacer(Modifier.height(40.dp))
+            ShoshinButton(
+                onClick = onAction,
+                variant = ShButtonVariant.Primary,
+                modifier = Modifier.widthIn(min = 200.dp)
+            ) {
+                Text(actionLabel)
+            }
+        }
+    }
+}
+
 // ── Shoshin Stat ──────────────────────────────────────────────
 @Composable
 fun ShoshinStat(
@@ -392,6 +554,8 @@ fun ShoshinStat(
     align: Alignment.Horizontal = Alignment.CenterHorizontally,
     modifier: Modifier = Modifier
 ) {
+    val finalColor = if (color == ShInk) MaterialTheme.colorScheme.onSurface else color
+    
     Column(horizontalAlignment = align, modifier = modifier) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
@@ -399,7 +563,7 @@ fun ShoshinStat(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = DmSansFamily,
-                color = color,
+                color = finalColor,
                 lineHeight = 24.sp
             )
             unit?.let {
@@ -409,7 +573,7 @@ fun ShoshinStat(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = DmSansFamily,
-                    color = color.copy(alpha = 0.6f),
+                    color = finalColor.copy(alpha = 0.6f),
                     modifier = Modifier.padding(bottom = 3.dp)
                 )
             }
@@ -421,8 +585,7 @@ fun ShoshinStat(
             fontWeight = FontWeight.Bold,
             fontFamily = DmSansFamily,
             letterSpacing = 1.sp,
-            color = ShFog
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
-

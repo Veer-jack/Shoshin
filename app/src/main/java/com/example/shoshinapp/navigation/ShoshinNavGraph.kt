@@ -135,14 +135,8 @@ fun ShoshinNavGraph(
                 }
             }
         } else if (!hasCompletedOnboarding) {
-            if (navController.currentDestination?.route != ShRoutes.ONBOARDING &&
-                navController.currentDestination?.route != ShRoutes.PERMISSIONS &&
-                navController.currentDestination?.route != ShRoutes.GOAL_SELECTION &&
-                navController.currentDestination?.route != ShRoutes.ROUTINE_TEMPLATE) {
-                navController.navigate(ShRoutes.ONBOARDING) {
-                    popUpTo(0) { inclusive = true }
-                }
-            }
+            // During onboarding, we stay on the current onboarding sub-step (Onboarding, Permissions, Goal, etc.)
+            // We don't force-reset to ShRoutes.ONBOARDING if we're already in that flow.
         } else {
             // Logged in and onboarding done
             if (navController.currentDestination?.route == ShRoutes.SPLASH ||
@@ -409,8 +403,8 @@ fun ShoshinNavGraph(
             
             val shareViewModel = viewModel<ShareViewModel>(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return ShareViewModel(context) as T
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return ShareViewModel(context.applicationContext as android.app.Application) as T
                 }
             })
             
@@ -533,7 +527,44 @@ fun ShoshinNavGraph(
             enterTransition  = { slideInHorizontally(tween(320)) { it } },
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) {
-            EditorScreen(navController = navController, database = database)
+            RoutineEditorScreen(navController = navController)
+        }
+
+        // ── Sound Picker ──────────────────────────────────────
+        composable(
+            route = ShRoutes.SOUND_PICKER,
+            enterTransition  = { slideInHorizontally(tween(320)) { it } },
+            exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
+        ) {
+            SoundPickerScreen(navController = navController)
+        }
+
+        // ── History ──────────────────────────────────────────
+        composable(
+            route = ShRoutes.HISTORY,
+            enterTransition  = { slideInHorizontally(tween(320)) { it } },
+            exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
+        ) {
+            HistoryScreen(navController = navController)
+        }
+
+        // ── Paywall ──────────────────────────────────────────
+        composable(
+            route = ShRoutes.PAYWALL,
+            enterTransition  = { slideInVertically(tween(400)) { it } },
+            exitTransition   = { slideOutVertically(tween(300)) { it } },
+        ) {
+            PaywallScreen(navController = navController)
+        }
+
+        // ── Broken Streak ─────────────────────────────────────
+        composable(ShRoutes.BROKEN_STREAK) {
+            BrokenStreakScreen(navController = navController)
+        }
+
+        // ── Returning User ────────────────────────────────────
+        composable(ShRoutes.RETURNING_USER) {
+            ReturningUserScreen(navController = navController)
         }
 
         // ── Create Group ─────────────────────────────────────

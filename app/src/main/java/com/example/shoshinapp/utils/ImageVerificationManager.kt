@@ -26,17 +26,24 @@ object ImageVerificationManager {
             val detected = labels.map { it.text.lowercase() }
             val targets = targetLabels.map { it.lowercase() }
             
+            android.util.Log.d("ImageVerification", "Detected: $detected")
+            android.util.Log.d("ImageVerification", "Targets: $targets")
+            
             // Check if any target label or similar concept matches
             val match = targets.any { target -> 
                 detected.any { it.contains(target) || target.contains(it) }
             }
 
             if (match) {
-                VerificationResult.Success(detected.firstOrNull { d -> targets.any { t -> d.contains(t) } } ?: "Match")
+                val matchedLabel = detected.firstOrNull { d -> targets.any { t -> d.contains(t) } } ?: "Match"
+                android.util.Log.d("ImageVerification", "Match found: $matchedLabel")
+                VerificationResult.Success(matchedLabel)
             } else {
+                android.util.Log.d("ImageVerification", "No match found")
                 VerificationResult.Failure("Could not clearly identify ${targets.joinToString("/")}. Detected: ${detected.take(3).joinToString(", ")}")
             }
         } catch (e: Exception) {
+            android.util.Log.e("ImageVerification", "Error during verification", e)
             VerificationResult.Error(e.message ?: "Verification failed")
         }
     }

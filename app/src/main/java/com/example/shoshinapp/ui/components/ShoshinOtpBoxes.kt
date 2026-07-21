@@ -39,7 +39,7 @@ fun ShoshinOtpBoxes(
             Box(
                 modifier = Modifier
                     .padding(horizontal = 4.dp) // Consistent small gap
-                    .size(width = 54.dp, height = 64.dp) // Slightly larger and taller for clarity
+                    .size(width = 50.dp, height = 50.dp) // Uniform square size
                     .background(
                         color = if (dark) ShNight3 else ShPaper2,
                         shape = RoundedCornerShape(12.dp),

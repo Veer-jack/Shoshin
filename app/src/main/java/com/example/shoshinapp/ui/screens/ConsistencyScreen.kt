@@ -35,7 +35,7 @@ fun ConsistencyScreen(navController: NavController) {
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header
+        // Header (Uses sh_ink which stays dark as per design intent for this specific header)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -64,10 +64,11 @@ fun ConsistencyScreen(navController: NavController) {
 
         Column(modifier = Modifier.padding(24.dp)) {
             if (streak == 0 && dailyData.all { it == 0 }) {
-                EmptyState(
-                    title = "Day One is the hardest",
-                    description = "Your consistency heatmap will appear here once you complete your first morning practice.",
-                    iconRes = R.drawable.ic_pulse,
+                EdgeLayout(
+                    icon = R.drawable.ic_pulse,
+                    kicker = "Day One is the hardest",
+                    title = "A beginning",
+                    body = "Your consistency heatmap will appear here once you complete your first morning practice.",
                     actionLabel = "Begin Morning Practice",
                     onAction = { navController.navigate("morning/activation") }
                 )
@@ -78,7 +79,7 @@ fun ConsistencyScreen(navController: NavController) {
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("CURRENT STREAK", style = ShKickerStyle, color = ShFog)
+                        Text("CURRENT STREAK", style = ShKickerStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
@@ -93,14 +94,14 @@ fun ConsistencyScreen(navController: NavController) {
                             Text(
                                 "days", 
                                 fontSize = 18.sp, 
-                                color = ShFog, 
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, 
                                 fontFamily = DmSansFamily,
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
-                        HorizontalDivider(color = ShLine, thickness = 1.dp)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 1.dp)
                         Spacer(modifier = Modifier.height(24.dp))
                         
                         Row(
@@ -116,7 +117,7 @@ fun ConsistencyScreen(navController: NavController) {
 
                 // Milestones
                 Spacer(modifier = Modifier.height(32.dp))
-                Kicker("Milestones", color = ShInk)
+                Kicker("Milestones", color = MaterialTheme.colorScheme.onBackground)
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
@@ -124,13 +125,13 @@ fun ConsistencyScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     MilestoneBox("7 DAY", "Achieved", ShMatcha, Modifier.weight(1f))
-                    MilestoneBox("21 DAY", "In Progress", ShSand, Modifier.weight(1f))
-                    MilestoneBox("71 DAY", "Locked", ShPaper2, Modifier.weight(1f))
+                    MilestoneBox("21 DAY", "In Progress", MaterialTheme.colorScheme.surfaceVariant, Modifier.weight(1f))
+                    MilestoneBox("71 DAY", "Locked", MaterialTheme.colorScheme.surfaceVariant, Modifier.weight(1f))
                 }
 
                 // Calendar heatmap
                 Spacer(modifier = Modifier.height(32.dp))
-                Kicker("Last 30 Days", color = ShInk)
+                Kicker("Last 30 Days", color = MaterialTheme.colorScheme.onBackground)
 
                 Spacer(modifier = Modifier.height(16.dp))
                 ShoshinCard(modifier = Modifier.fillMaxWidth()) {
@@ -145,7 +146,7 @@ fun ConsistencyScreen(navController: NavController) {
                                 repeat(5) { day ->
                                     val index = week * 5 + day
                                     if (index < dailyData.size) {
-                                        val color = if (dailyData[index] == 1) ShMatcha else ShPaper2
+                                        val color = if (dailyData[index] == 1) ShMatcha else MaterialTheme.colorScheme.surfaceVariant
                                         Box(
                                             modifier = Modifier
                                                 .weight(1f)
@@ -168,9 +169,9 @@ fun ConsistencyScreen(navController: NavController) {
 @Composable
 fun StatBox(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, style = ShKickerStyle.copy(fontSize = 9.sp), color = ShFog)
+        Text(label, style = ShKickerStyle.copy(fontSize = 9.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
-        Text(value, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = ShInk, fontFamily = DmSansFamily)
+        Text(value, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, fontFamily = DmSansFamily)
     }
 }
 
@@ -180,15 +181,15 @@ fun MilestoneBox(label: String, status: String, color: Color, modifier: Modifier
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(if (isMatcha) ShMatchaLight else ShPaper2)
-            .border(1.dp, if (isMatcha) ShMatcha.copy(alpha = 0.2f) else ShLine, RoundedCornerShape(16.dp))
+            .background(if (isMatcha) ShMatchaLight else MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, if (isMatcha) ShMatcha.copy(alpha = 0.2f) else MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, style = ShKickerStyle.copy(fontSize = 10.sp), color = if (isMatcha) ShMatcha else ShInk)
+            Text(label, style = ShKickerStyle.copy(fontSize = 10.sp), color = if (isMatcha) ShMatcha else MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(4.dp))
-            Text(status, fontSize = 11.sp, color = if (isMatcha) ShMatcha else ShFog, fontFamily = DmSansFamily)
+            Text(status, fontSize = 11.sp, color = if (isMatcha) ShMatcha else MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = DmSansFamily)
         }
     }
 }

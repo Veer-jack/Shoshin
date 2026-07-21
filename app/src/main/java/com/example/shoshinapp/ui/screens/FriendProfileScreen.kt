@@ -1,18 +1,15 @@
 package com.example.shoshinapp.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,7 +45,7 @@ fun FriendProfileScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
+                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
             }
         }
 
@@ -62,26 +59,26 @@ fun FriendProfileScreen(
                     modifier = Modifier
                         .size(78.dp)
                         .clip(CircleShape)
-                        .background(ShSand),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = friend.userName.take(1).uppercase(),
                         style = ShTitleStyle.copy(fontSize = 34.sp),
-                        color = ShInk
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 
                 Spacer(Modifier.height(14.dp))
                 
-                Text(friend.userName, style = ShTitleStyle.copy(fontSize = 24.sp), color = ShInk)
+                Text(friend.userName, style = ShTitleStyle.copy(fontSize = 24.sp), color = MaterialTheme.colorScheme.onSurface)
                 
                 Spacer(Modifier.height(8.dp))
                 
                 ShoshinPill(label = "2 shared circles", variant = ShPillVariant.Outline) // Mock shared count
                 
                 Spacer(Modifier.height(20.dp))
-                HorizontalDivider(color = ShLine)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                 Spacer(Modifier.height(18.dp))
                 
                 Row(
@@ -121,13 +118,13 @@ private fun ProfileRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = ShInk)
+        Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface)
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = ShInk)
-            Text(sub, fontSize = 12.5.sp, color = ShFog)
+            Text(title, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            Text(sub, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (hasChevron) {
-            Icon(painterResource(R.drawable.ic_arrow_right), null, modifier = Modifier.size(17.dp), tint = ShFog2)
+            Icon(painterResource(R.drawable.ic_arrow_right), null, modifier = Modifier.size(17.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

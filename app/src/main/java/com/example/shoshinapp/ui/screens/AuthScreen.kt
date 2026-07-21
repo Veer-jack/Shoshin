@@ -6,6 +6,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -106,35 +110,34 @@ fun AuthScreen(
         LoadingDialog(message = "Signing in with Google...")
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        // Logo in top-left corner (Three bars)
-        Row(
-            modifier = Modifier.padding(24.dp).align(Alignment.TopStart),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Box(modifier = Modifier.width(8.dp).height(14.dp).background(ShInk.copy(alpha = 0.5f), RoundedCornerShape(2.dp)))
-            Box(modifier = Modifier.width(8.dp).height(22.dp).background(ShMatcha, RoundedCornerShape(2.dp)))
-            Box(modifier = Modifier.width(8.dp).height(32.dp).background(ShVermillion, RoundedCornerShape(2.dp)))
-        }
-
+    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
                 .systemBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(72.dp))
+            Spacer(Modifier.height(24.dp))
+            
+            // Logo middle aligned
+            ShoshinLogoMark()
+
+            Spacer(Modifier.height(32.dp))
 
             // Headline
             Text(
                 text  = stringResource(R.string.auth_title),
                 style = ShTitleStyle,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text  = stringResource(R.string.auth_subtitle),
                 style = ShBodyStyle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(28.dp))
 
@@ -177,9 +180,11 @@ fun AuthScreen(
                 AuthInputMode.Phone -> {
                     ShoshinTextField(
                         value       = phoneInput,
-                        onValueChange = { 
-                            phoneInput = it
-                            if (phoneError != null) validatePhone(it)
+                        onValueChange = { input ->
+                            // Allow only digits and limit to 10
+                            val filtered = input.filter { it.isDigit() }.take(10)
+                            phoneInput = filtered
+                            if (phoneError != null) validatePhone(filtered)
                         },
                         label       = stringResource(R.string.auth_phone_label),
                         prefix      = stringResource(R.string.auth_phone_prefix),
@@ -278,6 +283,8 @@ fun AuthScreen(
             Spacer(Modifier.weight(1f))
 
             // CTA
+            val interactionSource = remember { MutableInteractionSource() }
+            
             ShoshinButton(
                 onClick  = {
                     val code = referralCodeInput.takeIf { it.isNotEmpty() }
@@ -298,9 +305,15 @@ fun AuthScreen(
                     }
                 },
                 variant  = ShButtonVariant.Accent,
-                enabled  = !isGoogleLoading
+                enabled  = !isGoogleLoading,
+                modifier = Modifier.fillMaxWidth(),
+                interactionSource = interactionSource,
+                pressedColor = Color.Black
             ) {
-                Text(stringResource(R.string.auth_continue))
+                Text(
+                    text = stringResource(R.string.auth_continue),
+                    color = Color.White
+                )
             }
             Spacer(Modifier.height(16.dp))
 

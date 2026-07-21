@@ -40,7 +40,7 @@ fun EditorScreen(
     
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val context = androidx.compose.ui.platform.LocalContext.current
-    val shareManager = remember { SocialShareManager(context, database!!) }
+    val shareManager = remember(context) { SocialShareManager(context, database!!) }
 
     if (isSaving) {
         LoadingDialog(message = "Saving your thoughts...")

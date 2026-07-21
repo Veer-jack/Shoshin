@@ -1,7 +1,6 @@
 package com.example.shoshinapp.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -14,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,32 +47,26 @@ fun BadgeScreen(
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
+                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
             }
-            Text("Marks of practice", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
+            Text("Marks of practice", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
         }
 
         Text(
             text = "$earnedCount of ${badges.size} earned",
             style = ShBodyStyle,
-            modifier = Modifier.padding(bottom = 6.dp)
+            modifier = Modifier.padding(bottom = 6.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
-        // Progress Bar
-        Box(
+
+        LinearProgressIndicator(
+            progress = { earnedCount.toFloat() / badges.size.coerceAtLeast(1) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp)
-                .clip(CircleShape)
-                .background(ShSand)
-                .padding(bottom = 24.dp) // Wait, padding on Box might not be what I want for spacing
-        )
-        // Re-writing progress bar logic
-        LinearProgressIndicator(
-            progress = { earnedCount.toFloat() / badges.size.coerceAtLeast(1) },
-            modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                .clip(RoundedCornerShape(4.dp)),
             color = ShVermillion,
-            trackColor = ShSand
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
 
         Spacer(Modifier.height(24.dp))
@@ -92,7 +84,7 @@ fun BadgeScreen(
                 }
             }
         }
-        
+
         Spacer(Modifier.height(24.dp))
     }
 }
@@ -106,11 +98,12 @@ fun BadgeItem(badge: Badge, onClick: () -> Unit) {
             .height(130.dp),
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = ShSurface,
-            contentColor = ShInk
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
         contentPadding = PaddingValues(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, ShLine)
+        elevation = null,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier.fillMaxSize().alpha(if (badge.isLocked) 0.45f else 1f),
@@ -120,14 +113,13 @@ fun BadgeItem(badge: Badge, onClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(if (badge.isLocked) ShPaper2 else Color.parseColor(badge.color).copy(alpha = 0.08f), CircleShape),
+                    .background(if (badge.isLocked) MaterialTheme.colorScheme.surfaceVariant else ShVermillion.copy(alpha = 0.08f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                // Use lock icon if locked
                 Icon(
                     painter = painterResource(if (badge.isLocked) R.drawable.ic_lock else getBadgeIconRes(badge.icon)),
                     contentDescription = null,
-                    tint = if (badge.isLocked) ShFog else ShVermillion,
+                    tint = if (badge.isLocked) MaterialTheme.colorScheme.onSurfaceVariant else ShVermillion,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -136,14 +128,14 @@ fun BadgeItem(badge: Badge, onClick: () -> Unit) {
                 text = badge.name,
                 style = ShLabelStyle.copy(fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold),
                 textAlign = TextAlign.Center,
-                color = if (badge.isLocked) ShFog else ShInk
+                color = if (badge.isLocked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
 
 // Helper for icon mapping
-private fun getBadgeIconRes(iconName: String): Int {
+internal fun getBadgeIconRes(iconName: String): Int {
     return when (iconName) {
         "streak_7", "streak_30", "streak_100", "streak_365" -> R.drawable.ic_flame
         "milestone" -> R.drawable.ic_check
@@ -155,8 +147,4 @@ private fun getBadgeIconRes(iconName: String): Int {
         "community" -> R.drawable.ic_user
         else -> R.drawable.ic_trophy
     }
-}
-
-private fun Color.Companion.parseColor(colorString: String): Color {
-    return Color(android.graphics.Color.parseColor(colorString))
 }

@@ -49,10 +49,10 @@ fun LegalScreen(navController: NavController, assetPath: String, title: String) 
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
+                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
             }
             Spacer(Modifier.width(8.dp))
-            Text(title, style = ShH2Style, color = ShInk)
+            Text(title, style = ShH2Style, color = MaterialTheme.colorScheme.onBackground)
         }
 
         Column(
@@ -66,12 +66,12 @@ fun LegalScreen(navController: NavController, assetPath: String, title: String) 
                 style = ShLabelStyle.copy(
                     fontSize = 14.sp,
                     lineHeight = 22.sp,
-                    color = ShInk
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             )
             
             Spacer(Modifier.height(32.dp))
-            HorizontalDivider(color = ShLine)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
             Spacer(Modifier.height(24.dp))
             
             Kicker("Online Version")

@@ -1,5 +1,6 @@
 package com.example.shoshinapp.viewmodel
 
+import android.app.Application
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,7 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import androidx.core.content.FileProvider
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shoshinapp.utils.ShareCardGenerator
@@ -20,8 +22,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-class ShareViewModel(private val context: Context) : ViewModel() {
+class ShareViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val context: Context get() = getApplication<Application>().applicationContext
     private val cardGenerator = ShareCardGenerator(context)
 
     private val _selectedStyle = MutableStateFlow("streak")
@@ -44,7 +47,7 @@ class ShareViewModel(private val context: Context) : ViewModel() {
     }
 
     fun generatePreview(streak: Int, habitName: String, startDate: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.Default) {
             val dateStr = if (startDate > 0) SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(startDate)) else "January 1, 2024"
             val bitmap = when (_selectedStyle.value) {
                 "streak" -> cardGenerator.generateCard(
@@ -81,11 +84,17 @@ class ShareViewModel(private val context: Context) : ViewModel() {
 
     fun shareToPlatform(platform: String, streak: Int) {
         val bitmap = _shareBitmap.value ?: return
-        val filename = "shoshin_share_${System.currentTimeMillis()}"
-        val file = cardGenerator.saveBitmapToFile(bitmap, filename) ?: return
-        
-        try {
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val filename = "shoshin_share_${System.currentTimeMillis()}"
+            val file = cardGenerator.saveBitmapToFile(bitmap, filename) ?: return@launch
+            
+            val uri = try {
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            } catch (e: Exception) {
+                Log.e("Share", "Failed to get URI for file", e)
+                return@launch
+            }
+
             val caption = getCaption(platform, streak)
             
             val baseIntent = Intent(Intent.ACTION_SEND).apply {
@@ -93,6 +102,8 @@ class ShareViewModel(private val context: Context) : ViewModel() {
                 putExtra(Intent.EXTRA_STREAM, uri)
                 putExtra(Intent.EXTRA_TEXT, caption)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                // Best practice for granting URI permissions on Android 10+
+                clipData = android.content.ClipData.newRawUri("", uri)
             }
 
             val targetPackage = when (platform) {
@@ -101,35 +112,50 @@ class ShareViewModel(private val context: Context) : ViewModel() {
                 "Facebook" -> "com.facebook.katana"
                 "WhatsApp" -> "com.whatsapp"
                 "Telegram" -> "org.telegram.messenger"
+                "TikTok" -> "com.zhiliaoapp.musically"
+                "Snapchat" -> "com.snapchat.android"
                 else -> null
             }
 
             val finalIntent = if (targetPackage != null) {
-                baseIntent.setPackage(targetPackage)
-                baseIntent
+                // Check if the target app can actually handle this intent
+                val packageManager = context.packageManager
+                val activities = packageManager.queryIntentActivities(baseIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+                val isHandlerInstalled = activities.any { it.activityInfo.packageName == targetPackage }
+                
+                if (isHandlerInstalled) {
+                    baseIntent.setPackage(targetPackage)
+                    baseIntent
+                } else {
+                    Intent.createChooser(baseIntent, "Share your practice")
+                }
             } else {
                 Intent.createChooser(baseIntent, "Share your practice")
             }
 
             finalIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(finalIntent)
-            trackShareEvent(platform, streak)
-        } catch (e: Exception) {
-            Log.e("Share", "Failed to share to $platform", e)
-            // Ultimate fallback
+            // Grant permission to the chooser intent as well if it's a chooser
+            finalIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            
             try {
-                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-                val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "image/png"
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    putExtra(Intent.EXTRA_TEXT, getCaption("More", streak))
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                context.startActivity(finalIntent)
+                trackShareEvent(platform, streak)
+            } catch (e: Exception) {
+                Log.e("Share", "Failed to share to $platform. Error: ${e.message}", e)
+                // Ultimate fallback
+                try {
+                    val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/png"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(Intent.EXTRA_TEXT, getCaption("More", streak))
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    val chooser = Intent.createChooser(fallbackIntent, "Share with")
+                    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(chooser)
+                } catch (e2: Exception) {
+                    Log.e("Share", "Ultimate failure while sharing. Error: ${e2.message}", e2)
                 }
-                val chooser = Intent.createChooser(fallbackIntent, "Share with")
-                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(chooser)
-            } catch (e2: Exception) {
-                Log.e("Share", "Ultimate failure", e2)
             }
         }
     }
@@ -162,7 +188,7 @@ class ShareViewModel(private val context: Context) : ViewModel() {
 
     fun saveToGallery() {
         val bitmap = _shareBitmap.value ?: return
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val filename = "Shoshin_Streak_${System.currentTimeMillis()}.png"
             val resolver = context.contentResolver
             val contentValues = ContentValues().apply {

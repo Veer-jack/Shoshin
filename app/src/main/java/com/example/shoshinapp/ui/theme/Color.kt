@@ -7,27 +7,42 @@ import androidx.compose.ui.graphics.Color
 // Design direction: Japanese Modernism · Muji calm × Nike focus
 // ============================================================
 
-// ── Core ──
+// ── Core Light ──
 val ShInk         = Color(0xFF1C1C1E)
 val ShInk2        = Color(0xFF2C2C2E)
 val ShPaper       = Color(0xFFFAF9F6)
 val ShPaper2      = Color(0xFFF3F1EB)
 val ShSurface     = Color(0xFFFFFFFF)
 
+// ── Core Dark ──
+val ShInkDark     = Color(0xFFF2F1EC)
+val ShInk2Dark    = Color(0xFFDAD8D2)
+val ShPaperDark   = Color(0xFF0F0F0F)
+val ShPaper2Dark  = Color(0xFF1A1A1A)
+val ShSurfaceDark = Color(0xFF1C1C1C)
+
 // ── Accent (one per screen — never two) ──
 val ShVermillion  = Color(0xFFC84B31)
 val ShVermillion2 = Color(0xFFB23E27)
+val ShVermillionDark = Color(0xFFE0654A)
 
 // ── Success / completion ──
 val ShMatcha      = Color(0xFF4A7C59)
+val ShMatcha2     = Color(0xFF3D6849)
+val ShMatchaDark  = Color(0xFF6FAF80)
 val ShMatchaLight = Color(0x1F4A7C59) // 12% opacity
 
 // ── Neutrals ──
 val ShSand        = Color(0xFFE8E4DC)
+val ShSandDark    = Color(0xFF262523)
 val ShFog         = Color(0xFF8A8580)
+val ShFogDark     = Color(0xFF9A968E)
 val ShFog2        = Color(0xFFB0ABA2)
+val ShFog2Dark    = Color(0xFF6B6862)
 val ShLine        = Color(0xFFE7E3DA)
+val ShLineDark    = Color(0x17FFFFFF) // ~9% opacity
 val ShLine2       = Color(0xFFD8D3C8)
+val ShLine2Dark   = Color(0x29FFFFFF) // ~16% opacity
 
 // ── Night / dark screens ──
 // Used on: Splash, Activation, Camera, 71-Day, Paywall, Wrong Answer

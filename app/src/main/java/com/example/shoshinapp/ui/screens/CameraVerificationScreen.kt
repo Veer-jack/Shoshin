@@ -68,8 +68,8 @@ fun CameraVerificationScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     
-    val photoStorageManager = remember { com.example.shoshinapp.utils.PhotoStorageManager(context) }
-    val shareManager = remember { com.example.shoshinapp.utils.SocialShareManager(context, database!!) }
+    val photoStorageManager = remember(context) { com.example.shoshinapp.utils.PhotoStorageManager(context) }
+    val shareManager = remember(context) { com.example.shoshinapp.utils.SocialShareManager(context, database!!) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     if (isUploading) {
@@ -161,6 +161,7 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
     }
     
     var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
+    var cameraError by remember { mutableStateOf<String?>(null) }
     val previewView = remember { mutableStateOf<PreviewView?>(null) }
 
     // Check permissions
@@ -184,27 +185,41 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        AndroidView(
-            factory = { ctx ->
-                PreviewView(ctx).also {
-                    previewView.value = it
+        if (cameraError != null) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(painterResource(R.drawable.ic_info), null, tint = Color.White, modifier = Modifier.size(48.dp))
+                Spacer(Modifier.height(16.dp))
+                Text("Camera failed: $cameraError", color = Color.White)
+                Spacer(Modifier.height(24.dp))
+                Button(onClick = { cameraError = null }) {
+                    Text("Retry")
                 }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+            }
+        } else {
+            AndroidView(
+                factory = { ctx ->
+                    PreviewView(ctx).also {
+                        previewView.value = it
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
-        LaunchedEffect(previewView.value) {
+        LaunchedEffect(previewView.value, cameraError) {
             val view = previewView.value ?: return@LaunchedEffect
-            android.util.Log.d("CameraVerification", "LaunchedEffect triggered with previewView: $view")
+            if (cameraError != null) return@LaunchedEffect
             
-            // Small delay to ensure view is ready
-            delay(500)
+            android.util.Log.d("CameraVerification", "LaunchedEffect triggered with previewView: $view")
             
             try {
                 val cameraProvider = withContext(Dispatchers.IO) {
                     cameraProviderFuture.get()
                 }
-                android.util.Log.d("CameraVerification", "CameraProvider obtained")
                 
                 val preview = Preview.Builder().build().also {
                     it.setSurfaceProvider(view.surfaceProvider)
@@ -215,12 +230,17 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
                     .setTargetRotation(view.display?.rotation ?: android.view.Surface.ROTATION_0)
                     .build()
 
-                val cameraSelector = if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
-                    CameraSelector.DEFAULT_BACK_CAMERA
-                } else if (cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)) {
-                    CameraSelector.DEFAULT_FRONT_CAMERA
-                } else {
-                    null
+                val availableCameras = cameraProvider.availableCameraInfos
+                android.util.Log.d("CameraVerification", "Available cameras: ${availableCameras.size}")
+                
+                val cameraSelector = when {
+                    availableCameras.any { it.lensFacing == CameraSelector.LENS_FACING_BACK } -> 
+                        CameraSelector.DEFAULT_BACK_CAMERA
+                    availableCameras.any { it.lensFacing == CameraSelector.LENS_FACING_FRONT } -> 
+                        CameraSelector.DEFAULT_FRONT_CAMERA
+                    availableCameras.isNotEmpty() -> 
+                        CameraSelector.Builder().addCameraFilter { it }.build() // Use first available
+                    else -> null
                 }
 
                 if (cameraSelector != null) {
@@ -231,12 +251,13 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
                         preview,
                         imageCapture
                     )
-                    android.util.Log.d("CameraVerification", "Camera bound successfully: $cameraSelector")
+                    android.util.Log.d("CameraVerification", "Camera bound successfully")
                 } else {
-                    android.util.Log.e("CameraVerification", "No camera selector found")
+                    cameraError = "No camera found"
                 }
             } catch (e: Exception) {
                 android.util.Log.e("CameraPreviewUI", "Camera initialization failed", e)
+                cameraError = e.message ?: "Unknown error"
             }
         }
 

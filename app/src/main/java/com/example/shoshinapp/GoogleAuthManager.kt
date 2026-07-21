@@ -15,7 +15,7 @@ import android.util.Log
 class GoogleAuthManager(context: Context, private val auth: FirebaseAuth) {
 
     private val googleSignInClient: GoogleSignInClient = GoogleSignIn.getClient(
-        context.applicationContext,
+        context,
         GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken("91496310161-0rc0v6focf6olfnf0djkkehhh4hadv8a.apps.googleusercontent.com")
             .requestEmail()

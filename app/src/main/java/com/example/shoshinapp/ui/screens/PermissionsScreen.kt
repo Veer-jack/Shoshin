@@ -12,6 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -35,14 +37,6 @@ fun PermissionsScreen(onContinue: () -> Unit) {
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { cameraGranted = it }
     val notifLauncher  = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { notifsGranted = it }
     val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { locationGranted = it }
-
-    // Auto-continue if all permissions already granted
-    LaunchedEffect(cameraGranted, notifsGranted, locationGranted) {
-        if (cameraGranted && notifsGranted && locationGranted) {
-            // Optional: Give user 500ms to see "Granted" states before moving
-            onContinue()
-        }
-    }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.weight(1f).padding(horizontal = 24.dp, vertical = 32.dp)) {
@@ -115,11 +109,19 @@ fun PermissionsScreen(onContinue: () -> Unit) {
         }
 
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            val interactionSource = remember { MutableInteractionSource() }
+            
             ShoshinButton(
-                variant = if (cameraGranted && notifsGranted && locationGranted) ShButtonVariant.Accent else ShButtonVariant.Ghost,
-                onClick = onContinue
+                variant = ShButtonVariant.Accent,
+                onClick = onContinue,
+                modifier = Modifier.fillMaxWidth(),
+                interactionSource = interactionSource,
+                pressedColor = Color.Black
             ) {
-                Text(if (cameraGranted && notifsGranted && locationGranted) stringResource(R.string.perms_continue) else stringResource(R.string.perms_later))
+                Text(
+                    text = if (cameraGranted && notifsGranted && locationGranted) stringResource(R.string.perms_continue) else stringResource(R.string.perms_later),
+                    color = Color.White
+                )
             }
         }
     }

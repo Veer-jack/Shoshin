@@ -13,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -60,15 +62,29 @@ fun OnboardingScreen(
         }
 
         Box(modifier = Modifier.weight(1f)) {
-            when (currentStep) {
-                1 -> OnboardingStep1()
-                2 -> OnboardingStep2()
-                3 -> OnboardingStep3(
-                    startTime = startTime,
-                    endTime = endTime,
-                    onStartTimeChange = { startTime = it },
-                    onEndTimeChange = { endTime = it }
-                )
+            AnimatedContent(
+                targetState = currentStep,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        slideInHorizontally { it } + fadeIn() togetherWith
+                                slideOutHorizontally { -it } + fadeOut()
+                    } else {
+                        slideInHorizontally { -it } + fadeIn() togetherWith
+                                slideOutHorizontally { it } + fadeOut()
+                    }.using(SizeTransform(clip = false))
+                },
+                label = "step_transition"
+            ) { step ->
+                when (step) {
+                    1 -> OnboardingStep1()
+                    2 -> OnboardingStep2()
+                    3 -> OnboardingStep3(
+                        startTime = startTime,
+                        endTime = endTime,
+                        onStartTimeChange = { startTime = it },
+                        onEndTimeChange = { endTime = it }
+                    )
+                }
             }
         }
 
@@ -92,6 +108,8 @@ fun OnboardingScreen(
             
             Spacer(Modifier.height(24.dp))
             
+            val interactionSource = remember { MutableInteractionSource() }
+            
             ShoshinButton(
                 onClick = {
                     if (currentStep < 3) {
@@ -101,9 +119,15 @@ fun OnboardingScreen(
                         onComplete()
                     }
                 },
-                variant = ShButtonVariant.Primary
+                variant = ShButtonVariant.Accent,
+                modifier = Modifier.fillMaxWidth(),
+                interactionSource = interactionSource,
+                pressedColor = Color.Black
             ) {
-                Text(if (currentStep == 3) "START →" else "NEXT →")
+                Text(
+                    text = if (currentStep == 3) "START →" else "NEXT →",
+                    color = Color.White
+                )
             }
         }
     }

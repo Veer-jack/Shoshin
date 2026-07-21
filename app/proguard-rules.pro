@@ -18,6 +18,9 @@
 -keep class androidx.compose.runtime.** { *; }
 -dontwarn androidx.compose.runtime.**
 
+# FileProvider (Ensure metadata is not stripped)
+-keep class androidx.core.content.FileProvider { *; }
+
 # General optimizations
 -optimizationpasses 5
 -allowaccessmodification

@@ -49,6 +49,8 @@ object ShRoutes {
     const val SUPPORT         = "support"
     const val NOTIFICATIONS   = "notifications"
     const val DATA_PRIVACY    = "data_privacy"
+    const val BROKEN_STREAK   = "broken_streak"
+    const val RETURNING_USER  = "returning_user"
     const val STREAK_SHARE    = "streak_share/{streak}/{habitName}/{startDate}"
     const val BADGE_UNLOCK    = "badge_unlock/{badgeId}"
     const val BADGES          = "badges"

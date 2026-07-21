@@ -1,6 +1,8 @@
 package com.example.shoshinapp.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -96,7 +98,7 @@ fun DashboardTab(
                         when (syncState) {
                             is SyncState.Success -> ShMatcha.copy(alpha = 0.1f)
                             is SyncState.Error -> ShVermillion.copy(alpha = 0.1f)
-                            else -> ShPaper
+                            else -> MaterialTheme.colorScheme.surfaceVariant
                         }
                     )
                     .padding(vertical = 8.dp, horizontal = 16.dp),
@@ -113,7 +115,7 @@ fun DashboardTab(
                         tint = when (syncState) {
                             is SyncState.Success -> ShMatcha
                             is SyncState.Error -> ShVermillion
-                            else -> ShInk
+                            else -> MaterialTheme.colorScheme.onBackground
                         },
                         modifier = Modifier.size(16.dp)
                     )
@@ -125,7 +127,7 @@ fun DashboardTab(
                             else -> ""
                         },
                         style = MaterialTheme.typography.labelLarge,
-                        color = ShInk
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 }
             }
@@ -140,9 +142,9 @@ fun DashboardTab(
             // Header
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Column {
-                    Text(dateStr.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = ShFog, letterSpacing = 2.sp)
+                    Text(dateStr.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 2.sp)
                     Spacer(Modifier.height(6.dp))
-                    Text("$greeting,\n$userName", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShInk, lineHeight = 36.sp)
+                    Text("$greeting,\n$userName", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = MaterialTheme.colorScheme.onBackground, lineHeight = 36.sp)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Notifications Button
@@ -152,49 +154,65 @@ fun DashboardTab(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_bell),
                             contentDescription = "Notifications",
-                            tint = ShInk
+                            tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
 
-                    // Share Button (Top right, replaces manual sync icon as per user hint)
-                    IconButton(
-                        onClick = { 
-                            navController.navigate(ShRoutes.streakShare(streak, t.name, user?.streakStartDate ?: 0L))
-                        }
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_share),
-                            contentDescription = "Share Streak",
-                            tint = ShInk
-                        )
-                    }
-
-                    Box(
+                    // Combined Share & Profile Pill
+                    Row(
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(ShSand)
-                            .border(1.5.dp, ShLine, CircleShape)
-                            .clickable { navController.navigate("profile") }, 
-                        contentAlignment = Alignment.Center
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(ShPaper2)
+                            .border(1.dp, ShLine, RoundedCornerShape(22.dp)),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_user),
-                            contentDescription = "Profile",
-                            tint = ShInk,
-                            modifier = Modifier.size(24.dp)
+                        // Share Action
+                        IconButton(
+                            onClick = { 
+                                navController.navigate(ShRoutes.streakShare(streak, t.name, user?.streakStartDate ?: 0L))
+                            },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_share),
+                                contentDescription = "Share",
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        // Vertical Divider
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(20.dp)
+                                .background(ShLine)
                         )
+
+                        // Profile Action
+                        IconButton(
+                            onClick = { navController.navigate("profile") },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_user),
+                                contentDescription = "Profile",
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
 
-            // Hero card — ink background
+            // Hero card — ink background (Always dark as per design spec)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(24.dp))
                     .background(ShInk)
-                    .clickable { navController.navigate(ShRoutes.CLOCK) } // Make Hero clickable to see full clock
+                    .clickable { navController.navigate(ShRoutes.CLOCK) }
                     .padding(24.dp)
             ) {
                 // Enso motif
@@ -211,7 +229,6 @@ fun DashboardTab(
                             Text("SET FOR DAWN", fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShMatcha, letterSpacing = 1.sp)
                         }
                         
-                        // Mini Reverse Timer in Hero
                         Text(
                             text = "Life counting down →",
                             style = ShLabelStyle.copy(fontSize = 11.sp, color = ShPaper.copy(alpha = 0.5f))
@@ -239,19 +256,28 @@ fun DashboardTab(
                         )
                     }
                     
+                    val adjustInteractionSource = remember { MutableInteractionSource() }
+                    
                     ShoshinButton(
-                        onClick = { navController.navigate("alarm_setup") }, // Use new route
-                        variant = ShButtonVariant.Dark,
-                        modifier = Modifier.height(48.dp)
+                        onClick = { navController.navigate("alarm_setup") },
+                        variant = ShButtonVariant.Ghost,
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        interactionSource = adjustInteractionSource,
+                        pressedColor = Color.Black.copy(alpha = 0.05f)
                     ) {
-                        Text("Adjust tomorrow's wake", fontSize = 14.sp)
+                        Text(
+                            "Adjust tomorrow's wake", 
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ShInk
+                        )
                     }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // Streak Loss Warning (Feature 0.2)
+            // Streak Loss Warning
             val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             val lastCheckpoint = user?.lastCheckpointDate ?: 0L
             val isTodayDone = isSameDay(lastCheckpoint, System.currentTimeMillis())
@@ -264,6 +290,7 @@ fun DashboardTab(
                         .clip(RoundedCornerShape(12.dp))
                         .background(ShVermillion.copy(alpha = 0.1f))
                         .border(1.dp, ShVermillion, RoundedCornerShape(12.dp))
+                        .clickable { navController.navigate(ShRoutes.CLOCK) }
                         .padding(16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -279,7 +306,7 @@ fun DashboardTab(
                 }
             }
 
-            // Streak Section (New Feature 0.2)
+            // Streak Section
             ShoshinCard(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -313,11 +340,10 @@ fun DashboardTab(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Normal,
                         fontFamily = DmSansFamily,
-                        color = ShFog,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         letterSpacing = 1.sp
                     )
 
-                    // Milestone Badges
                     if (badges.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -334,34 +360,27 @@ fun DashboardTab(
                     Text(
                         text = "Started: $startDateText",
                         fontSize = 12.sp,
-                        color = ShFog2,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         fontFamily = DmSansFamily
                     )
                     
-                    // Streak Freezes (Feature 2.2)
                     if ((user?.streakFreezes ?: 0) > 0) {
                         Spacer(Modifier.height(16.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Freeze Tokens: ", style = ShLabelStyle, color = ShFog)
+                            Text("Freeze Tokens: ", style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             repeat(user?.streakFreezes ?: 0) { i ->
                                 val isUsed = i < (user?.freezesUsedThisMonth ?: 0)
                                 Icon(
-                                    painter = painterResource(id = R.drawable.ic_bolt), // Using bolt as freeze placeholder
+                                    painter = painterResource(id = R.drawable.ic_bolt),
                                     contentDescription = null,
                                     modifier = Modifier
                                         .padding(horizontal = 2.dp)
                                         .size(18.dp)
                                         .alpha(if (isUsed) 0.3f else 1f),
-                                    tint = ShInk
+                                    tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
-                        Text(
-                            text = "You have ${(user?.streakFreezes ?: 0) - (user?.freezesUsedThisMonth ?: 0)} available",
-                            style = ShLabelStyle,
-                            color = ShFog2,
-                            fontSize = 10.sp
-                        )
                     }
                     
                     Spacer(Modifier.height(16.dp))
@@ -380,7 +399,6 @@ fun DashboardTab(
 
             Spacer(Modifier.height(16.dp))
 
-            // Friend Streaks Section (Feature 3.1)
             FriendStreaksSection(
                 friends = topFriends,
                 totalCount = totalFriends,
@@ -391,15 +409,17 @@ fun DashboardTab(
 
             Spacer(Modifier.height(16.dp))
 
-            // Metrics Row (Modified to show only Consistency)
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        val consistency = 0 // Removed mock 86%
-                        RingProgress(percentage = consistency, size = 52, strokeWidth = 5f, valueText = consistency.toString(), color = ShInk, trackColor = ShSand)
+                        val consistency = 0
+                        RingProgress(percentage = consistency, size = 52, strokeWidth = 5f, valueText = consistency.toString(), color = ShMatcha, trackColor = MaterialTheme.colorScheme.surfaceVariant)
                         Column {
-                            Text("$consistency%", fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShInk)
-                            Text("CONSISTENCY", fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShFog, letterSpacing = 1.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("$consistency%", fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onBackground)
+                                Icon(painterResource(R.drawable.ic_pulse), null, modifier = Modifier.size(14.dp), tint = ShMatcha)
+                            }
+                            Text("MORNINGS KEPT", fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.sp)
                         }
                     }
                 }
@@ -407,7 +427,6 @@ fun DashboardTab(
 
             Spacer(Modifier.height(24.dp))
 
-            // Backwards Clock Preview Card
             ShoshinCard(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -419,15 +438,15 @@ fun DashboardTab(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("TIME REMAINING", fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShFog, letterSpacing = 1.sp)
+                        Text("TIME REMAINING", fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.sp)
                         Spacer(Modifier.height(4.dp))
-                        Text("Day is counting down", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = ShInk)
+                        Text("Day is counting down", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onBackground)
                     }
                     Box(
                         modifier = Modifier
                             .size(56.dp)
                             .clip(CircleShape)
-                            .background(ShSand),
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -442,25 +461,26 @@ fun DashboardTab(
 
             Spacer(Modifier.height(24.dp))
 
-            // The Bridge
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Kicker("The Bridge", color = ShVermillion, modifier = Modifier.weight(1f))
-                Text("Tomorrow's path", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = ShInk, modifier = Modifier.weight(2f))
-                Text("Edit", fontSize = 14.sp, color = ShFog, fontFamily = DmSansFamily, modifier = Modifier.clickable { navController.navigate("routine_editor") })
+                Row(modifier = Modifier.weight(2f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(painterResource(R.drawable.ic_walk), null, modifier = Modifier.size(18.dp), tint = ShInk)
+                    Text("Morning Walk", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onBackground)
+                }
+                Text("Edit", fontSize = 14.sp, color = ShVermillion, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, modifier = Modifier.clickable { navController.navigate("routine_editor") })
             }
 
             ShoshinCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                     t.steps.forEachIndexed { i, step ->
                         CheckpointRow(number = i + 1, label = step, state = CheckpointState.PENDING)
-                        if (i < t.steps.lastIndex) HorizontalDivider(color = ShLine, thickness = 1.dp)
+                        if (i < t.steps.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 1.dp)
                     }
                 }
             }
 
             Spacer(Modifier.height(32.dp))
 
-            // CTA
             ShoshinButton(
                 onClick = { navController.navigate("morning/activation") },
                 variant = ShButtonVariant.Accent,
@@ -475,7 +495,6 @@ fun DashboardTab(
         }
     }
 
-    // Conflict Dialog
     conflictDialog?.let { conflict ->
         ConflictResolutionDialog(
             isVisible = true,

@@ -57,10 +57,10 @@ fun ShareScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
+                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
             }
             Spacer(Modifier.width(14.dp))
-            Text("Share your practice", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
+            Text("Share your practice", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
         }
 
         Spacer(Modifier.height(22.dp))
@@ -71,7 +71,7 @@ fun ShareScreen(
                 .fillMaxWidth()
                 .aspectRatio(4f / 5f)
                 .clip(RoundedCornerShape(24.dp))
-                .background(ShInk),
+                .background(ShInk), // Card itself always dark as per design
             contentAlignment = Alignment.Center
         ) {
             bitmap?.let {
@@ -106,17 +106,17 @@ fun ShareScreen(
                     modifier = Modifier.weight(1f).height(72.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSelected) ShInk else ShPaper,
-                        contentColor = if (isSelected) ShPaper else ShFog
+                        containerColor = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
+                        contentColor = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     contentPadding = PaddingValues(8.dp),
                     elevation = null,
-                    border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.5.dp, ShLine)
+                    border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(painterResource(icon), null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.height(6.dp))
-                        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (isSelected) ShPaper else ShInk)
+                        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -152,7 +152,7 @@ fun ShareScreen(
                         Icon(painterResource(icon), null, modifier = Modifier.size(22.dp), tint = color)
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text(label, style = ShLabelStyle.copy(fontSize = 11.5.sp), color = ShInk)
+                    Text(label, style = ShLabelStyle.copy(fontSize = 11.5.sp), color = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }

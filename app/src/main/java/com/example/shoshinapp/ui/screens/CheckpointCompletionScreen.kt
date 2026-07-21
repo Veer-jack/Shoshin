@@ -83,7 +83,7 @@ fun CheckpointCompletionScreen(
         Kicker("Morning Practice", color = ShVermillion)
         Spacer(modifier = Modifier.height(10.dp))
         val user by streakViewModel?.user?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
-        Text("Day ${user?.currentStreak ?: 1}", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShInk)
+        Text("Day ${user?.currentStreak ?: 1}", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = MaterialTheme.colorScheme.onBackground)
         Spacer(modifier = Modifier.height(32.dp))
 
         checkpoints.forEachIndexed { index, checkpoint ->
@@ -99,7 +99,7 @@ fun CheckpointCompletionScreen(
                 time = if (state == CheckpointState.DONE) "Completed" else null
             )
             if (index < checkpoints.lastIndex) {
-                HorizontalDivider(color = ShLine, thickness = 1.dp, modifier = Modifier.padding(start = 48.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 1.dp, modifier = Modifier.padding(start = 48.dp))
             }
         }
 
@@ -109,7 +109,6 @@ fun CheckpointCompletionScreen(
             onClick = {
                 if (current.type == "photo") {
                     onPhotoRequired(currentIndex, current.label, current.targets)
-                    // We don't increment here, we wait for return from camera
                 } else {
                     if (currentIndex < checkpoints.lastIndex) {
                         currentIndex++
@@ -134,7 +133,8 @@ fun CheckpointCompletionScreen(
                     }
                 }
             },
-            variant = ShButtonVariant.Accent
+            variant = ShButtonVariant.Accent,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (currentIndex < checkpoints.lastIndex) "Next: ${checkpoints.getOrNull(currentIndex)?.label}" else "Complete Morning")
         }
@@ -144,7 +144,7 @@ fun CheckpointCompletionScreen(
             Text(
                 text = "Verification: ${current.hint}",
                 style = ShLabelStyle,
-                color = ShFog,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
