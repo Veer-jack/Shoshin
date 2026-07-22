@@ -35,7 +35,7 @@ graph TD
 ## 2. Data Storage Structure
 
 ### A. Local Database (SQLite via Room)
-Located in `com.example.shoshinapp.data.db`, the local database mirrors the cloud structure for offline access.
+Located in `com.shoshin.app.data.db`, the local database mirrors the cloud structure for offline access.
 
 | Table Name | Primary Key | Key Fields | Purpose |
 | :--- | :--- | :--- | :--- |

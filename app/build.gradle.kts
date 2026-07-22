@@ -7,15 +7,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.shoshinapp"
+    namespace = "com.shoshin.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.shoshinapp"
+        applicationId = "com.shoshin.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -28,7 +28,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
