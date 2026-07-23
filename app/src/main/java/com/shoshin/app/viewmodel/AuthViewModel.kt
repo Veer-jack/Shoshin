@@ -1,10 +1,10 @@
-package com.shoshin.app.viewmodel
+package com.Shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shoshin.app.data.AuthRepository
-import com.shoshin.app.GoogleAuthManager
-import com.shoshin.app.PhoneAuthManager
+import com.Shoshin.app.data.AuthRepository
+import com.Shoshin.app.GoogleAuthManager
+import com.Shoshin.app.PhoneAuthManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

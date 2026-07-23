@@ -1,8 +1,8 @@
-package com.shoshin.app.data
+package com.Shoshin.app.data
 
 import android.util.Log
-import com.shoshin.app.data.db.dao.UserLimitsDao
-import com.shoshin.app.data.db.entities.UserLimitsEntity
+import com.Shoshin.app.data.db.dao.UserLimitsDao
+import com.Shoshin.app.data.db.entities.UserLimitsEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.util.*

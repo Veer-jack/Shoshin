@@ -7,23 +7,33 @@ plugins {
 }
 
 android {
-    namespace = "com.shoshin.app"
-    compileSdk = 34
+    namespace = "com.Shoshin.app"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.shoshin.app"
+        applicationId = "com.Shoshin.app"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 3
-        versionName = "1.0.2"
+        targetSdk = 35
+        versionCode = 4
+        versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getProperty("user.home") + "/shoshin_keystore.p12")
+            storePassword = "shoshin123"
+            keyAlias = "shoshin_key"
+            keyPassword = "shoshin123"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

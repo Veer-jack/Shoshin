@@ -1,4 +1,4 @@
-package com.shoshin.app.alarm
+package com.Shoshin.app.alarm
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -13,7 +13,7 @@ object AlarmScheduler {
     fun schedule(context: Context, hour: Int, minute: Int, routineName: String) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AlarmReceiver::class.java).apply {
-            action = "com.shoshin.app.ALARM_TRIGGER"
+            action = "com.Shoshin.app.ALARM_TRIGGER"
             putExtra("routine_name", routineName)
         }
         val pendingIntent = PendingIntent.getBroadcast(

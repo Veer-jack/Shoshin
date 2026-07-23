@@ -1,11 +1,11 @@
-package com.shoshin.app
+package com.Shoshin.app
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.shoshin.app.data.ShoshinRepository
-import com.shoshin.app.data.db.AppDatabase
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.data.db.AppDatabase
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +33,7 @@ class NotificationReceiver : BroadcastReceiver() {
                 // Schedule for tomorrow
                 rescheduleNotification(context, notificationManager, repository)
             }
-            "com.shoshin.app.SKIP_TODAY" -> {
+            "com.Shoshin.app.SKIP_TODAY" -> {
                 Log.d("NotificationReceiver", "User skipped notification today")
                 // Track skip today analytics would go here
                 val androidNotificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
@@ -62,7 +62,7 @@ class NotificationReceiver : BroadcastReceiver() {
                     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
                     if (uid.isNotEmpty()) {
                         db.notificationDao().insertNotification(
-                            com.shoshin.app.data.db.entities.NotificationEntity(
+                            com.Shoshin.app.data.db.entities.NotificationEntity(
                                 notificationId = java.util.UUID.randomUUID().toString(),
                                 userId = uid,
                                 type = "reminder",

@@ -1,4 +1,4 @@
-package com.shoshin.app
+package com.Shoshin.app
 
 import org.junit.Test
 

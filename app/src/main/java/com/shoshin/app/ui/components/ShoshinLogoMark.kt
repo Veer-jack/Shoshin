@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.components
+package com.Shoshin.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.ui.theme.*
 
 @Composable
 fun ShoshinLogoMark(modifier: Modifier = Modifier) {

@@ -1,4 +1,4 @@
-package com.shoshin.app.utils
+package com.Shoshin.app.utils
 
 import android.annotation.SuppressLint
 import android.content.Context

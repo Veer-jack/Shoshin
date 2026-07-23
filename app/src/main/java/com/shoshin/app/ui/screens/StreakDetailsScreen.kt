@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,11 +16,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.StreakViewModel
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.StreakViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 

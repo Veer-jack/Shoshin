@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
@@ -31,10 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.ProfileViewModel
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.ProfileViewModel
 
 @Composable
 fun EditProfileScreen(

@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,11 +14,11 @@ import androidx.navigation.NavController
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.Color
-import com.shoshin.app.ui.components.ShoshinButton
-import com.shoshin.app.ui.components.ShButtonVariant
-import com.shoshin.app.ui.components.ShoshinTextField
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.GroupViewModel
+import com.Shoshin.app.ui.components.ShoshinButton
+import com.Shoshin.app.ui.components.ShButtonVariant
+import com.Shoshin.app.ui.components.ShoshinTextField
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.GroupViewModel
 
 @Composable
 fun CreateGroupScreen(navController: NavController, viewModel: GroupViewModel = viewModel()) {

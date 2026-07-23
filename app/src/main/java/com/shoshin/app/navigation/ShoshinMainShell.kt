@@ -1,4 +1,4 @@
-package com.shoshin.app.navigation
+package com.Shoshin.app.navigation
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -15,12 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import com.shoshin.app.R
-import com.shoshin.app.data.db.AppDatabase
-import com.shoshin.app.sync.*
-import com.shoshin.app.ui.screens.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.ProfileViewModel
+import com.Shoshin.app.R
+import com.Shoshin.app.data.db.AppDatabase
+import com.Shoshin.app.sync.*
+import com.Shoshin.app.ui.screens.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.ProfileViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
@@ -30,11 +30,11 @@ fun ShoshinMainShell(
     syncManager: SyncManager,
     networkMonitor: NetworkStateMonitor,
     conflictResolver: ConflictResolver,
-    userRepository: com.shoshin.app.data.user.UserRepository,
-    streakViewModel: com.shoshin.app.viewmodel.StreakViewModel,
-    friendViewModel: com.shoshin.app.viewmodel.FriendStreaksViewModel? = null,
-    referralViewModel: com.shoshin.app.viewmodel.ReferralViewModel? = null,
-    groupViewModel: com.shoshin.app.viewmodel.GroupViewModel? = null
+    userRepository: com.Shoshin.app.data.user.UserRepository,
+    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel,
+    friendViewModel: com.Shoshin.app.viewmodel.FriendStreaksViewModel? = null,
+    referralViewModel: com.Shoshin.app.viewmodel.ReferralViewModel? = null,
+    groupViewModel: com.Shoshin.app.viewmodel.GroupViewModel? = null
 ) {
     val innerNav = rememberNavController()
     val currentBackStack by innerNav.currentBackStackEntryAsState()

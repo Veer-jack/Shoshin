@@ -1,10 +1,10 @@
-package com.shoshin.app.viewmodel
+package com.Shoshin.app.viewmodel
 
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shoshin.app.data.db.entities.UserEntity
-import com.shoshin.app.data.user.UserRepository
+import com.Shoshin.app.data.db.entities.UserEntity
+import com.Shoshin.app.data.user.UserRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

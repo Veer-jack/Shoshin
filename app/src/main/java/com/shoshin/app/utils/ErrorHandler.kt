@@ -1,4 +1,4 @@
-package com.shoshin.app.utils
+package com.Shoshin.app.utils
 
 import android.content.Context
 import android.widget.Toast

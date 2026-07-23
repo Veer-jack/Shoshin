@@ -1,4 +1,4 @@
-package com.shoshin.app.navigation
+package com.Shoshin.app.navigation
 
 object ShRoutes {
     // Onboarding stack (not in bottom nav)

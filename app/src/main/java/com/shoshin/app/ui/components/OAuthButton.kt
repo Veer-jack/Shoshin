@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.components
+package com.Shoshin.app.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -10,8 +10,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.R
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.R
 
 // OAuthButton — Google & Apple sign-in
 // Height: 54dp · Radius: 14dp · Font: DM Sans 600 15sp

@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.components
+package com.Shoshin.app.ui.components
 
 import android.app.TimePickerDialog
 import androidx.compose.runtime.Composable

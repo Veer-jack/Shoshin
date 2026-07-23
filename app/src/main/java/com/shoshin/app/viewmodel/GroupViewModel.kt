@@ -1,10 +1,10 @@
-package com.shoshin.app.viewmodel
+package com.Shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shoshin.app.data.groups.Group
-import com.shoshin.app.data.groups.GroupMember
-import com.shoshin.app.data.groups.GroupRepository
+import com.Shoshin.app.data.groups.Group
+import com.Shoshin.app.data.groups.GroupMember
+import com.Shoshin.app.data.groups.GroupRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,8 +24,8 @@ class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _groupPosts = MutableStateFlow<List<com.shoshin.app.data.db.entities.GroupPostEntity>>(emptyList())
-    val groupPosts: StateFlow<List<com.shoshin.app.data.db.entities.GroupPostEntity>> = _groupPosts.asStateFlow()
+    private val _groupPosts = MutableStateFlow<List<com.Shoshin.app.data.db.entities.GroupPostEntity>>(emptyList())
+    val groupPosts: StateFlow<List<com.Shoshin.app.data.db.entities.GroupPostEntity>> = _groupPosts.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()

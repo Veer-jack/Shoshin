@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,12 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.ProfileViewModel
-import com.shoshin.app.viewmodel.BadgeViewModel
-import com.shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.ProfileViewModel
+import com.Shoshin.app.viewmodel.BadgeViewModel
+import com.Shoshin.app.navigation.ShRoutes
 
 @Composable
 fun ProfileScreen(
@@ -205,10 +205,11 @@ fun ProfileScreen(
                                         .clickable { navController.navigate(ShRoutes.badgeDetail(badge.id)) },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = badge.icon,
-                                        fontSize = 28.sp,
-                                        modifier = Modifier.alpha(if (badge.isLocked) 0.3f else 1f)
+                                    Icon(
+                                        painter = painterResource(if (badge.isLocked) R.drawable.ic_lock else getBadgeIconRes(badge.icon)),
+                                        contentDescription = null,
+                                        tint = if (badge.isLocked) ShFog2 else Color.parseColor(badge.color),
+                                        modifier = Modifier.size(28.dp).alpha(if (badge.isLocked) 0.5f else 1f)
                                     )
                                 }
                             }

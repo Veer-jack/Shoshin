@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,12 +24,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.data.ShoshinRepository
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.sync.*
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.sync.*
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 import kotlinx.coroutines.launch
 import java.util.*
 import java.text.SimpleDateFormat
@@ -66,8 +66,8 @@ fun DashboardTab(
     syncManager: SyncManager,
     networkMonitor: NetworkStateMonitor,
     conflictResolver: ConflictResolver,
-    streakViewModel: com.shoshin.app.viewmodel.StreakViewModel,
-    friendViewModel: com.shoshin.app.viewmodel.FriendStreaksViewModel? = null
+    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel,
+    friendViewModel: com.Shoshin.app.viewmodel.FriendStreaksViewModel? = null
 ) {
     val context = LocalContext.current
     val repo = remember { ShoshinRepository(context) }

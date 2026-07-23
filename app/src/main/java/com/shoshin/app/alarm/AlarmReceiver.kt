@@ -1,4 +1,4 @@
-package com.shoshin.app.alarm
+package com.Shoshin.app.alarm
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -12,7 +12,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 // Re-schedule alarm after reboot if one was set
                 // Read from DataStore and reschedule
             }
-            "com.shoshin.app.ALARM_TRIGGER" -> {
+            "com.Shoshin.app.ALARM_TRIGGER" -> {
                 val serviceIntent = Intent(context, AlarmService::class.java).apply {
                     putExtra("routine_name", intent.getStringExtra("routine_name") ?: "Morning Walk")
                 }

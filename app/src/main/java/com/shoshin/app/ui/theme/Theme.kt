@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.theme
+package com.Shoshin.app.ui.theme
 
 import android.app.Application
 import android.content.Context

@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.components
+package com.Shoshin.app.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.ui.theme.*
 
 data class SegmentOption<T>(val id: T, val label: String)
 

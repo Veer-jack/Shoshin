@@ -1,10 +1,10 @@
-package com.shoshin.app
+package com.Shoshin.app
 
 import android.app.Application
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.shoshin.app.utils.AnalyticsManager
+import com.Shoshin.app.utils.AnalyticsManager
 
 class ShoshinApp : Application() {
     override fun onCreate() {

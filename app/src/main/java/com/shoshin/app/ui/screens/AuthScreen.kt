@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,10 +17,10 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.utils.AnalyticsManager
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.AnalyticsManager
 import android.util.Patterns
 
 enum class AuthInputMode { Phone, Email }

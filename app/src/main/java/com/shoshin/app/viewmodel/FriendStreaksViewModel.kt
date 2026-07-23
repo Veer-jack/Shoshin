@@ -1,10 +1,10 @@
-package com.shoshin.app.viewmodel
+package com.Shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shoshin.app.data.FriendRepository
-import com.shoshin.app.data.models.Friend
-import com.shoshin.app.data.user.UserRepository
+import com.Shoshin.app.data.FriendRepository
+import com.Shoshin.app.data.models.Friend
+import com.Shoshin.app.data.user.UserRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

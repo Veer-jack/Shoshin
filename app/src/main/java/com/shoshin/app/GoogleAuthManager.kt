@@ -1,4 +1,4 @@
-package com.shoshin.app
+package com.Shoshin.app
 
 import android.app.Activity
 import android.content.Context

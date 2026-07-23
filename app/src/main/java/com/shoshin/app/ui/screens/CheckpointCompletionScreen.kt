@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,12 +11,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.utils.AnalyticsManager
-import com.shoshin.app.utils.LocationHelper
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.AnalyticsManager
+import com.Shoshin.app.utils.LocationHelper
 import kotlinx.coroutines.launch
-import com.shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.data.ShoshinRepository
 import kotlinx.coroutines.flow.first
 
 private data class Checkpoint(
@@ -54,7 +54,7 @@ private val TEMPLATE_CHECKPOINTS = mapOf(
 fun CheckpointCompletionScreen(
     onPhotoRequired: (Int, String, List<String>) -> Unit,
     onComplete: () -> Unit,
-    streakViewModel: com.shoshin.app.viewmodel.StreakViewModel? = null
+    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel? = null
 ) {
     val context = LocalContext.current
     val repo = remember { ShoshinRepository(context) }

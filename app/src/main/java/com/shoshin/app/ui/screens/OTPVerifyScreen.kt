@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,14 +16,14 @@ import androidx.compose.ui.platform.LocalContext
 import android.app.Activity
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
-import com.shoshin.app.R
-import com.shoshin.app.PhoneAuthManager
-import com.shoshin.app.EmailAuthManager
-import com.shoshin.app.data.ShoshinRepository
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.utils.ErrorHandler
+import com.Shoshin.app.R
+import com.Shoshin.app.PhoneAuthManager
+import com.Shoshin.app.EmailAuthManager
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.ErrorHandler
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

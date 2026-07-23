@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -33,15 +33,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.shoshin.app.R
-import com.shoshin.app.data.db.AppDatabase
-import com.shoshin.app.data.db.entities.PhotoEntity
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.utils.LocationHelper
-import com.shoshin.app.utils.AnalyticsManager
-import com.shoshin.app.utils.PhotoStorageManager
-import com.shoshin.app.utils.SocialShareManager
+import com.Shoshin.app.R
+import com.Shoshin.app.data.db.AppDatabase
+import com.Shoshin.app.data.db.entities.PhotoEntity
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.LocationHelper
+import com.Shoshin.app.utils.AnalyticsManager
+import com.Shoshin.app.utils.PhotoStorageManager
+import com.Shoshin.app.utils.SocialShareManager
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
@@ -63,13 +63,13 @@ fun CameraVerificationScreen(
     var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
     var isUploading by remember { mutableStateOf(false) }
     var isVerifying by remember { mutableStateOf(false) }
-    var verificationResult by remember { mutableStateOf<com.shoshin.app.utils.VerificationResult?>(null) }
+    var verificationResult by remember { mutableStateOf<com.Shoshin.app.utils.VerificationResult?>(null) }
     var uploadError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     
-    val photoStorageManager = remember(context) { com.shoshin.app.utils.PhotoStorageManager(context) }
-    val shareManager = remember(context) { com.shoshin.app.utils.SocialShareManager(context, database!!) }
+    val photoStorageManager = remember(context) { com.Shoshin.app.utils.PhotoStorageManager(context) }
+    val shareManager = remember(context) { com.Shoshin.app.utils.SocialShareManager(context, database!!) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     if (isUploading) {
@@ -92,7 +92,7 @@ fun CameraVerificationScreen(
                     if (targetLabels.isNotEmpty()) {
                         isVerifying = true
                         scope.launch {
-                            verificationResult = com.shoshin.app.utils.ImageVerificationManager.verifyImage(bitmap, targetLabels)
+                            verificationResult = com.Shoshin.app.utils.ImageVerificationManager.verifyImage(bitmap, targetLabels)
                             isVerifying = false
                         }
                     }
@@ -121,7 +121,7 @@ fun CameraVerificationScreen(
                         isUploading = true
                         scope.launch {
                             // ... existing upload logic
-                            val location = com.shoshin.app.utils.LocationHelper.getLastLocation(context)
+                            val location = com.Shoshin.app.utils.LocationHelper.getLastLocation(context)
                             val lat = location?.latitude?.let { Math.round(it * 100.0) / 100.0 }
                             val long = location?.longitude?.let { Math.round(it * 100.0) / 100.0 }
 
@@ -370,7 +370,7 @@ fun CameraConfirmScreen(
     targetLabels: List<String>,
     isUploading: Boolean,
     isVerifying: Boolean,
-    verificationResult: com.shoshin.app.utils.VerificationResult?,
+    verificationResult: com.Shoshin.app.utils.VerificationResult?,
     error: String?,
     shareManager: SocialShareManager,
     userId: String,
@@ -408,9 +408,9 @@ fun CameraConfirmScreen(
                 // Verification Badge Overlay
                 verificationResult?.let { result ->
                     val (icon, color, text) = when (result) {
-                        is com.shoshin.app.utils.VerificationResult.Success -> Triple(R.drawable.ic_check, ShMatcha, "Verified: ${result.label}")
-                        is com.shoshin.app.utils.VerificationResult.Failure -> Triple(R.drawable.ic_info, ShVermillion, "Detection Mismatch")
-                        is com.shoshin.app.utils.VerificationResult.Error -> Triple(R.drawable.ic_info, ShFog, "Scan Error")
+                        is com.Shoshin.app.utils.VerificationResult.Success -> Triple(R.drawable.ic_check, ShMatcha, "Verified: ${result.label}")
+                        is com.Shoshin.app.utils.VerificationResult.Failure -> Triple(R.drawable.ic_info, ShVermillion, "Detection Mismatch")
+                        is com.Shoshin.app.utils.VerificationResult.Error -> Triple(R.drawable.ic_info, ShFog, "Scan Error")
                     }
                     
                     Surface(
@@ -437,7 +437,7 @@ fun CameraConfirmScreen(
         Column(modifier = Modifier.padding(horizontal = 24.dp)) {
             if (isVerifying) {
                 Text("Checking image for ${targetLabels.joinToString("/")}...", color = ShFog, style = ShBodyStyle)
-            } else if (verificationResult is com.shoshin.app.utils.VerificationResult.Failure) {
+            } else if (verificationResult is com.Shoshin.app.utils.VerificationResult.Failure) {
                 Text(verificationResult.message, color = ShVermillion, style = ShBodyStyle)
                 Text("You can still confirm if the detection was incorrect.", color = ShFog, fontSize = 12.sp)
             } else if (error != null) {
@@ -460,7 +460,7 @@ fun CameraConfirmScreen(
             ShoshinButton(
                 onClick = onConfirm,
                 modifier = Modifier.padding(horizontal = 24.dp),
-                variant = if (verificationResult is com.shoshin.app.utils.VerificationResult.Success) ShButtonVariant.Accent else ShButtonVariant.Primary
+                variant = if (verificationResult is com.Shoshin.app.utils.VerificationResult.Success) ShButtonVariant.Accent else ShButtonVariant.Primary
             ) {
                 Text("Confirm & Continue")
             }

@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.components
+package com.Shoshin.app.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -21,8 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.painterResource
-import com.shoshin.app.R
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.theme.*
 
 // ── ShoshinKeypad ─────────────────────────────────────────────
 @Composable
