@@ -1,4 +1,4 @@
-package com.Shoshin.app.utils
+package com.shoshin.app.utils
 
 import android.graphics.Bitmap
 import com.google.mlkit.vision.common.InputImage

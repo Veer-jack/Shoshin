@@ -1,4 +1,4 @@
-package com.Shoshin.app.ui.screens
+package com.shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,18 +17,17 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.Shoshin.app.R
-import com.Shoshin.app.ui.components.*
-import com.Shoshin.app.ui.theme.*
-import com.Shoshin.app.utils.AnalyticsManager
+import com.shoshin.app.R
+import com.shoshin.app.ui.components.*
+import com.shoshin.app.ui.theme.*
+import com.shoshin.app.utils.AnalyticsManager
 import android.util.Patterns
 
-enum class AuthInputMode { Phone, Email }
+enum class AuthInputMode { Phone }
 
 @Composable
 fun AuthScreen(
     onPhoneContinue: (phoneNumber: String, referralCode: String?) -> Unit,
-    onEmailContinue: (name: String, email: String, pass: String, referralCode: String?) -> Unit,
     onGoogleSignIn: () -> Unit,
     onPrivacyClick: () -> Unit,
     onTermsClick: () -> Unit,
@@ -38,15 +37,9 @@ fun AuthScreen(
 ) {
     var inputMode by remember { mutableStateOf(AuthInputMode.Phone) }
     var phoneInput by remember { mutableStateOf("") }
-    var emailInput by remember { mutableStateOf("") }
-    var nameInput by remember { mutableStateOf("") }
-    var passwordInput by remember { mutableStateOf("") }
     var referralCodeInput by remember { mutableStateOf(initialReferralCode ?: "") }
     
-    var emailError by remember { mutableStateOf<String?>(null) }
-    var nameError by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
     var referralError by remember { mutableStateOf<String?>(null) }
 
     val termsText = buildAnnotatedString {
@@ -72,37 +65,6 @@ fun AuthScreen(
         } else {
             phoneError = "Please enter a valid 10-digit phone number"
             false
-        }
-    }
-
-    fun validateEmail(email: String): Boolean {
-        return if (Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            emailError = null
-            true
-        } else {
-            emailError = "Please enter a valid email address"
-            false
-        }
-    }
-
-    fun validatePassword(password: String): Boolean {
-        return when {
-            password.length < 8 -> {
-                passwordError = "Password must be at least 8 characters"
-                false
-            }
-            !password.any { it.isUpperCase() } -> {
-                passwordError = "Password must contain at least one uppercase letter"
-                false
-            }
-            !password.any { it.isDigit() } -> {
-                passwordError = "Password must contain at least one number"
-                false
-            }
-            else -> {
-                passwordError = null
-                true
-            }
         }
     }
 
@@ -156,114 +118,27 @@ fun AuthScreen(
             ShoshinDivider(label = stringResource(R.string.auth_or_continue_with))
             Spacer(Modifier.height(22.dp))
 
-            // Phone / Email segmented
-            ShoshinSegmented(
-                options  = listOf(
-                    SegmentOption(AuthInputMode.Phone, stringResource(R.string.auth_tab_phone)),
-                    SegmentOption(AuthInputMode.Email, stringResource(R.string.auth_tab_email)),
-                ),
-                selected = inputMode,
-                onSelect = { 
-                    if (!isGoogleLoading) {
-                        AnalyticsManager.logAuthMethodSelected(if (it == AuthInputMode.Phone) "phone" else "email")
-                        inputMode = it
-                        emailError = null
-                        phoneError = null
-                        passwordError = null
-                    }
-                },
-            )
-            Spacer(Modifier.height(16.dp))
-
             // Text field
-            when (inputMode) {
-                AuthInputMode.Phone -> {
-                    ShoshinTextField(
-                        value       = phoneInput,
-                        onValueChange = { input ->
-                            // Allow only digits and limit to 10
-                            val filtered = input.filter { it.isDigit() }.take(10)
-                            phoneInput = filtered
-                            if (phoneError != null) validatePhone(filtered)
-                        },
-                        label       = stringResource(R.string.auth_phone_label),
-                        prefix      = stringResource(R.string.auth_phone_prefix),
-                        placeholder = stringResource(R.string.auth_phone_placeholder),
-                        enabled     = !isGoogleLoading
-                    )
-                    phoneError?.let {
-                        Text(
-                            text = it,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 4.dp, start = 4.dp)
-                        )
-                    }
-                }
-                AuthInputMode.Email -> {
-                    Column {
-                        ShoshinTextField(
-                            value       = nameInput,
-                            onValueChange = { 
-                                nameInput = it
-                                nameError = null
-                            },
-                            label       = "Full Name",
-                            placeholder = "e.g. Arjun Kumar",
-                            enabled     = !isGoogleLoading
-                        )
-                        nameError?.let {
-                            Text(
-                                text = it,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
-                            )
-                        }
-
-                        Spacer(Modifier.height(12.dp))
-
-                        ShoshinTextField(
-                            value       = emailInput,
-                            onValueChange = { 
-                                emailInput = it
-                                if (emailError != null) validateEmail(it)
-                            },
-                            label       = stringResource(R.string.auth_email_label),
-                            placeholder = stringResource(R.string.auth_email_placeholder),
-                            enabled     = !isGoogleLoading
-                        )
-                        emailError?.let {
-                            Text(
-                                text = it,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
-                            )
-                        }
-                        
-                        Spacer(Modifier.height(12.dp))
-                        
-                        ShoshinTextField(
-                            value       = passwordInput,
-                            onValueChange = { 
-                                passwordInput = it
-                                if (passwordError != null) validatePassword(it)
-                            },
-                            label       = "Password",
-                            placeholder = "At least 8 characters",
-                            enabled     = !isGoogleLoading
-                        )
-                        passwordError?.let {
-                            Text(
-                                text = it,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
-                            )
-                        }
-                    }
-                }
+            ShoshinTextField(
+                value       = phoneInput,
+                onValueChange = { input ->
+                    // Allow only digits and limit to 10
+                    val filtered = input.filter { it.isDigit() }.take(10)
+                    phoneInput = filtered
+                    if (phoneError != null) validatePhone(filtered)
+                },
+                label       = stringResource(R.string.auth_phone_label),
+                prefix      = stringResource(R.string.auth_phone_prefix),
+                placeholder = stringResource(R.string.auth_phone_placeholder),
+                enabled     = !isGoogleLoading
+            )
+            phoneError?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                )
             }
 
             Spacer(Modifier.height(24.dp))
@@ -288,21 +163,7 @@ fun AuthScreen(
             ShoshinButton(
                 onClick  = {
                     val code = referralCodeInput.takeIf { it.isNotEmpty() }
-                    when (inputMode) {
-                        AuthInputMode.Phone -> {
-                            if (validatePhone(phoneInput)) onPhoneContinue(phoneInput, code)
-                        }
-                        AuthInputMode.Email -> {
-                            val isEmailValid = validateEmail(emailInput)
-                            val isPassValid = validatePassword(passwordInput)
-                            val isNameValid = nameInput.isNotBlank()
-                            if (!isNameValid) nameError = "Please enter your name"
-                            
-                            if (isEmailValid && isPassValid && isNameValid) {
-                                onEmailContinue(nameInput, emailInput, passwordInput, code)
-                            }
-                        }
-                    }
+                    if (validatePhone(phoneInput)) onPhoneContinue(phoneInput, code)
                 },
                 variant  = ShButtonVariant.Accent,
                 enabled  = !isGoogleLoading,

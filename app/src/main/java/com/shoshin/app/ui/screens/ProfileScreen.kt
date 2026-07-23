@@ -1,4 +1,4 @@
-package com.Shoshin.app.ui.screens
+package com.shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,12 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.Shoshin.app.R
-import com.Shoshin.app.ui.components.*
-import com.Shoshin.app.ui.theme.*
-import com.Shoshin.app.viewmodel.ProfileViewModel
-import com.Shoshin.app.viewmodel.BadgeViewModel
-import com.Shoshin.app.navigation.ShRoutes
+import com.shoshin.app.R
+import com.shoshin.app.ui.components.*
+import com.shoshin.app.ui.theme.*
+import com.shoshin.app.viewmodel.ProfileViewModel
+import com.shoshin.app.viewmodel.BadgeViewModel
+import com.shoshin.app.navigation.ShRoutes
 
 @Composable
 fun ProfileScreen(

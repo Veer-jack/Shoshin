@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.Shoshin.app"
+    namespace = "com.shoshin.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.Shoshin.app"
+        applicationId = "com.shoshin.app"
         minSdk = 26
         targetSdk = 35
         versionCode = 4
@@ -22,7 +22,7 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(System.getProperty("user.home") + "/shoshin_keystore.p12")
+            storeFile = file(System.getProperty("user.home") + "/shoshin_release.keystore")
             storePassword = "shoshin123"
             keyAlias = "shoshin_key"
             keyPassword = "shoshin123"
@@ -50,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

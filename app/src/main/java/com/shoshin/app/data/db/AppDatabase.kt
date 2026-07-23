@@ -1,11 +1,11 @@
-package com.Shoshin.app.data.db
+package com.shoshin.app.data.db
 
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
-import com.Shoshin.app.data.db.dao.*
-import com.Shoshin.app.data.db.entities.*
+import com.shoshin.app.data.db.dao.*
+import com.shoshin.app.data.db.entities.*
 
 @Database(
     entities = [

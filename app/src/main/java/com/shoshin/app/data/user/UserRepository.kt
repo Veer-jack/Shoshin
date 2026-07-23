@@ -1,8 +1,8 @@
-package com.Shoshin.app.data.user
+package com.shoshin.app.data.user
 
 import android.graphics.Bitmap
-import com.Shoshin.app.data.db.dao.UserDao
-import com.Shoshin.app.data.db.entities.UserEntity
+import com.shoshin.app.data.db.dao.UserDao
+import com.shoshin.app.data.db.entities.UserEntity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage

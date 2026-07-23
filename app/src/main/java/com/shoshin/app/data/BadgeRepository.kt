@@ -1,11 +1,11 @@
-package com.Shoshin.app.data
+package com.shoshin.app.data
 
-import com.Shoshin.app.data.db.dao.BadgeDao
-import com.Shoshin.app.data.db.entities.BadgeEntity
-import com.Shoshin.app.data.models.Badge
-import com.Shoshin.app.data.models.BadgeCategory
-import com.Shoshin.app.data.models.BadgeDefinitions
-import com.Shoshin.app.data.models.BadgeRarity
+import com.shoshin.app.data.db.dao.BadgeDao
+import com.shoshin.app.data.db.entities.BadgeEntity
+import com.shoshin.app.data.models.Badge
+import com.shoshin.app.data.models.BadgeCategory
+import com.shoshin.app.data.models.BadgeDefinitions
+import com.shoshin.app.data.models.BadgeRarity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

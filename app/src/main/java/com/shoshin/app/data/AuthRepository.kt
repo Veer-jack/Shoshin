@@ -1,4 +1,4 @@
-package com.Shoshin.app.data
+package com.shoshin.app.data
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider

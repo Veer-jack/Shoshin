@@ -1,4 +1,4 @@
-package com.Shoshin.app.data.groups
+package com.shoshin.app.data.groups
 
 import com.google.firebase.firestore.ServerTimestamp
 import java.util.Date

@@ -1,4 +1,4 @@
-package com.Shoshin.app.sync
+package com.shoshin.app.sync
 
 import android.content.Context
 import android.net.ConnectivityManager

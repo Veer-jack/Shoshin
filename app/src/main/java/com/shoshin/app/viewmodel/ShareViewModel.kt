@@ -1,4 +1,4 @@
-package com.Shoshin.app.viewmodel
+package com.shoshin.app.viewmodel
 
 import android.app.Application
 import android.content.ContentValues
@@ -13,8 +13,8 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.Shoshin.app.utils.ShareCardGenerator
-import com.Shoshin.app.utils.AnalyticsManager
+import com.shoshin.app.utils.ShareCardGenerator
+import com.shoshin.app.utils.AnalyticsManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

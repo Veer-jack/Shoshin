@@ -1,10 +1,10 @@
-package com.Shoshin.app.viewmodel
+package com.shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.Shoshin.app.data.db.dao.*
-import com.Shoshin.app.data.models.*
-import com.Shoshin.app.data.user.UserRepository
+import com.shoshin.app.data.db.dao.*
+import com.shoshin.app.data.models.*
+import com.shoshin.app.data.user.UserRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat

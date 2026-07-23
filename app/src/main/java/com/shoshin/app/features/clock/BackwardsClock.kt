@@ -1,4 +1,4 @@
-package com.Shoshin.app.features.clock
+package com.shoshin.app.features.clock
 
 import java.time.LocalTime
 import java.time.LocalDateTime

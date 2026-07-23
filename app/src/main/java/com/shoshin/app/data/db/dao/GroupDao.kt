@@ -1,7 +1,7 @@
-package com.Shoshin.app.data.db.dao
+package com.shoshin.app.data.db.dao
 
 import androidx.room.*
-import com.Shoshin.app.data.db.entities.GroupEntity
+import com.shoshin.app.data.db.entities.GroupEntity
 
 @Dao
 interface GroupDao {

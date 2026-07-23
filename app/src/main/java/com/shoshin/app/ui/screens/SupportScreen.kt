@@ -1,4 +1,4 @@
-package com.Shoshin.app.ui.screens
+package com.shoshin.app.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -21,9 +21,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.Shoshin.app.R
-import com.Shoshin.app.ui.components.*
-import com.Shoshin.app.ui.theme.*
+import com.shoshin.app.R
+import com.shoshin.app.ui.components.*
+import com.shoshin.app.ui.theme.*
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext

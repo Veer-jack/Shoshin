@@ -1,6 +1,6 @@
-package com.Shoshin.app.sync
+package com.shoshin.app.sync
 
-import com.Shoshin.app.data.db.entities.ReflectionEntity
+import com.shoshin.app.data.db.entities.ReflectionEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

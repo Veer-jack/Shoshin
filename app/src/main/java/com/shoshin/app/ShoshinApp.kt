@@ -1,10 +1,12 @@
-package com.Shoshin.app
+package com.shoshin.app
 
 import android.app.Application
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.Shoshin.app.utils.AnalyticsManager
+import com.shoshin.app.utils.AnalyticsManager
+import com.shoshin.app.BuildConfig
 
 class ShoshinApp : Application() {
     override fun onCreate() {
@@ -12,9 +14,15 @@ class ShoshinApp : Application() {
         
         // Initialize App Check
         val firebaseAppCheck = FirebaseAppCheck.getInstance()
-        firebaseAppCheck.installAppCheckProviderFactory(
-            DebugAppCheckProviderFactory.getInstance()
-        )
+        if (BuildConfig.DEBUG) {
+            firebaseAppCheck.installAppCheckProviderFactory(
+                DebugAppCheckProviderFactory.getInstance()
+            )
+        } else {
+            firebaseAppCheck.installAppCheckProviderFactory(
+                PlayIntegrityAppCheckProviderFactory.getInstance()
+            )
+        }
 
         // Initialize Analytics
         AnalyticsManager.initialize(this)

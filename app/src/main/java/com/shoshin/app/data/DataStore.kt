@@ -1,4 +1,4 @@
-package com.Shoshin.app.data
+package com.shoshin.app.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore

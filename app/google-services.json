@@ -9,9 +9,11 @@
       "client_info": {
         "mobilesdk_app_id": "1:91496310161:android:9ab7ace05542381a572630",
         "android_client_info": {
-          "package_name": "com.Shoshin.app",
+          "package_name": "com.shoshin.app",
           "certificate_hash": [
-            "4EFAD0CB88064643125783DAC27F7C97006CC826"
+            "EE1B31D66C96A192658EF0E8501A6F68D24406EC",
+            "4EFAD0CB88064643125783DAC27F7C97006CC826",
+            "88788E13E5CC1C69CDD9118DC970B0792A37F630"
           ]
         }
       },

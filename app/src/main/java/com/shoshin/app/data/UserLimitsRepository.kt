@@ -1,8 +1,8 @@
-package com.Shoshin.app.data
+package com.shoshin.app.data
 
-import com.Shoshin.app.data.db.dao.UserLimitsDao
-import com.Shoshin.app.data.db.entities.UserLimitsEntity
-import com.Shoshin.app.data.models.UserLimits
+import com.shoshin.app.data.db.dao.UserLimitsDao
+import com.shoshin.app.data.db.entities.UserLimitsEntity
+import com.shoshin.app.data.models.UserLimits
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

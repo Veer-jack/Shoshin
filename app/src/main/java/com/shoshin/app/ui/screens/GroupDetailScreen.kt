@@ -1,4 +1,4 @@
-package com.Shoshin.app.ui.screens
+package com.shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,13 +20,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.Shoshin.app.R
-import com.Shoshin.app.navigation.ShRoutes
-import com.Shoshin.app.ui.components.*
-import com.Shoshin.app.ui.theme.*
-import com.Shoshin.app.viewmodel.GroupViewModel
-import com.Shoshin.app.viewmodel.GroupStatsViewModel
-import com.Shoshin.app.utils.ErrorHandler
+import com.shoshin.app.R
+import com.shoshin.app.navigation.ShRoutes
+import com.shoshin.app.ui.components.*
+import com.shoshin.app.ui.theme.*
+import com.shoshin.app.viewmodel.GroupViewModel
+import com.shoshin.app.viewmodel.GroupStatsViewModel
+import com.shoshin.app.utils.ErrorHandler
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.*

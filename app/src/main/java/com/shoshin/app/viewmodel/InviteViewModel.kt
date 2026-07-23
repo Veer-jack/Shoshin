@@ -1,10 +1,10 @@
-package com.Shoshin.app.viewmodel
+package com.shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.Shoshin.app.data.ContactsRepository
-import com.Shoshin.app.data.models.UserSummary
-import com.Shoshin.app.data.user.UserRepository
+import com.shoshin.app.data.ContactsRepository
+import com.shoshin.app.data.models.UserSummary
+import com.shoshin.app.data.user.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -1,11 +1,11 @@
-package com.Shoshin.app.utils
+package com.shoshin.app.utils
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
-import com.Shoshin.app.data.db.AppDatabase
-import com.Shoshin.app.data.db.entities.SocialShareEntity
+import com.shoshin.app.data.db.AppDatabase
+import com.shoshin.app.data.db.entities.SocialShareEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

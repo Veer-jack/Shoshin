@@ -1,4 +1,4 @@
-package com.Shoshin.app
+package com.shoshin.app
 
 import android.app.AlarmManager
 import android.app.NotificationChannel
@@ -20,7 +20,7 @@ class ShoshinNotificationManager(private val context: Context) {
         const val CHANNEL_ID = "shoshin_reminders"
         const val CHANNEL_NAME = "Daily Reminders"
         const val NOTIFICATION_ID = 1001
-        const val ACTION_NOTIFICATION_ALARM = "com.Shoshin.app.NOTIFICATION_ALARM"
+        const val ACTION_NOTIFICATION_ALARM = "com.shoshin.app.NOTIFICATION_ALARM"
         const val EXTRA_OPEN_CHECKPOINT = "open_checkpoint"
     }
 
@@ -118,7 +118,7 @@ class ShoshinNotificationManager(private val context: Context) {
         )
 
         val skipIntent = Intent(context, NotificationReceiver::class.java).apply {
-            action = "com.Shoshin.app.SKIP_TODAY"
+            action = "com.shoshin.app.SKIP_TODAY"
         }
         val skipPendingIntent = PendingIntent.getBroadcast(
             context,

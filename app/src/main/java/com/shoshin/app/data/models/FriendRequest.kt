@@ -1,4 +1,4 @@
-package com.Shoshin.app.data.models
+package com.shoshin.app.data.models
 
 data class FriendRequest(
     val requestId: String,

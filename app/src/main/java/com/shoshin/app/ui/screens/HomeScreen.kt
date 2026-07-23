@@ -1,11 +1,11 @@
-package com.Shoshin.app.ui.screens
+package com.shoshin.app.ui.screens
 
 import androidx.compose.runtime.*
 import androidx.navigation.NavController
-import com.Shoshin.app.data.db.AppDatabase
-import com.Shoshin.app.sync.*
-import com.Shoshin.app.navigation.ShoshinMainShell
-import com.Shoshin.app.data.user.UserRepository
+import com.shoshin.app.data.db.AppDatabase
+import com.shoshin.app.sync.*
+import com.shoshin.app.navigation.ShoshinMainShell
+import com.shoshin.app.data.user.UserRepository
 
 @Composable
 fun HomeScreen(
@@ -15,7 +15,7 @@ fun HomeScreen(
     networkMonitor: NetworkStateMonitor,
     conflictResolver: ConflictResolver,
     userRepository: UserRepository,
-    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel
+    streakViewModel: com.shoshin.app.viewmodel.StreakViewModel
 ) {
     // HomeScreen now just delegates to ShoshinMainShell which handles the tabs
     ShoshinMainShell(

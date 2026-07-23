@@ -1,9 +1,9 @@
-package com.Shoshin.app.data
+package com.shoshin.app.data
 
-import com.Shoshin.app.data.db.dao.FriendDao
-import com.Shoshin.app.data.db.entities.FriendEntity
-import com.Shoshin.app.data.models.Friend
-import com.Shoshin.app.data.models.FriendRequest
+import com.shoshin.app.data.db.dao.FriendDao
+import com.shoshin.app.data.db.entities.FriendEntity
+import com.shoshin.app.data.models.Friend
+import com.shoshin.app.data.models.FriendRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

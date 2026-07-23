@@ -1,4 +1,4 @@
-package com.Shoshin.app.ui.components
+package com.shoshin.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,9 +14,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.Shoshin.app.R
-import com.Shoshin.app.data.models.Friend
-import com.Shoshin.app.ui.theme.*
+import com.shoshin.app.R
+import com.shoshin.app.data.models.Friend
+import com.shoshin.app.ui.theme.*
 
 @Composable
 fun FriendStreaksSection(

@@ -1,9 +1,9 @@
-package com.Shoshin.app.data.groups
+package com.shoshin.app.data.groups
 
-import com.Shoshin.app.data.db.dao.GroupDao
-import com.Shoshin.app.data.db.dao.GroupMemberDao
-import com.Shoshin.app.data.db.entities.GroupEntity
-import com.Shoshin.app.data.db.entities.GroupMemberEntity
+import com.shoshin.app.data.db.dao.GroupDao
+import com.shoshin.app.data.db.dao.GroupMemberDao
+import com.shoshin.app.data.db.entities.GroupEntity
+import com.shoshin.app.data.db.entities.GroupMemberEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.tasks.await
@@ -268,10 +268,10 @@ class GroupRepository(
         }
     }
 
-    suspend fun getGroupPosts(groupId: String): Result<List<com.Shoshin.app.data.db.entities.GroupPostEntity>> {
+    suspend fun getGroupPosts(groupId: String): Result<List<com.shoshin.app.data.db.entities.GroupPostEntity>> {
         return try {
             val query = db.collection("groups").document(groupId).collection("posts").orderBy("createdAt").get().await()
-            val posts = query.documents.mapNotNull { it.toObject(com.Shoshin.app.data.db.entities.GroupPostEntity::class.java) }
+            val posts = query.documents.mapNotNull { it.toObject(com.shoshin.app.data.db.entities.GroupPostEntity::class.java) }
             Result.success(posts)
         } catch (e: Exception) {
             Result.failure(e)
@@ -281,7 +281,7 @@ class GroupRepository(
     suspend fun postToGroup(groupId: String, userId: String, content: String, photoUrl: String?): Result<Unit> {
         return try {
             val postId = UUID.randomUUID().toString()
-            val post = com.Shoshin.app.data.db.entities.GroupPostEntity(
+            val post = com.shoshin.app.data.db.entities.GroupPostEntity(
                 postId = postId,
                 groupId = groupId,
                 userId = userId,

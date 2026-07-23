@@ -1,8 +1,8 @@
-package com.Shoshin.app.data.db.dao
+package com.shoshin.app.data.db.dao
 
 import androidx.room.*
-import com.Shoshin.app.data.db.entities.CheckpointEntity
-import com.Shoshin.app.data.db.entities.ReflectionEntity
+import com.shoshin.app.data.db.entities.CheckpointEntity
+import com.shoshin.app.data.db.entities.ReflectionEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

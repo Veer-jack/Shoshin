@@ -1,4 +1,4 @@
-package com.Shoshin.app.data.db.entities
+package com.shoshin.app.data.db.entities
 
 import androidx.room.Entity
 

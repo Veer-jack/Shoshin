@@ -1,11 +1,11 @@
-package com.Shoshin.app.utils
+package com.shoshin.app.utils
 
 import android.content.Context
 import android.graphics.*
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
-import com.Shoshin.app.R
+import com.shoshin.app.R
 import java.io.File
 import java.io.FileOutputStream
 

@@ -1,4 +1,4 @@
-package com.Shoshin.app.ui.screens
+package com.shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,26 +16,24 @@ import androidx.compose.ui.platform.LocalContext
 import android.app.Activity
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
-import com.Shoshin.app.R
-import com.Shoshin.app.PhoneAuthManager
-import com.Shoshin.app.EmailAuthManager
-import com.Shoshin.app.data.ShoshinRepository
-import com.Shoshin.app.navigation.ShRoutes
-import com.Shoshin.app.ui.components.*
-import com.Shoshin.app.ui.theme.*
-import com.Shoshin.app.utils.ErrorHandler
+import com.shoshin.app.R
+import com.shoshin.app.PhoneAuthManager
+import com.shoshin.app.data.ShoshinRepository
+import com.shoshin.app.navigation.ShRoutes
+import com.shoshin.app.ui.components.*
+import com.shoshin.app.ui.theme.*
+import com.shoshin.app.utils.ErrorHandler
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-enum class OtpMode { Phone, Email }
+enum class OtpMode { Phone }
 
 @Composable
 fun OTPVerifyScreen(
     navController: NavHostController,
     shoshinRepository: ShoshinRepository,
     phone: String = "",
-    email: String = "",
     password: String = "",
     mode: OtpMode = OtpMode.Phone,
     referralCode: String? = null,
@@ -46,7 +44,6 @@ fun OTPVerifyScreen(
     val scope = rememberCoroutineScope()
     val auth = FirebaseAuth.getInstance()
     val phoneAuthManager = remember { PhoneAuthManager(auth) }
-    val emailAuthManager = remember { EmailAuthManager(auth) }
 
     var code by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -65,21 +62,6 @@ fun OTPVerifyScreen(
                 onCodeSent = { 
                     isSending = false
                     resendCooldown = 60
-                },
-                onError = { e ->
-                    errorMessage = ErrorHandler.mapFirebaseError(e)
-                    isSending = false
-                }
-            )
-        } else if (mode == OtpMode.Email) {
-            isSending = true
-            emailAuthManager.sendVerificationEmail(
-                email = email,
-                password = password,
-                onSuccess = {
-                    isSending = false
-                    resendCooldown = 60
-                    successMessage = "Verification email sent!"
                 },
                 onError = { e ->
                     errorMessage = ErrorHandler.mapFirebaseError(e)
@@ -126,7 +108,7 @@ fun OTPVerifyScreen(
             Spacer(Modifier.height(32.dp))
 
             Text(
-                text = if (mode == OtpMode.Phone) "Verify Phone" else "Check your email",
+                text = "Verify Phone",
                 style = ShTitleStyle,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -137,7 +119,7 @@ fun OTPVerifyScreen(
                 text = if (mode == OtpMode.Phone) 
                     "Enter the 6-digit code sent to $phone"
                 else 
-                    "We sent a verification link to $email",
+                    "",
                 style = ShBodyStyle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -162,14 +144,6 @@ fun OTPVerifyScreen(
                     dark = false,
                     modifier = Modifier.padding(top = 24.dp)
                 )
-            } else {
-                // Email Verification Icon
-                Box(
-                    modifier = Modifier.size(100.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(painterResource(R.drawable.ic_mail), null, modifier = Modifier.size(40.dp), tint = ShVermillion)
-                }
             }
 
             if (errorMessage.isNotEmpty()) {
@@ -198,7 +172,7 @@ fun OTPVerifyScreen(
 
             ShoshinButton(
                 onClick = {
-                    if (mode == OtpMode.Phone && code.length != 6) {
+                    if (code.length != 6) {
                         errorMessage = "OTP must be 6 digits"
                         return@ShoshinButton
                     }
@@ -214,18 +188,6 @@ fun OTPVerifyScreen(
                                 onSuccess = {
                                     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
                                     onSuccess(userId, phone, referralCode)
-                                },
-                                onError = {
-                                    errorMessage = ErrorHandler.mapFirebaseError(it)
-                                    isLoading = false
-                                }
-                            )
-                        }
-                        OtpMode.Email -> {
-                            emailAuthManager.verifyEmail(
-                                onSuccess = {
-                                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                                    onSuccess(userId, email, referralCode)
                                 },
                                 onError = {
                                     errorMessage = ErrorHandler.mapFirebaseError(it)
@@ -266,20 +228,6 @@ fun OTPVerifyScreen(
                                 isSending = false
                                 resendCooldown = 60
                                 successMessage = "New code sent!"
-                            },
-                            onError = { e ->
-                                errorMessage = ErrorHandler.mapFirebaseError(e)
-                                isSending = false
-                            }
-                        )
-                    } else if (mode == OtpMode.Email) {
-                        emailAuthManager.sendVerificationEmail(
-                            email = email,
-                            password = password,
-                            onSuccess = {
-                                isSending = false
-                                resendCooldown = 60
-                                successMessage = "New verification link sent!"
                             },
                             onError = { e ->
                                 errorMessage = ErrorHandler.mapFirebaseError(e)

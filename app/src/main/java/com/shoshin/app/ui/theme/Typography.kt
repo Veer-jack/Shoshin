@@ -1,4 +1,4 @@
-package com.Shoshin.app.ui.theme
+package com.shoshin.app.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
@@ -6,7 +6,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.Shoshin.app.R
+import com.shoshin.app.R
 
 // Shoshin (初心) — Typography
 // Fonts: Cormorant Garamond (display) · DM Sans (UI) · Noto Serif JP (kanji)

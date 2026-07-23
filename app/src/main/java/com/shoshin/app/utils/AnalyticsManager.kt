@@ -1,4 +1,4 @@
-package com.Shoshin.app.utils
+package com.shoshin.app.utils
 
 import android.content.Context
 import android.os.Bundle

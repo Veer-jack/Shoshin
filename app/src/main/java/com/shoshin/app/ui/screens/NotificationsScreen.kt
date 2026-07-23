@@ -1,4 +1,4 @@
-package com.Shoshin.app.ui.screens
+package com.shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,11 +16,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.platform.LocalContext
-import com.Shoshin.app.R
-import com.Shoshin.app.data.db.AppDatabase
-import com.Shoshin.app.data.db.entities.NotificationEntity
-import com.Shoshin.app.ui.components.*
-import com.Shoshin.app.ui.theme.*
+import com.shoshin.app.R
+import com.shoshin.app.data.db.AppDatabase
+import com.shoshin.app.data.db.entities.NotificationEntity
+import com.shoshin.app.ui.components.*
+import com.shoshin.app.ui.theme.*
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 

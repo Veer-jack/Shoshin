@@ -1,11 +1,11 @@
-package com.Shoshin.app.viewmodel
+package com.shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.Shoshin.app.data.user.UserRepository
-import com.Shoshin.app.features.clock.DaySettings
-import com.Shoshin.app.features.clock.TimeRemaining
-import com.Shoshin.app.features.clock.calculateTimeRemaining
+import com.shoshin.app.data.user.UserRepository
+import com.shoshin.app.features.clock.DaySettings
+import com.shoshin.app.features.clock.TimeRemaining
+import com.shoshin.app.features.clock.calculateTimeRemaining
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

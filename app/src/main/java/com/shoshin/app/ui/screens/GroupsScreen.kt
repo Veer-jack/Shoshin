@@ -1,4 +1,4 @@
-package com.Shoshin.app.ui.screens
+package com.shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,16 +19,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.Shoshin.app.R
-import com.Shoshin.app.navigation.ShRoutes
-import com.Shoshin.app.ui.components.*
-import com.Shoshin.app.ui.theme.*
+import com.shoshin.app.R
+import com.shoshin.app.navigation.ShRoutes
+import com.shoshin.app.ui.components.*
+import com.shoshin.app.ui.theme.*
 
 @Composable
 fun GroupsScreen(
     navController: NavController,
-    referralViewModel: com.Shoshin.app.viewmodel.ReferralViewModel? = null,
-    groupViewModel: com.Shoshin.app.viewmodel.GroupViewModel? = null
+    referralViewModel: com.shoshin.app.viewmodel.ReferralViewModel? = null,
+    groupViewModel: com.shoshin.app.viewmodel.GroupViewModel? = null
 ) {
     val limits by referralViewModel?.limits?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
     

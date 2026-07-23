@@ -1,8 +1,8 @@
-package com.Shoshin.app.data
+package com.shoshin.app.data
 
 import android.content.Context
 import android.provider.ContactsContract
-import com.Shoshin.app.data.models.UserSummary
+import com.shoshin.app.data.models.UserSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext

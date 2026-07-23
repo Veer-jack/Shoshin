@@ -1,10 +1,10 @@
-package com.Shoshin.app.viewmodel
+package com.shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.Shoshin.app.data.models.GroupStats
-import com.Shoshin.app.data.models.UserSummary
-import com.Shoshin.app.data.db.dao.GroupDao
+import com.shoshin.app.data.models.GroupStats
+import com.shoshin.app.data.models.UserSummary
+import com.shoshin.app.data.db.dao.GroupDao
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

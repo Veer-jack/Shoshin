@@ -1,9 +1,9 @@
-package com.Shoshin.app.viewmodel
+package com.shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.Shoshin.app.data.user.UserRepository
-import com.Shoshin.app.data.ShoshinRepository
+import com.shoshin.app.data.user.UserRepository
+import com.shoshin.app.data.ShoshinRepository
 import kotlinx.coroutines.launch
 
 class OnboardingViewModel(

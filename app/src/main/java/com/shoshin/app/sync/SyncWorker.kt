@@ -1,12 +1,12 @@
-package com.Shoshin.app.sync
+package com.shoshin.app.sync
 
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.Shoshin.app.data.AuthRepository
-import com.Shoshin.app.data.db.AppDatabase
+import com.shoshin.app.data.AuthRepository
+import com.shoshin.app.data.db.AppDatabase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.concurrent.TimeUnit

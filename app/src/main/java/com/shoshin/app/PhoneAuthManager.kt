@@ -1,4 +1,4 @@
-package com.Shoshin.app
+package com.shoshin.app
 
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
