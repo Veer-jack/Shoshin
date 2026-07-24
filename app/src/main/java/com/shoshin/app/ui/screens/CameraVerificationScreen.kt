@@ -65,12 +65,72 @@ fun CameraVerificationScreen(
     var isVerifying by remember { mutableStateOf(false) }
     var verificationResult by remember { mutableStateOf<com.shoshin.app.utils.VerificationResult?>(null) }
     var uploadError by remember { mutableStateOf<String?>(null) }
+    
+    var timeRemaining by remember { mutableStateOf(300) } // 5 minutes = 300 seconds
+    var isTimeExpired by remember { mutableStateOf(false) }
+
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     
     val photoStorageManager = remember(context) { com.shoshin.app.utils.PhotoStorageManager(context) }
     val shareManager = remember(context) { com.shoshin.app.utils.SocialShareManager(context, database!!) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+    LaunchedEffect(Unit) {
+        while (timeRemaining > 0 && verificationResult !is com.shoshin.app.utils.VerificationResult.Success && !isTimeExpired) {
+            delay(1000)
+            timeRemaining--
+            if (timeRemaining <= 0) {
+                isTimeExpired = true
+                android.util.Log.e("CameraVerification", "Time expired for photo verification")
+            }
+        }
+    }
+
+    LaunchedEffect(isTimeExpired) {
+        if (isTimeExpired) {
+            android.util.Log.w("CameraVerification", "Photo verification timeout - routine failed")
+            // AnalyticsManager.logCheckpointFailed(
+            //    reason = "timeout",
+            //    timeSpent = 300 - timeRemaining
+            // )
+        }
+    }
+
+    if (isTimeExpired) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text(
+                    "Time's Up!",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = ShVermillion
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    "You didn't complete the photo verification in time.",
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    color = ShFog
+                )
+                Spacer(Modifier.height(32.dp))
+                ShoshinButton(
+                    onClick = { onSkip() },
+                    variant = ShButtonVariant.Accent,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Return to Routine", color = Color.White)
+                }
+            }
+        }
+        return
+    }
 
     if (isUploading) {
         LoadingDialog(message = "Uploading proof...")
@@ -84,6 +144,7 @@ fun CameraVerificationScreen(
         if (showCamera) {
             CameraPreviewUI(
                 label = label,
+                timeRemaining = timeRemaining,
                 onPhotoCapture = { bitmap ->
                     capturedImage = bitmap
                     showCamera = false
@@ -103,6 +164,7 @@ fun CameraVerificationScreen(
             CameraConfirmScreen(
                 bitmap = capturedImage,
                 label = label,
+                timeRemaining = timeRemaining,
                 targetLabels = targetLabels,
                 isUploading = isUploading,
                 isVerifying = isVerifying,
@@ -153,7 +215,12 @@ fun CameraVerificationScreen(
 }
 
 @Composable
-fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: () -> Unit) {
+fun CameraPreviewUI(
+    label: String, 
+    timeRemaining: Int,
+    onPhotoCapture: (Bitmap) -> Unit, 
+    onDismiss: () -> Unit
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> = remember { 
@@ -265,9 +332,23 @@ fun CameraPreviewUI(label: String, onPhotoCapture: (Bitmap) -> Unit, onDismiss: 
         Column(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 40.dp), contentAlignment = Alignment.TopCenter) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val timerColor = when {
+                        timeRemaining > 180 -> ShMatcha       // More than 3 min
+                        timeRemaining > 60 -> Color.Yellow    // 1-3 min
+                        else -> ShVermillion                  // Less than 1 min
+                    }
+
+                    Text(
+                        text = formatTime(timeRemaining),
+                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 48.sp),
+                        color = timerColor
+                    )
+                    
+                    Spacer(Modifier.height(16.dp))
+
                     Text(
                         "Capture Proof", 
-                        color = ShNightMuted, 
+                        color = Color.White.copy(alpha = 0.6f),
                         style = ShLabelStyle
                     )
                     Spacer(Modifier.height(8.dp))
@@ -367,6 +448,7 @@ fun imageProxyToBitmap(image: ImageProxy): Bitmap {
 fun CameraConfirmScreen(
     bitmap: Bitmap?,
     label: String,
+    timeRemaining: Int,
     targetLabels: List<String>,
     isUploading: Boolean,
     isVerifying: Boolean,
@@ -383,6 +465,20 @@ fun CameraConfirmScreen(
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
+        val timerColor = when {
+            timeRemaining > 180 -> ShMatcha       // More than 3 min
+            timeRemaining > 60 -> Color.Yellow    // 1-3 min
+            else -> ShVermillion                  // Less than 1 min
+        }
+
+        Box(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), contentAlignment = Alignment.Center) {
+            Text(
+                text = formatTime(timeRemaining),
+                style = MaterialTheme.typography.headlineMedium,
+                color = timerColor
+            )
+        }
+
         if (!isUploading && !isVerifying) {
             TextButton(
                 onClick = onRetake, 
@@ -542,4 +638,10 @@ suspend fun uploadPhotoToFirebase(
     } catch (e: Exception) {
         onError(e.localizedMessage ?: "Unknown error")
     }
+}
+
+private fun formatTime(seconds: Int): String {
+    val minutes = seconds / 60
+    val secs = seconds % 60
+    return String.format("%d:%02d", minutes, secs)
 }
