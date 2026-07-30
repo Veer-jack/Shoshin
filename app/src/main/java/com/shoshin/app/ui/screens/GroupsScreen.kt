@@ -1,7 +1,6 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,165 +18,188 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 
 @Composable
 fun GroupsScreen(
     navController: NavController,
-    referralViewModel: com.shoshin.app.viewmodel.ReferralViewModel? = null,
-    groupViewModel: com.shoshin.app.viewmodel.GroupViewModel? = null
+    referralViewModel: com.Shoshin.app.viewmodel.ReferralViewModel? = null,
+    groupViewModel: com.Shoshin.app.viewmodel.GroupViewModel? = null
 ) {
-    val limits by referralViewModel?.limits?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
-    
     val groups by groupViewModel?.groups?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
     val isLoading by groupViewModel?.isLoading?.collectAsState() ?: remember { mutableStateOf(false) }
+
+    var showJoinDialog by remember { mutableStateOf(false) }
+    var joinCode by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         groupViewModel?.loadGroups()
     }
 
-    val joinedCount = groups.size
-    val maxJoin = limits?.groupsJoinLimit ?: 5
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(ShInk)
-                .padding(horizontal = 24.dp, vertical = 32.dp)
-        ) {
-            Column {
-                Kicker("Community", color = ShVermillion)
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Your Circles",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = CormorantFamily,
-                    color = Color.White
-                )
-                Text(
-                    "Rise together, stay accountable.",
-                    fontSize = 15.sp,
-                    color = ShFog,
-                    fontFamily = DmSansFamily,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-        }
-        
-        // LIMIT DISPLAY (Feature 4.4)
-        Surface(
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("MY GROUPS", style = ShKickerStyle, color = MaterialTheme.colorScheme.background.copy(alpha = 0.6f))
-                    Text(
-                        "Joined: $joinedCount of $maxJoin",
-                        style = ShBodyStyle,
-                        color = MaterialTheme.colorScheme.background,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                TextButton(onClick = { navController.navigate(ShRoutes.REFERRALS) }) {
-                    Text("Refer to unlock", color = ShVermillion, style = ShLabelStyle)
-                }
-            }
-        }
-
-        // WARNING BANNER (Feature 4.4)
-        if (maxJoin - joinedCount <= 1) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(ShVermillion.copy(alpha = 0.1f))
-                    .clickable { navController.navigate(ShRoutes.REFERRALS) }
-                    .padding(vertical = 8.dp, horizontal = 24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(painterResource(R.drawable.ic_info), contentDescription = null, tint = ShVermillion, modifier = Modifier.size(16.dp))
-                Text(
-                    "${maxJoin - joinedCount} group slot remaining. Refer a friend to unlock more →",
-                    style = ShLabelStyle,
-                    color = ShVermillion
-                )
-            }
-        }
-
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            Spacer(Modifier.height(24.dp))
-
-            if (groups.isEmpty()) {
-                EdgeLayout(
-                    icon = R.drawable.ic_groups,
-                    kicker = "Solitude is peace, but a circle is power",
-                    title = "Find your circle",
-                    body = "Join or create a circle to rise with others and keep each other accountable.",
-                    actionLabel = "Create a Circle",
-                    onAction = { navController.navigate(ShRoutes.CREATE_GROUP) }
+            // App Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "Circles", 
+                    style = ShTitleStyle.copy(fontSize = 32.sp), 
+                    color = MaterialTheme.colorScheme.onBackground
                 )
-            } else {
-                Text("YOUR CIRCLES", style = ShKickerStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 16.dp))
-                
-                groups.forEach { group ->
-                    GroupCard(
-                        name = group.name,
-                        description = group.description,
-                        memberCount = group.members.size,
-                        onClick = { navController.navigate(ShRoutes.groupDetail(group.id)) }
+                IconButton(onClick = { navController.navigate(ShRoutes.REFERRALS) }) {
+                    Icon(painterResource(R.drawable.ic_bolt), null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+            ) {
+                Spacer(Modifier.height(8.dp))
+
+                if (isLoading && groups.isEmpty()) {
+                    Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                } else if (groups.isEmpty()) {
+                    EdgeLayout(
+                        icon = R.drawable.ic_groups,
+                        kicker = "YOUR CIRCLE IS QUIET",
+                        title = "Find your circle",
+                        body = "Solitude is peace, but a circle is power. Join others to rise together.",
+                        actionLabel = "Create a Circle",
+                        onAction = { navController.navigate(ShRoutes.CREATE_GROUP) }
                     )
+                } else {
+                    Kicker("YOUR CIRCLES", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(16.dp))
+
+                    groups.forEach { group ->
+                        ShoshinCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp)
+                                .clickable { navController.navigate(ShRoutes.groupDetail(group.id)) }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Group Avatar
+                                Box(
+                                    modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = group.name.take(1).uppercase(),
+                                        style = ShH2Style.copy(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                    )
+                                }
+                                
+                                Spacer(Modifier.width(16.dp))
+                                
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(group.name, style = ShH2Style.copy(fontSize = 17.sp), color = MaterialTheme.colorScheme.onSurface)
+                                    Text("${group.members.size} members", style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_arrow_right), 
+                                    null, 
+                                    tint = MaterialTheme.colorScheme.outline, 
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
 
-                // Action Buttons
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Bottom Actions
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     ShoshinButton(
                         onClick = { navController.navigate(ShRoutes.CREATE_GROUP) },
                         variant = ShButtonVariant.Ghost,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(painterResource(id = R.drawable.ic_plus), null, modifier = Modifier.size(19.dp))
+                        Icon(painterResource(id = R.drawable.ic_plus), null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onBackground)
                         Spacer(Modifier.width(8.dp))
-                        Text("Create")
+                        Text("Create", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
                     }
 
                     ShoshinButton(
-                        onClick = { /* Join code logic */ },
+                        onClick = { showJoinDialog = true },
                         variant = ShButtonVariant.Primary,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(painterResource(id = R.drawable.ic_groups), null, modifier = Modifier.size(19.dp))
+                        Icon(painterResource(id = R.drawable.ic_groups), null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.background)
                         Spacer(Modifier.width(8.dp))
-                        Text("Join")
+                        Text("Join", fontWeight = FontWeight.Bold)
                     }
                 }
+                
+                Spacer(Modifier.height(48.dp))
             }
-
-            Spacer(modifier = Modifier.height(48.dp))
         }
+    }
+
+    if (showJoinDialog) {
+        AlertDialog(
+            onDismissRequest = { showJoinDialog = false },
+            title = { Text("Join a Circle", style = ShTitleStyle.copy(fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface)) },
+            text = {
+                Column {
+                    Text("Enter the circle code shared with you.", style = ShBodyStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = joinCode,
+                        onValueChange = { joinCode = it.uppercase() },
+                        placeholder = { Text("CODE", style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { 
+                        if (joinCode.isNotBlank()) {
+                            groupViewModel?.joinGroup(joinCode)
+                            showJoinDialog = false
+                        }
+                    }
+                ) {
+                    Text("Join", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showJoinDialog = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(24.dp)
+        )
     }
 }

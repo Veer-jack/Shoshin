@@ -1,11 +1,11 @@
-package com.shoshin.app.viewmodel
+package com.Shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shoshin.app.data.ReferralRepository
-import com.shoshin.app.data.UserLimitsRepository
-import com.shoshin.app.data.models.UserLimits
-import com.shoshin.app.data.user.UserRepository
+import com.Shoshin.app.data.ReferralRepository
+import com.Shoshin.app.data.UserLimitsRepository
+import com.Shoshin.app.data.models.UserLimits
+import com.Shoshin.app.data.user.UserRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

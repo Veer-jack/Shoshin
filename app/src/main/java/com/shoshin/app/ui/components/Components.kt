@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.components
+package com.Shoshin.app.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -21,8 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.painterResource
-import com.shoshin.app.R
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.theme.*
 
 // ── ShoshinKeypad ─────────────────────────────────────────────
 @Composable
@@ -33,7 +33,7 @@ fun ShoshinKeypad(
     modifier: Modifier = Modifier,
     dark: Boolean = true
 ) {
-    val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "0", "del")
+    val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "ok")
     Column(modifier = modifier) {
         keys.chunked(3).forEach { row ->
             Row(
@@ -43,57 +43,49 @@ fun ShoshinKeypad(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 row.forEach { k ->
-                    val isSpecial = k == "del" || k == "+"
+                    val isOk = k == "ok"
+                    val isDel = k == "del"
+                    
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(58.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .height(64.dp)
+                            .clip(RoundedCornerShape(12.dp))
                             .background(
                                 when {
-                                    k == "del" -> ShVermillion
-                                    dark -> ShNightText.copy(alpha = 0.05f)
-                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                    isOk -> ShVermillion
+                                    dark -> ShPaper2 // Consistent dark gray box
+                                    else -> ShPaper2
                                 }
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = when {
-                                    k == "del" -> ShVermillion
-                                    dark -> ShNightText.copy(alpha = 0.08f)
-                                    else -> MaterialTheme.colorScheme.outline
-                                },
-                                shape = RoundedCornerShape(14.dp)
                             )
                             .clickable {
                                 when (k) {
                                     "del" -> onClear()
-                                    "+" -> onDigit("+")
+                                    "ok" -> onOk()
                                     else -> onDigit(k)
                                 }
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        when (k) {
-                            "del" -> Icon(
+                        when {
+                            isDel -> Icon(
                                 painter = painterResource(id = R.drawable.ic_backspace),
                                 contentDescription = "Delete",
-                                tint = ShPaper,
-                                modifier = Modifier.size(22.dp)
+                                tint = if (dark) Color.White else ShInk,
+                                modifier = Modifier.size(24.dp)
                             )
-                            "+" -> Text(
-                                text = "+",
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = DmSansFamily,
-                                color = if (dark) ShNightText else MaterialTheme.colorScheme.onSurface
+                            isOk -> Icon(
+                                painter = painterResource(id = R.drawable.ic_arrow_right),
+                                contentDescription = "Continue",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
                             )
                             else -> Text(
                                 text = k,
                                 fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 fontFamily = DmSansFamily,
-                                color = if (dark) ShNightText else MaterialTheme.colorScheme.onSurface
+                                color = if (dark) Color.White else ShInk
                             )
                         }
                     }
@@ -542,6 +534,22 @@ fun EdgeLayout(
                 Text(actionLabel)
             }
         }
+    }
+}
+
+// ── Badge Helpers ─────────────────────────────────────────────
+fun getBadgeIconRes(iconName: String): Int {
+    return when (iconName) {
+        "streak_7", "streak_30", "streak_100", "streak_365", "flame" -> R.drawable.ic_flame
+        "milestone", "check" -> R.drawable.ic_check
+        "groups", "community" -> R.drawable.ic_groups
+        "plus" -> R.drawable.ic_plus
+        "sun", "early_riser" -> R.drawable.ic_sun
+        "book", "scholar" -> R.drawable.ic_book
+        "share" -> R.drawable.ic_share
+        "shield", "security" -> R.drawable.ic_shield
+        "trophy", "best" -> R.drawable.ic_trophy
+        else -> R.drawable.ic_trophy
     }
 }
 

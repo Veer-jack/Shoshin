@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,15 +18,15 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.ShareViewModel
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.ShareViewModel
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShareScreen(
     navController: NavController,
@@ -36,139 +36,131 @@ fun ShareScreen(
     startDate: Long
 ) {
     val bitmap by viewModel.shareBitmap.collectAsState()
-    val description by viewModel.customDescription.collectAsState()
     val selectedStyle by viewModel.selectedStyle.collectAsState()
     val scrollState = rememberScrollState()
 
-    LaunchedEffect(streak, habitName, startDate, description, selectedStyle) {
+    LaunchedEffect(streak, habitName, startDate, selectedStyle) {
         viewModel.generatePreview(streak, habitName, startDate)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-    ) {
-        // App Bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
-            }
-            Spacer(Modifier.width(14.dp))
-            Text("Share your practice", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
-        }
-
-        Spacer(Modifier.height(22.dp))
-
-        // Card Preview
-        Box(
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(4f / 5f)
-                .clip(RoundedCornerShape(24.dp))
-                .background(ShInk), // Card itself always dark as per design
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .background(ShNight)
+                .statusBarsPadding()
         ) {
-            bitmap?.let {
-                Image(
-                    bitmap = it.asImageBitmap(),
-                    contentDescription = "Share Card Preview",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
-                )
-            } ?: CircularProgressIndicator(color = ShVermillion)
-        }
+            // App Bar
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(painterResource(R.drawable.ic_arrow_left), null, tint = Color.White)
+                }
+                Spacer(Modifier.width(8.dp))
+                Text("Share your practice", style = ShTitleStyle.copy(fontSize = 28.sp, color = Color.White))
+            }
 
-        Spacer(Modifier.height(24.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 24.dp)
+            ) {
+                Spacer(Modifier.height(24.dp))
 
-        // Style Picker
-        Kicker("Choose a card", modifier = Modifier.padding(start = 4.dp))
-        Spacer(Modifier.height(10.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            val styles = listOf(
-                Triple("streak", R.drawable.ic_flame, "Streak"),
-                Triple("ring", R.drawable.ic_pulse, "Consistency"),
-                Triple("badge", R.drawable.ic_trophy, "Badge")
-            )
-            
-            styles.forEach { (id, icon, label) ->
-                val isSelected = selectedStyle == id
-                Button(
-                    onClick = { viewModel.setStyle(id) },
-                    modifier = Modifier.weight(1f).height(72.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
-                        contentColor = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    contentPadding = PaddingValues(8.dp),
-                    elevation = null,
-                    border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
+                // Card Preview
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(ShNight2),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Enso(size = 240, color = ShVermillionLight.copy(alpha = 0.12f), strokeWidth = 10f, modifier = Modifier.align(Alignment.BottomEnd).offset(x = 60.dp, y = 60.dp))
+                    
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(painterResource(icon), null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.height(6.dp))
-                        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Box(
+                            modifier = Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)).background(ShNightText.copy(alpha = 0.05f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(painterResource(R.drawable.ic_pulse), null, tint = ShVermillionLight, modifier = Modifier.size(24.dp))
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Kicker("MORNINGS KEPT", color = ShVermillionLight)
+                        Spacer(Modifier.height(16.dp))
+                        Text(streak.toString(), style = ShTitleStyle.copy(fontSize = 72.sp, color = Color.White))
+                        Spacer(Modifier.height(8.dp))
+                        Text("Fourteen days of beginning again.", style = ShBodyStyle.copy(color = ShNightMuted), textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(16.dp))
+                        Text("初心", style = ShKanjiStyle.copy(fontSize = 22.sp, color = ShVermillionLight.copy(alpha = 0.5f)))
                     }
                 }
-            }
-        }
 
-        Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(32.dp))
 
-        // Share targets
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val targets = listOf(
-                Triple("Instagram", R.drawable.ic_camera, Color(0xFFE4405F)),
-                Triple("WhatsApp", R.drawable.ic_mail, Color(0xFF25D366)),
-                Triple("Telegram", R.drawable.ic_share, Color(0xFF0088CC)),
-                Triple("More", R.drawable.ic_grid, Color(0xFF666666))
-            )
-            
-            targets.forEach { (label, icon, color) ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 12.dp).clickable { viewModel.shareToPlatform(label, streak) }
+                Kicker("CHOOSE A CARD", color = ShNightMuted)
+                Spacer(Modifier.height(12.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val styles = listOf("streak" to "Streak", "ring" to "Consistency", "badge" to "Badge")
+                    val icons = listOf(R.drawable.ic_droplet, R.drawable.ic_pulse, R.drawable.ic_trophy)
+                    
+                    styles.forEachIndexed { i, (id, label) ->
+                        val isSelected = selectedStyle == id
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(80.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (isSelected) Color.White else ShNight2)
+                                .clickable { viewModel.setStyle(id) }
+                                .padding(12.dp)
+                        ) {
+                            Column {
+                                Icon(painterResource(icons[i]), null, modifier = Modifier.size(18.dp), tint = if (isSelected) Color.Black else ShNightMuted)
+                                Spacer(Modifier.weight(1f))
+                                Text(label, style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, color = if (isSelected) Color.Black else Color.White))
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(40.dp))
+
+                // Social Row
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                    SocialIcon(icon = R.drawable.ic_share, label = "Instagram")
+                    SocialIcon(icon = R.drawable.ic_mail, label = "WhatsApp")
+                    SocialIcon(icon = R.drawable.ic_grid, label = "More")
+                }
+
+                Spacer(Modifier.height(40.dp))
+
+                ShoshinButton(
+                    onClick = { viewModel.shareToPlatform("Generic", streak) },
+                    variant = ShButtonVariant.Accent,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(54.dp)
-                            .clip(CircleShape)
-                            .background(color.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(painterResource(icon), null, modifier = Modifier.size(22.dp), tint = color)
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text(label, style = ShLabelStyle.copy(fontSize = 11.5.sp), color = MaterialTheme.colorScheme.onBackground)
+                    Icon(painterResource(R.drawable.ic_share), null, modifier = Modifier.size(20.dp), tint = Color.White)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Share this card", fontWeight = FontWeight.Bold)
                 }
+
+                Spacer(Modifier.height(48.dp))
             }
         }
+    }
+}
 
-        Spacer(Modifier.height(32.dp))
-
-        ShoshinButton(
-            onClick = { viewModel.shareToPlatform("Generic", streak) },
-            variant = ShButtonVariant.Accent,
-            modifier = Modifier.fillMaxWidth().height(56.dp)
-        ) {
-            Icon(painterResource(R.drawable.ic_share), null, modifier = Modifier.size(20.dp), tint = Color.White)
-            Spacer(Modifier.width(10.dp))
-            Text("Share this card", fontWeight = FontWeight.Bold)
+@Composable
+private fun SocialIcon(icon: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(ShNight2), contentAlignment = Alignment.Center) {
+            Icon(painterResource(icon), null, tint = Color.White, modifier = Modifier.size(24.dp))
         }
-
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(8.dp))
+        Text(label, style = ShLabelStyle.copy(fontSize = 11.sp, color = ShNightMuted))
     }
 }

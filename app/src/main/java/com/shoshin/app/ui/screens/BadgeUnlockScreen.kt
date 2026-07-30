@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -21,11 +21,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.BadgeViewModel
+import com.Shoshin.app.R
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.BadgeViewModel
 
 @Composable
 fun BadgeUnlockScreen(
@@ -36,8 +36,7 @@ fun BadgeUnlockScreen(
     val badges by viewModel.badges.collectAsState()
     val badge = badges.find { it.id == badgeId } ?: return
 
-    ShoshinTheme(darkSurface = true) {
-        // Animation states
+    ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
         val infiniteTransition = rememberInfiniteTransition(label = "rotation")
         val rotation by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -49,21 +48,10 @@ fun BadgeUnlockScreen(
             label = "rotation"
         )
 
-        val scale = remember { Animatable(0f) }
-        LaunchedEffect(Unit) {
-            scale.animateTo(
-                targetValue = 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            )
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(ShNight)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -72,17 +60,17 @@ fun BadgeUnlockScreen(
             // Badge Medallion
             Box(
                 modifier = Modifier
-                    .size(180.dp)
+                    .size(200.dp)
                     .rotate(rotation)
                     .drawBehind {
                         drawCircle(
-                            color = ShVermillion,
-                            radius = 78.dp.toPx(),
+                            color = ShVermillionLight,
+                            radius = 92.dp.toPx(),
                             style = Stroke(
-                                width = 2.dp.toPx(),
-                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 8.dp.toPx()), 0f)
+                                width = 1.2.dp.toPx(),
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 10.dp.toPx()), 0f)
                             ),
-                            alpha = 0.5f
+                            alpha = 0.4f
                         )
                     },
                 contentAlignment = Alignment.Center
@@ -91,14 +79,14 @@ fun BadgeUnlockScreen(
                     modifier = Modifier
                         .size(128.dp)
                         .clip(CircleShape)
-                        .background(ShVermillion.copy(alpha = 0.14f)),
+                        .background(ShNight2),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
                             .size(88.dp)
                             .clip(CircleShape)
-                            .background(ShVermillion),
+                            .background(ShVermillionLight),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -111,30 +99,31 @@ fun BadgeUnlockScreen(
                 }
             }
 
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(48.dp))
 
-            Kicker("Badge earned", color = ShVermillion)
+            Kicker("BADGE EARNED", color = ShVermillionLight)
             
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
 
             Text(
                 text = badge.name,
-                style = ShTitleStyle.copy(fontSize = 32.sp, color = MaterialTheme.colorScheme.onBackground),
+                style = ShTitleStyle.copy(fontSize = 40.sp, color = Color.White),
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
 
             Text(
                 text = badge.description,
-                style = ShBodyStyle.copy(fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant),
+                style = ShBodyStyle.copy(fontSize = 16.sp, color = ShNightMuted),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.widthIn(max = 280.dp)
+                modifier = Modifier.widthIn(max = 280.dp),
+                lineHeight = 22.sp
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Column(modifier = Modifier.padding(bottom = 28.dp)) {
+            Column(modifier = Modifier.padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 ShoshinButton(
                     onClick = { 
                         navController.navigate(ShRoutes.streakShare(1, badge.name, System.currentTimeMillis()))
@@ -142,19 +131,17 @@ fun BadgeUnlockScreen(
                     variant = ShButtonVariant.Accent,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(painterResource(R.drawable.ic_share), null, modifier = Modifier.size(18.dp), tint = Color.White)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Share this moment")
+                    Icon(painterResource(R.drawable.ic_share), null, modifier = Modifier.size(20.dp), tint = Color.White)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Share this moment", fontWeight = FontWeight.Bold)
                 }
-                
-                Spacer(Modifier.height(12.dp))
                 
                 ShoshinButton(
                     onClick = { navController.popBackStack() },
                     variant = ShButtonVariant.Dark,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Continue")
+                    Text("Continue", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         }

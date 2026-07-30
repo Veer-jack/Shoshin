@@ -1,6 +1,6 @@
-package com.shoshin.app
+package com.Shoshin.app
 
-import com.shoshin.app.ui.screens.getBadgeIconRes
+import com.Shoshin.app.ui.screens.getBadgeIconRes
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

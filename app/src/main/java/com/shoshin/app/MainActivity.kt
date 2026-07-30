@@ -1,4 +1,4 @@
-package com.shoshin.app
+package com.Shoshin.app
 
 import android.content.Intent
 import android.os.Bundle
@@ -11,16 +11,16 @@ import androidx.compose.runtime.*
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.shoshin.app.data.AuthRepository
-import com.shoshin.app.data.ShoshinRepository
-import com.shoshin.app.data.db.AppDatabase
-import com.shoshin.app.navigation.ShoshinNavGraph
-import com.shoshin.app.sync.*
-import com.shoshin.app.ui.theme.ShoshinTheme
+import com.Shoshin.app.data.AuthRepository
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.data.db.AppDatabase
+import com.Shoshin.app.navigation.ShoshinNavGraph
+import com.Shoshin.app.sync.*
+import com.Shoshin.app.ui.theme.ShoshinTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.shoshin.app.utils.AnalyticsManager
-import com.shoshin.app.utils.LocationHelper
+import com.Shoshin.app.utils.AnalyticsManager
+import com.Shoshin.app.utils.LocationHelper
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
@@ -140,7 +140,7 @@ class MainActivity : ComponentActivity() {
         Log.d("MainActivity", "handleIntent: openCheckpoint=$openCheckpoint, navigateTo=$navigateTo")
         
         if (openCheckpoint) {
-            navController?.navigate(com.shoshin.app.navigation.ShRoutes.ACTIVATION)
+            navController?.navigate(com.Shoshin.app.navigation.ShRoutes.ACTIVATION)
             intent.removeExtra(ShoshinNotificationManager.EXTRA_OPEN_CHECKPOINT)
         } else if (navigateTo != null) {
             navController?.navigate(navigateTo)

@@ -1,9 +1,9 @@
-package com.shoshin.app.sync
+package com.Shoshin.app.sync
 
 import android.util.Log
-import com.shoshin.app.data.AuthRepository
-import com.shoshin.app.data.db.AppDatabase
-import com.shoshin.app.data.db.entities.*
+import com.Shoshin.app.data.AuthRepository
+import com.Shoshin.app.data.db.AppDatabase
+import com.Shoshin.app.data.db.entities.*
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow

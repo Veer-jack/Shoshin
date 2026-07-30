@@ -1,26 +1,28 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.platform.LocalContext
-import com.shoshin.app.R
-import com.shoshin.app.data.db.AppDatabase
-import com.shoshin.app.data.db.entities.NotificationEntity
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.data.db.AppDatabase
+import com.Shoshin.app.data.db.entities.NotificationEntity
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
@@ -36,101 +38,114 @@ fun NotificationsScreen(
     val notifications by database.notificationDao().getNotificationsFlow(userId).collectAsState(initial = emptyList())
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp)
-    ) {
-        // App Bar
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 22.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(ShNight)
+                .statusBarsPadding()
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
-                }
-                Text("Notifications", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
-            }
-            TextButton(onClick = { scope.launch { database.notificationDao().clearAll(userId) } }) {
-                Text("Clear all", color = ShVermillion, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp)
-            }
-        }
-
-        if (notifications.isEmpty()) {
-            EdgeLayout(
-                icon = R.drawable.ic_bell,
-                kicker = "All caught up",
-                title = "Nothing new",
-                body = "We'll let you know when your circle rises or a badge is earned."
-            )
-        } else {
-            ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                    notifications.forEachIndexed { i, item ->
-                        NotificationRow(item)
-                        if (i < notifications.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+            // App Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = Color.White)
                     }
+                    Spacer(Modifier.width(8.dp))
+                    Text("Notifications", style = ShTitleStyle.copy(fontSize = 28.sp, color = Color.White))
+                }
+                TextButton(onClick = { scope.launch { database.notificationDao().clearAll(userId) } }) {
+                    Text("Clear all", color = ShVermillionLight, style = ShLabelStyle.copy(fontWeight = FontWeight.Bold))
+                }
+            }
+
+            if (notifications.isEmpty()) {
+                EdgeLayout(
+                    icon = R.drawable.ic_bell,
+                    kicker = "ALL CAUGHT UP",
+                    title = "Nothing new",
+                    body = "We'll let you know when your circle rises or a badge is earned."
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(ShNight2)
+                    ) {
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            notifications.forEachIndexed { i, item ->
+                                NotificationRowDark(item)
+                                if (i < notifications.lastIndex) {
+                                    HorizontalDivider(color = ShNightLine, modifier = Modifier.padding(horizontal = 16.dp))
+                                }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(48.dp))
                 }
             }
         }
-        
-        Spacer(Modifier.height(40.dp))
     }
 }
 
 @Composable
-private fun NotificationRow(item: NotificationEntity) {
+private fun NotificationRowDark(item: NotificationEntity) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 18.dp),
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(44.dp)
                 .clip(CircleShape)
-                .background(if (!item.isRead) ShVermillion.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant),
+                .background(if (!item.isRead) ShVermillionLight.copy(alpha = 0.1f) else ShNight3),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 painter = painterResource(item.iconRes),
                 contentDescription = null,
-                tint = if (!item.isRead) ShVermillion else MaterialTheme.colorScheme.onSurface,
+                tint = if (!item.isRead) ShVermillionLight else Color.White,
                 modifier = Modifier.size(18.dp)
             )
         }
 
         Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = item.title,
-                    fontSize = 15.sp,
-                    fontWeight = if (!item.isRead) FontWeight.SemiBold else FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = ShH2Style.copy(fontSize = 15.5.sp, color = Color.White),
+                    fontWeight = if (!item.isRead) FontWeight.Bold else FontWeight.Medium
                 )
                 if (!item.isRead) {
-                    Box(modifier = Modifier.size(6.dp).background(ShVermillion, CircleShape))
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ShVermillionLight))
                 }
             }
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = item.body,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 18.sp
+                style = ShBodyStyle.copy(fontSize = 14.sp, color = ShNightMuted, lineHeight = 19.sp)
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
             val dateStr = java.text.SimpleDateFormat("MMM d · h:mm a", java.util.Locale.getDefault()).format(java.util.Date(item.timestamp))
             Text(
-                text = dateStr,
-                fontSize = 11.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                text = dateStr.uppercase(),
+                style = ShKickerStyle.copy(fontSize = 9.sp, color = ShNightMuted.copy(alpha = 0.6f))
             )
         }
     }

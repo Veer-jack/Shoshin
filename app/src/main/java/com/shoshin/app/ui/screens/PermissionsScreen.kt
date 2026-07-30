@@ -1,10 +1,10 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -20,9 +20,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 
 @Composable
 fun PermissionsScreen(onContinue: () -> Unit) {
@@ -49,80 +49,43 @@ fun PermissionsScreen(onContinue: () -> Unit) {
             Spacer(Modifier.height(28.dp))
 
             PermissionRow(
-                icon = R.drawable.ic_camera, 
-                title = stringResource(R.string.perms_camera_title), 
-                sub = stringResource(R.string.perms_camera_body),
-                granted = cameraGranted,
-                onAllow = { cameraLauncher.launch(Manifest.permission.CAMERA) }
-            )
-            
-            Spacer(modifier = Modifier.height(14.dp))
-            
-            PermissionRow(
-                icon = R.drawable.ic_map_pin, 
-                title = "Location", 
-                sub = "Helps us give you geographic insights into your habits.",
-                granted = locationGranted,
-                onAllow = { locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION) }
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-            
-            PermissionRow(
                 icon = R.drawable.ic_bell, 
-                title = stringResource(R.string.perms_notif_title), 
-                sub = stringResource(R.string.perms_notif_body),
+                title = "Notifications", 
+                sub = "One gentle wind-down at night, and the alarm that begins your morning. Nothing more.",
                 granted = notifsGranted,
-                onAllow = { notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+                onToggle = { notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            PermissionRow(
+                icon = R.drawable.ic_camera, 
+                title = "Camera", 
+                sub = "Used only when you choose photo proof for a checkpoint. Images never leave your phone.",
+                granted = cameraGranted,
+                onToggle = { cameraLauncher.launch(Manifest.permission.CAMERA) }
             )
 
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                // ... (Exact Alarms)
-                var alarmGranted by remember { mutableStateOf(false) }
-                val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
-                
-                // Update granted state periodically or via Lifecycle
-                LaunchedEffect(Unit) {
-                    alarmGranted = alarmManager.canScheduleExactAlarms()
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-                PermissionRow(
-                    icon = R.drawable.ic_clock, 
-                    title = "Exact Alarms", 
-                    sub = "Required for precise morning wake-up times.",
-                    granted = alarmGranted,
-                    onAllow = {
-                        val intent = android.content.Intent(
-                            android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                            android.net.Uri.parse("package:${context.packageName}")
-                        )
-                        context.startActivity(intent)
-                    }
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(ShInk.copy(alpha = 0.04f)).padding(14.dp)) {
-                Text("Your data stays on your device. No ads, no tracking, no sharing.", fontSize = 13.sp, color = ShFog, fontFamily = DmSansFamily, lineHeight = 20.sp)
+            Spacer(Modifier.height(32.dp))
+            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).padding(horizontal = 4.dp)) {
+                Text("No background tracking. No noise. We ask plainly, and you stay in control.", fontSize = 14.sp, color = ShFog, fontFamily = DmSansFamily, lineHeight = 22.sp)
             }
         }
 
-        Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            val interactionSource = remember { MutableInteractionSource() }
-            
+        Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             ShoshinButton(
                 variant = ShButtonVariant.Accent,
                 onClick = onContinue,
-                modifier = Modifier.fillMaxWidth(),
-                interactionSource = interactionSource,
-                pressedColor = Color.Black
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = if (cameraGranted && notifsGranted && locationGranted) stringResource(R.string.perms_continue) else stringResource(R.string.perms_later),
-                    color = Color.White
-                )
+                Text("Continue", color = Color.White, fontWeight = FontWeight.Bold)
             }
+            
+            Text(
+                "Maybe later",
+                style = ShLabelStyle.copy(color = ShFog, fontWeight = FontWeight.Bold),
+                modifier = Modifier.clickable { onContinue() }
+            )
         }
     }
 }
@@ -133,48 +96,46 @@ fun PermissionRow(
     title: String,
     sub: String,
     granted: Boolean,
-    onAllow: () -> Unit
+    onToggle: () -> Unit
 ) {
-    Row(
+    Box(
         modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(ShSurface)
-            .border(1.5.dp, if (granted) ShMatcha else ShLine, RoundedCornerShape(20.dp))
-            .padding(18.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(ShNight2) // Always dark as per screenshot
+            .padding(20.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(ShPaper2, RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = null,
-                tint = ShInk,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShInk)
-            Text(sub, fontSize = 13.sp, color = ShFog, fontFamily = DmSansFamily, lineHeight = 18.sp)
-        }
-        if (granted) {
-            Box(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(ShMatcha.copy(alpha = 0.12f)).padding(horizontal = 10.dp, vertical = 5.dp)) {
-                Text("Granted", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = ShMatcha, fontFamily = DmSansFamily)
-            }
-        } else {
-            Button(
-                onClick = onAllow, 
-                colors = ButtonDefaults.buttonColors(containerColor = ShInk), 
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                modifier = Modifier.height(36.dp)
+        Row(verticalAlignment = Alignment.Top) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(ShNightText.copy(alpha = 0.05f)),
+                contentAlignment = Alignment.Center
             ) {
-                Text("Allow", fontSize = 13.sp, fontFamily = DmSansFamily, fontWeight = FontWeight.Bold)
+                Icon(
+                    painter = painterResource(id = icon),
+                    contentDescription = null,
+                    tint = ShMatchaDark.copy(alpha = 0.6f), // Icon color per screen
+                    modifier = Modifier.size(20.dp)
+                )
             }
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = Color.White)
+                Spacer(Modifier.height(8.dp))
+                Text(sub, fontSize = 13.sp, color = ShNightMuted, fontFamily = DmSansFamily, lineHeight = 19.sp)
+            }
+            Spacer(Modifier.width(12.dp))
+            Switch(
+                checked = granted,
+                onCheckedChange = { onToggle() },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = ShMatcha,
+                    uncheckedThumbColor = Color.White.copy(alpha = 0.4f),
+                    uncheckedTrackColor = ShNight3
+                )
+            )
         }
     }
 }

@@ -1,7 +1,7 @@
-package com.shoshin.app.data.db.dao
+package com.Shoshin.app.data.db.dao
 
 import androidx.room.*
-import com.shoshin.app.data.db.entities.PhotoEntity
+import com.Shoshin.app.data.db.entities.PhotoEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

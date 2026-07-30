@@ -1,11 +1,11 @@
-package com.shoshin.app.data.db
+package com.Shoshin.app.data.db
 
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
-import com.shoshin.app.data.db.dao.*
-import com.shoshin.app.data.db.entities.*
+import com.Shoshin.app.data.db.dao.*
+import com.Shoshin.app.data.db.entities.*
 
 @Database(
     entities = [
@@ -24,7 +24,7 @@ import com.shoshin.app.data.db.entities.*
         CheckpointEntity::class,
         NotificationEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -42,6 +42,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userLimitsDao(): UserLimitsDao
     abstract fun statsDao(): StatsDao
     abstract fun notificationDao(): NotificationDao
+    abstract fun checkpointDao(): CheckpointDao
 
     companion object {
         @Volatile

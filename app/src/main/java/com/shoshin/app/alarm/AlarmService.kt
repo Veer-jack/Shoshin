@@ -1,4 +1,4 @@
-package com.shoshin.app.alarm
+package com.Shoshin.app.alarm
 
 import android.app.*
 import android.content.Intent
@@ -8,9 +8,9 @@ import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.shoshin.app.MainActivity
-import com.shoshin.app.R
-import com.shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.MainActivity
+import com.Shoshin.app.R
+import com.Shoshin.app.data.ShoshinRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first

@@ -1,11 +1,13 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,15 +16,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.data.models.Friend
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.FriendStreaksViewModel
+import com.Shoshin.app.R
+import com.Shoshin.app.data.models.Friend
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.FriendStreaksViewModel
 
 @Composable
 fun AllFriendsScreen(
@@ -30,72 +33,93 @@ fun AllFriendsScreen(
     viewModel: FriendStreaksViewModel
 ) {
     val friends by viewModel.allFriends.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
     
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 24.dp)
+            .background(ShPaper)
     ) {
         // App Bar
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 22.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
                 }
-                Text("Friends", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
+                Spacer(Modifier.width(16.dp))
+                Text("Friends", style = ShTitleStyle.copy(fontSize = 28.sp), color = ShInk)
             }
-            IconButton(onClick = { navController.navigate(ShRoutes.INVITE) }, modifier = Modifier.size(22.dp)) {
-                Icon(painterResource(R.drawable.ic_plus), contentDescription = "Add", tint = MaterialTheme.colorScheme.onBackground)
+            IconButton(onClick = { navController.navigate(ShRoutes.INVITE) }, modifier = Modifier.size(24.dp)) {
+                Icon(painterResource(R.drawable.ic_plus), contentDescription = "Add", tint = ShInk)
             }
         }
 
-        // Search
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
         ) {
-            Icon(painterResource(R.drawable.ic_search), null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.width(10.dp))
-            Text("Search friends", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        if (friends.isEmpty()) {
-            EdgeLayout(
-                icon = R.drawable.ic_user,
-                kicker = "Your circle is quiet",
-                title = "No friends yet",
-                body = "Invite someone who needs a reason to rise.",
-                actionLabel = "Invite Friends",
-                onAction = { navController.navigate(ShRoutes.INVITE) }
+            // Search Bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search friends", style = ShLabelStyle, color = ShFog) },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_search), null, tint = ShFog, modifier = Modifier.size(20.dp)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = ShLine,
+                    unfocusedBorderColor = ShLine,
+                    cursorColor = ShInk,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                ),
+                singleLine = true
             )
-        } else {
-            ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                    friends.forEachIndexed { i, friend ->
-                        FriendListRow(
-                            friend = friend,
-                            onClick = { navController.navigate(ShRoutes.friendProfile(friend.userId)) }
-                        )
-                        if (i < friends.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+
+            Spacer(Modifier.height(24.dp))
+
+            if (friends.isEmpty()) {
+                EdgeLayout(
+                    icon = R.drawable.ic_user,
+                    kicker = "Your circle is quiet",
+                    title = "No friends yet",
+                    body = "Invite someone who needs a reason to rise.",
+                    actionLabel = "Invite Friends",
+                    onAction = { navController.navigate(ShRoutes.INVITE) }
+                )
+            } else {
+                ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        friends.forEachIndexed { i, friend ->
+                            FriendListRow(
+                                friend = friend,
+                                onClick = { navController.navigate(ShRoutes.friendProfile(friend.userId)) }
+                            )
+                            if (i < friends.lastIndex) {
+                                HorizontalDivider(
+                                    color = ShLine, 
+                                    thickness = 1.dp, 
+                                    modifier = Modifier.padding(start = 72.dp, end = 24.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
+            
+            Spacer(Modifier.height(48.dp))
         }
-        
-        Spacer(Modifier.height(40.dp))
     }
 }
 
@@ -108,30 +132,43 @@ private fun FriendListRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 16.dp),
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Initial Avatar
         Box(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(ShPaper2),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = friend.userName.take(1).uppercase(),
-                style = ShTitleStyle.copy(fontSize = 17.sp),
-                color = MaterialTheme.colorScheme.onSurface
+                style = ShH2Style.copy(fontSize = 17.sp, color = ShInk.copy(alpha = 0.6f))
             )
         }
-        Spacer(Modifier.width(14.dp))
+        
+        Spacer(Modifier.width(16.dp))
+        
         Column(modifier = Modifier.weight(1f)) {
-            Text(friend.userName, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-            Text("2 shared circles", fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) // Mock shared count
+            Text(friend.userName, style = ShH2Style.copy(fontSize = 16.sp))
+            Text("2 shared circles", style = ShLabelStyle, color = ShFog) // Mock shared count
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(15.dp), tint = ShVermillion)
-            Text(friend.currentStreak.toString(), style = ShNumeralStyle.copy(fontSize = 15.sp), color = MaterialTheme.colorScheme.onSurface)
+        
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(
+                painter = painterResource(R.drawable.ic_flame), 
+                null, 
+                modifier = Modifier.size(14.dp), 
+                tint = ShVermillion
+            )
+            Text(
+                text = friend.currentStreak.toString(), 
+                style = ShNumeralStyle.copy(fontSize = 16.sp), 
+                color = ShInk,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

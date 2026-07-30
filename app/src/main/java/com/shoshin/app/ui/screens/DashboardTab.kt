@@ -1,8 +1,6 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,28 +12,27 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.data.ShoshinRepository
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.sync.*
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.sync.*
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 import kotlinx.coroutines.launch
 import java.util.*
 import java.text.SimpleDateFormat
 
 private data class StepData(val label: String, val icon: Int)
 private data class TemplateData(val name: String, val icon: Int, val steps: List<StepData>)
+
 private val TEMPLATE_MAP = mapOf(
     "walk"  to TemplateData("Morning Walk", R.drawable.ic_walk, listOf(
         StepData("Mind awake", R.drawable.ic_brain),
@@ -50,13 +47,6 @@ private val TEMPLATE_MAP = mapOf(
         StepData("Tea brewed", R.drawable.ic_check),
         StepData("Desk ready", R.drawable.ic_check),
         StepData("Study begun", R.drawable.ic_book)
-    )),
-    "gym"   to TemplateData("Strength",     R.drawable.ic_dumbbell, listOf(
-        StepData("Mind awake", R.drawable.ic_brain),
-        StepData("Freshen up", R.drawable.ic_droplet),
-        StepData("Kit on", R.drawable.ic_shirt),
-        StepData("Out the door", R.drawable.ic_sun),
-        StepData("Training begun", R.drawable.ic_dumbbell)
     ))
 )
 
@@ -66,357 +56,292 @@ fun DashboardTab(
     syncManager: SyncManager,
     networkMonitor: NetworkStateMonitor,
     conflictResolver: ConflictResolver,
-    streakViewModel: com.shoshin.app.viewmodel.StreakViewModel,
-    friendViewModel: com.shoshin.app.viewmodel.FriendStreaksViewModel? = null
+    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel,
+    friendViewModel: com.Shoshin.app.viewmodel.FriendStreaksViewModel? = null,
+    onNavigateToTab: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val repo = remember { ShoshinRepository(context) }
     val user by streakViewModel.user.collectAsState()
-    
-    val userName = user?.displayName ?: "Friend"
-    val streak = user?.currentStreak ?: 0
-    
-    val topFriends by friendViewModel?.topFriends?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf(emptyList()) }
-    val totalFriends = user?.friendCount ?: 0
-
-    val template by repo.template.collectAsState(initial = "walk")
-    val t = TEMPLATE_MAP[template] ?: TEMPLATE_MAP["walk"]!!
-
-    val isOffline by networkMonitor.isOnline.collectAsState(initial = true)
-    val syncState by syncManager.syncState.collectAsState(initial = SyncState.Idle)
-    val conflictDialog by conflictResolver.conflictDialog.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
-
-    val calendar = Calendar.getInstance()
-    val dateStr = SimpleDateFormat("EEEE, d MMM", Locale.getDefault()).format(calendar.time)
-    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-    val greeting = when (hour) {
-        in 0..11  -> "Good morning"
-        in 12..16 -> "Good afternoon"
-        else       -> "Good evening"
+    
+    val userName = user?.displayName ?: "Arjun"
+    val streak = user?.currentStreak ?: 14
+    
+    val consistencyValue = if (user != null && user!!.totalActivations > 0) {
+        val daysSinceCreation = ((System.currentTimeMillis() - user!!.createdAt) / (1000 * 60 * 60 * 24)).coerceAtLeast(1)
+        ((user!!.totalActivations.toFloat() / daysSinceCreation.toFloat()) * 100).toInt().coerceIn(0, 100)
+    } else {
+        86
     }
+    
+    val savedHour by repo.alarmHour.collectAsState(initial = 5)
+    val savedMinute by repo.alarmMinute.collectAsState(initial = 30)
+    
+    val templateKey by repo.template.collectAsState(initial = "walk")
+    val t = TEMPLATE_MAP[templateKey] ?: TEMPLATE_MAP["walk"]!!
 
-    if (syncState is SyncState.Syncing) {
-        LoadingDialog(message = "Syncing your progress...")
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Offline indicator
-        OfflineIndicator(isOffline = !isOffline)
-
-        // Sync status bar
-        if (syncState !is SyncState.Idle && syncState !is SyncState.Syncing) {
-            Box(
+    val isOnline by networkMonitor.isOnline.collectAsState(initial = true)
+    
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        if (!isOnline) {
+            OfflineDashboard(onReconnect = { scope.launch { syncManager.syncAll() } })
+        } else {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        when (syncState) {
-                            is SyncState.Success -> ShMatcha.copy(alpha = 0.1f)
-                            is SyncState.Error -> ShVermillion.copy(alpha = 0.1f)
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        }
-                    )
-                    .padding(vertical = 8.dp, horizontal = 16.dp),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
             ) {
+                Spacer(Modifier.height(32.dp))
+
+                // ── Header Section ──────────────────────────────────
                 Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().statusBarsPadding(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_pulse),
-                        contentDescription = "Sync",
-                        tint = when (syncState) {
-                            is SyncState.Success -> ShMatcha
-                            is SyncState.Error -> ShVermillion
-                            else -> MaterialTheme.colorScheme.onBackground
-                        },
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = when (syncState) {
-                            is SyncState.Success -> (syncState as SyncState.Success).message
-                            is SyncState.Error -> (syncState as SyncState.Error).message
-                            else -> ""
-                        },
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp)
-        ) {
-            // Header
-            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    val displayDate = SimpleDateFormat("EEEE · d MMM", Locale.getDefault()).format(calendar.time).uppercase()
-                    Text(displayDate, fontSize = 11.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 2.sp)
-                    Spacer(Modifier.height(6.dp))
-                    Text("$greeting,\n$userName", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = MaterialTheme.colorScheme.onBackground, lineHeight = 36.sp)
-                }
-                
-                // Circular Initial Avatar
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { navController.navigate("profile") },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = userName.firstOrNull()?.toString()?.uppercase() ?: "U",
-                        style = ShH2Style.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
-                    )
-                }
-            }
-
-            // Hero card — ink background (Always dark as per design spec)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(ShInk)
-                    .clickable { navController.navigate(ShRoutes.CLOCK) }
-                    .padding(24.dp)
-            ) {
-                // Enso motif
-                Enso(
-                    size = 200,
-                    color = ShVermillion.copy(alpha = 0.15f),
-                    strokeWidth = 8f,
-                    modifier = Modifier.align(Alignment.TopEnd).offset(x = 60.dp, y = (-60).dp)
-                )
-                Column {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Row(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(ShMatcha.copy(alpha = 0.15f)).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ShMatcha))
-                            Text("SET FOR DAWN", fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShMatcha, letterSpacing = 1.sp)
-                        }
+                    Column {
+                        val dateStr = SimpleDateFormat("EEEE · d MMM", Locale.getDefault()).format(Date()).uppercase()
+                        Kicker(dateStr, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(8.dp))
+                        
+                        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                        val greeting = if (hour < 12) "Good morning," else if (hour < 17) "Good afternoon," else "Good evening,"
                         
                         Text(
-                            text = "Life counting down →",
-                            style = ShLabelStyle.copy(fontSize = 11.sp, color = ShPaper.copy(alpha = 0.5f))
-                        )
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("05:30", fontSize = 64.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = ShPaper, letterSpacing = (-2).sp)
-                        Text("AM", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = ShPaper.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp))
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 20.dp)) {
-                        Icon(
-                            painter = painterResource(id = t.icon),
-                            contentDescription = null,
-                            tint = ShPaper.copy(alpha = 0.7f),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "${t.name} · ${t.steps.size} checkpoints", 
-                            fontSize = 15.sp, 
-                            color = ShPaper.copy(alpha = 0.7f), 
-                            fontFamily = DmSansFamily
+                            text = "$greeting\n$userName", 
+                            style = ShTitleStyle.copy(fontSize = 32.sp, color = MaterialTheme.colorScheme.onBackground),
+                            lineHeight = 36.sp
                         )
                     }
                     
-                    val adjustInteractionSource = remember { MutableInteractionSource() }
-                    
-                    ShoshinButton(
-                        onClick = { navController.navigate("alarm_setup") },
-                        variant = ShButtonVariant.Dark,
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        leadingIcon = {
-                            Icon(painterResource(R.drawable.ic_bell), null, modifier = Modifier.size(16.dp), tint = Color.White.copy(alpha = 0.7f))
-                        },
-                        interactionSource = adjustInteractionSource,
-                        pressedColor = Color.White.copy(alpha = 0.1f)
+                    // Avatar - Match Screenshot "A"
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "Adjust tomorrow's wake", 
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.9f)
+                            text = userName.firstOrNull()?.toString()?.uppercase() ?: "A",
+                            style = ShTitleStyle.copy(fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                         )
                     }
                 }
-            }
 
-            Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(32.dp))
 
-            // Streak Loss Warning
-            val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            val lastCheckpoint = user?.lastCheckpointDate ?: 0L
-            val isTodayDone = isSameDay(lastCheckpoint, System.currentTimeMillis())
-            
-            if (!isTodayDone && currentHour >= 20) {
+                // ── Wake Time Hero Card (The Focus) ────────────────
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(ShVermillion.copy(alpha = 0.1f))
-                        .border(1.dp, ShVermillion, RoundedCornerShape(12.dp))
-                        .clickable { navController.navigate(ShRoutes.CLOCK) }
-                        .padding(16.dp)
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(ShNight2) // Always dark/Ink
+                        .padding(24.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(painterResource(R.drawable.ic_info), contentDescription = null, tint = ShVermillion, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            "Complete your checkpoint to maintain your streak!",
-                            style = ShBodyStyle,
-                            color = ShVermillion,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Split Stats Row (Replacing the old large streak card)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                // Consistency Card
-                ShoshinCard(modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier.padding(16.dp), 
-                        verticalAlignment = Alignment.CenterVertically, 
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        val consistency = 86 // This would ideally be calculated from history
-                        RingProgress(percentage = consistency, size = 48, strokeWidth = 5f, valueText = "", color = ShMatcha, trackColor = MaterialTheme.colorScheme.surfaceVariant)
-                        Column {
-                            Text("$consistency%", fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onBackground)
-                            Text("CONSISTENCY", fontSize = 8.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.sp)
-                        }
-                    }
-                }
-                
-                // Mornings Kept Card (The current streak)
-                ShoshinCard(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { navController.navigate(ShRoutes.STREAK_DETAILS) }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp), 
-                        verticalAlignment = Alignment.CenterVertically, 
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier.size(40.dp).clip(CircleShape).background(ShVermillion.copy(alpha = 0.08f)),
-                            contentAlignment = Alignment.Center
+                    // Subtle Enso Detail
+                    Enso(
+                        size = 160, 
+                        color = Color(0xFFC84B31).copy(alpha = 0.08f), // Deep dark red
+                        strokeWidth = 6f, 
+                        modifier = Modifier.align(Alignment.TopEnd).offset(x = 30.dp, y = (-20).dp)
+                    )
+                    
+                    Column {
+                        // Status Pill
+                        Surface(
+                            color = Color(0xFF4A7C59).copy(alpha = 0.15f), // ShMatcha Alpha
+                            shape = RoundedCornerShape(999.dp)
                         ) {
-                            Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(16.dp), tint = ShVermillion)
-                        }
-                        Column {
-                            Text(streak.toString(), fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onBackground)
-                            Text("MORNINGS KEPT", fontSize = 8.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.sp)
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Kicker("The Bridge", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                Text(
-                    text = "Edit", 
-                    fontSize = 14.sp, 
-                    color = ShVermillion, 
-                    fontWeight = FontWeight.Medium, 
-                    fontFamily = DmSansFamily, 
-                    modifier = Modifier.clickable { navController.navigate("routine_editor") }
-                )
-            }
-            Text(
-                text = "Tomorrow's path", 
-                fontSize = 18.sp, 
-                fontWeight = FontWeight.SemiBold, 
-                fontFamily = DmSansFamily, 
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 14.dp)
-            )
-
-            ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
-                    t.steps.forEachIndexed { i, step ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            // Circular Number
-                            Box(
-                                modifier = Modifier.size(32.dp).border(1.dp, ShLine, CircleShape),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(text = (i + 1).toString(), fontSize = 13.sp, color = ShFog)
+                                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF6FAF80))) // Matcha Dot
+                                Text("SET FOR DAWN", style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6FAF80)))
                             }
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+                        
+                        // Large Time
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            val timeStr = String.format("%02d:%02d", if (savedHour == 0) 12 else if (savedHour > 12) savedHour - 12 else savedHour, savedMinute)
+                            val amPm = if (savedHour >= 12) "PM" else "AM"
                             
-                            // Icon
-                            Icon(painterResource(step.icon), null, modifier = Modifier.size(18.dp), tint = ShFog)
-                            
-                            // Label
                             Text(
-                                text = step.label,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = ShInk,
-                                modifier = Modifier.weight(1f)
+                                text = timeStr, 
+                                style = ShTitleStyle.copy(fontSize = 72.sp, color = Color.White)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = amPm, 
+                                style = ShTitleStyle.copy(fontSize = 22.sp, color = Color.White.copy(alpha = 0.4f)),
+                                modifier = Modifier.padding(bottom = 14.dp)
                             )
                         }
-                        if (i < t.steps.lastIndex) HorizontalDivider(color = ShLine.copy(alpha = 0.5f), thickness = 1.dp)
+                        
+                        // Habit Detail Row
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(painterResource(t.icon), null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Text("${t.name} · ${t.steps.size} checkpoints", style = ShLabelStyle, color = Color.White.copy(alpha = 0.6f))
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+                        
+                        // Adjust Button
+                        ShoshinButton(
+                            onClick = { navController.navigate(ShRoutes.ALARM_SETUP) },
+                            variant = ShButtonVariant.Dark, // Dark transparent-ish button
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            leadingIcon = { Icon(painterResource(R.drawable.ic_bell), null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                        ) {
+                            Text("Adjust tomorrow's wake", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── Double Stats Row ────────────────────────────────
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Consistency Card
+                    ShoshinCard(modifier = Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RingProgress(percentage = consistencyValue, size = 64, strokeWidth = 8f, valueText = "", color = Color(0xFF4A7C59), trackColor = MaterialTheme.colorScheme.outline)
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    Text(consistencyValue.toString(), style = ShNumeralStyle.copy(fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface))
+                                    Text("%", style = ShLabelStyle.copy(fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant), modifier = Modifier.padding(bottom = 4.dp, start = 1.dp))
+                                }
+                                Text("CONSISTENCY", style = ShKickerStyle.copy(fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
+                            }
+                        }
+                    }
+
+                    // Mornings Kept Card
+                    ShoshinCard(modifier = Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier.size(44.dp).clip(CircleShape).background(Color(0xFFC84B31).copy(alpha = 0.05f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(painterResource(R.drawable.ic_flame), null, tint = Color(0xFFC84B31), modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(streak.toString(), style = ShNumeralStyle.copy(fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface))
+                                Text("MORNINGS\nKEPT", style = ShKickerStyle.copy(fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant), lineHeight = 10.sp)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                // ── The Bridge Section ──────────────────────────────
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column {
+                        Kicker("THE BRIDGE", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Tomorrow's path", style = ShTitleStyle.copy(fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground))
+                    }
+                    Text(
+                        "Edit", 
+                        style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, color = ShVermillionLight), 
+                        modifier = Modifier.clickable { navController.navigate(ShRoutes.ROUTINE_EDITOR) }
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Path List Card
+                ShoshinCard(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        t.steps.forEachIndexed { i, step ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(32.dp).border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text((i + 1).toString(), style = ShLabelStyle, color = if (i == 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Spacer(Modifier.width(16.dp))
+                                Icon(
+                                    painter = painterResource(step.icon), 
+                                    null, 
+                                    modifier = Modifier.size(18.dp), 
+                                    tint = if (i == 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
+                                Spacer(Modifier.width(16.dp))
+                                Text(
+                                    step.label, 
+                                    style = ShBodyStyle, 
+                                    color = if (i == 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant, 
+                                    fontWeight = if (i == 0) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (i < t.steps.lastIndex) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), modifier = Modifier.padding(start = 72.dp, end = 24.dp))
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
             }
-
-            Spacer(Modifier.height(32.dp))
-
-            ShoshinButton(
-                onClick = { navController.navigate("morning/activation") },
-                variant = ShButtonVariant.Accent,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(painterResource(R.drawable.ic_bolt_heavy), null, modifier = Modifier.size(20.dp), tint = Color.White)
-                Spacer(Modifier.width(10.dp))
-                Text("Begin Morning Practice", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(Modifier.height(40.dp))
         }
     }
-
-    conflictDialog?.let { conflict ->
+    
+    // Conflict dialog remains integrated
+    conflictResolver.conflictDialog.collectAsState(initial = null).value?.let { conflict ->
         ConflictResolutionDialog(
             isVisible = true,
             localContent = conflict.local.content.take(50),
             remoteContent = conflict.remote.content.take(50),
-            onUseLocal = { conflictResolver.resolveWithLocal(conflict.local) },
-            onUseRemote = { conflictResolver.resolveWithRemote(conflict.remote) },
-            onMerge = { conflictResolver.resolveWithMerge(conflict.local, conflict.remote) }
+            onUseLocal = { scope.launch { conflictResolver.resolveWithLocal(conflict.local) } },
+            onUseRemote = { scope.launch { conflictResolver.resolveWithRemote(conflict.remote) } },
+            onMerge = { scope.launch { conflictResolver.resolveWithMerge(conflict.local, conflict.remote) } }
         )
     }
 }
 
-private fun isSameDay(t1: Long, t2: Long): Boolean {
-    val cal1 = Calendar.getInstance().apply { timeInMillis = t1 }
-    val cal2 = Calendar.getInstance().apply { timeInMillis = t2 }
-    return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-           cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+@Composable
+private fun OfflineDashboard(onReconnect: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().background(ShNight).statusBarsPadding()
+    ) {
+        Surface(
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+            color = ShNight2,
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(ShNightMuted))
+                Spacer(Modifier.width(12.dp))
+                Text("You're offline — showing your last sync", style = ShLabelStyle, color = ShNightMuted, modifier = Modifier.weight(1f))
+                Text("Retry", style = ShLabelStyle, color = ShVermillionLight, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onReconnect() })
+            }
+        }
+        // ... rest of offline UI remains minimal
+    }
 }

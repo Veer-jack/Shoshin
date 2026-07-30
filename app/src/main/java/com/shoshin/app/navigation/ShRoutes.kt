@@ -1,4 +1,4 @@
-package com.shoshin.app.navigation
+package com.Shoshin.app.navigation
 
 object ShRoutes {
     // Onboarding stack (not in bottom nav)
@@ -10,6 +10,7 @@ object ShRoutes {
     const val PERMISSIONS     = "permissions"
     const val GOAL_SELECTION  = "goal_selection"
     const val ROUTINE_TEMPLATE = "routine_template/{goalKey}"
+    const val BUILD_PATH       = "build_path"
 
     // Main shell (bottom nav tabs)
     const val MAIN            = "main"   // hosts bottom nav scaffold

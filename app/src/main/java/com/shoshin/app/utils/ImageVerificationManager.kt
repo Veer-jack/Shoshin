@@ -1,4 +1,4 @@
-package com.shoshin.app.utils
+package com.Shoshin.app.utils
 
 import android.graphics.Bitmap
 import com.google.mlkit.vision.common.InputImage
@@ -10,7 +10,7 @@ object ImageVerificationManager {
 
     private val labeler = ImageLabeling.getClient(
         ImageLabelerOptions.Builder()
-            .setConfidenceThreshold(0.5f)
+            .setConfidenceThreshold(0.3f)
             .build()
     )
 

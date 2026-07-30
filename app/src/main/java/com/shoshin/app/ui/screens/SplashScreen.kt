@@ -1,10 +1,11 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -13,14 +14,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.data.ShoshinRepository
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -52,6 +56,7 @@ fun SplashScreen(navController: NavController) {
                     popUpTo(ShRoutes.SPLASH) { inclusive = true }
                 }
             } else {
+                // New users go to Auth then Onboarding
                 navController.navigate(ShRoutes.AUTH) {
                     popUpTo(ShRoutes.SPLASH) { inclusive = true }
                 }
@@ -59,7 +64,12 @@ fun SplashScreen(navController: NavController) {
         }
     }
 
-    ShoshinTheme(darkSurface = true) {
+    fun onReturn() {
+        // Returning users (who have an account) go directly to Auth/Login
+        navController.navigate(ShRoutes.AUTH)
+    }
+
+    ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
         Box(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
@@ -91,16 +101,8 @@ fun SplashScreen(navController: NavController) {
             ) {
                 Spacer(Modifier.weight(1.2f))
 
-                // Logo mark — three rising bars
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.Bottom,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                ) {
-                    Box(modifier = Modifier.width(12.dp).height(20.dp).background(Color.White, RoundedCornerShape(3.dp)))
-                    Box(modifier = Modifier.width(12.dp).height(32.dp).background(ShMatcha, RoundedCornerShape(3.dp)))
-                    Box(modifier = Modifier.width(12.dp).height(46.dp).background(ShVermillion, RoundedCornerShape(3.dp)))
-                }
+                // Logo mark — using the updated component with enclosure
+                ShoshinLogoMark(on = "night", modifier = Modifier.padding(bottom = 24.dp))
 
                 Text(
                     text = "Shoshin",
@@ -118,12 +120,17 @@ fun SplashScreen(navController: NavController) {
                     letterSpacing = 8.sp,
                     modifier = Modifier.padding(top = 8.dp)
                 )
+                
+                Spacer(Modifier.height(100.dp))
+
                 Text(
-                    text = "Beginner's mind. Every morning.",
-                    fontSize = 14.sp,
-                    fontFamily = DMSans,
-                    color = ShNightMuted,
-                    letterSpacing = 0.5.sp,
+                    text = "Beginner's mind.\nEvery morning.",
+                    style = ShBodyStyle.copy(
+                        fontSize = 18.sp,
+                        lineHeight = 24.sp,
+                        textAlign = TextAlign.Center,
+                        color = Color.White.copy(alpha = 0.8f)
+                    ),
                     modifier = Modifier.padding(top = 16.dp)
                 )
 
@@ -134,11 +141,33 @@ fun SplashScreen(navController: NavController) {
                 ShoshinButton(
                     onClick = { onBegin() },
                     variant = ShButtonVariant.Accent,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
                     interactionSource = interactionSource,
-                    pressedColor = Color.Black
+                    pressedColor = Color.Black,
+                    trailingIcon = {
+                        Icon(painterResource(R.drawable.ic_arrow_right), null, modifier = Modifier.size(18.dp))
+                    }
                 ) {
-                    Text("LET’S BEGIN", color = Color.White, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                    Text(
+                        text = "Begin",
+                        style = ShButtonStyle.copy(color = Color.White, fontSize = 18.sp)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .padding(bottom = 24.dp)
+                        .clickable { onReturn() },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Already practicing? ",
+                        style = ShLabelStyle.copy(color = ShNightMuted, fontSize = 13.sp)
+                    )
+                    Text(
+                        text = "Return",
+                        style = ShLabelStyle.copy(color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    )
                 }
             }
         }

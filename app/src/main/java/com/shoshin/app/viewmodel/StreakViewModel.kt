@@ -1,15 +1,16 @@
-package com.shoshin.app.viewmodel
+package com.Shoshin.app.viewmodel
 
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shoshin.app.data.BadgeRepository
-import com.shoshin.app.data.user.UserRepository
-import com.shoshin.app.data.db.entities.UserEntity
-import com.shoshin.app.ui.theme.ShMatcha
-import com.shoshin.app.utils.AnalyticsManager
+import com.Shoshin.app.data.BadgeRepository
+import com.Shoshin.app.data.user.UserRepository
+import com.Shoshin.app.data.db.entities.UserEntity
+import com.Shoshin.app.ui.theme.ShMatcha
+import com.Shoshin.app.utils.AnalyticsManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.*
 
 class StreakViewModel(
@@ -53,6 +54,27 @@ class StreakViewModel(
                     lastFreezeResetDate = now
                 ))
             }
+        }
+    }
+
+    fun saveRoutineProgress(stepIndex: Int) {
+        val currentUser = _user.value ?: return
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        viewModelScope.launch {
+            userRepository.updateUser(currentUser.copy(
+                lastRoutineStepIndex = stepIndex,
+                lastRoutineDate = today
+            ))
+        }
+    }
+
+    fun resetRoutineProgress() {
+        val currentUser = _user.value ?: return
+        viewModelScope.launch {
+            userRepository.updateUser(currentUser.copy(
+                lastRoutineStepIndex = 0,
+                lastRoutineDate = ""
+            ))
         }
     }
 

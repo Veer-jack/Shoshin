@@ -1,83 +1,108 @@
-package com.shoshin.app.ui.theme
+package com.Shoshin.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
 // ============================================================
 // Shoshin (初心) — Color Tokens
 // Design direction: Japanese Modernism · Muji calm × Nike focus
+// Tokens synced with Design Tokens (Light-Dark).json
 // ============================================================
 
-// ── Core Light ──
-val ShInk         = Color(0xFF1C1C1E)
-val ShInk2        = Color(0xFF2C2C2E)
-val ShPaper       = Color(0xFFFAF9F6)
-val ShPaper2      = Color(0xFFF3F1EB)
-val ShSurface     = Color(0xFFFFFFFF)
+// ── Core Tokens (Theme Responsive) ──
+val ShInkLight        = Color(0xFF1C1C1E)
+val ShInkDark         = Color(0xFFF2F1EC)
 
-// ── Core Dark ──
-val ShInkDark     = Color(0xFFF2F1EC)
-val ShInk2Dark    = Color(0xFFDAD8D2)
-val ShPaperDark   = Color(0xFF0F0F0F)
-val ShPaper2Dark  = Color(0xFF1A1A1A)
-val ShSurfaceDark = Color(0xFF1C1C1C)
+val ShInk2Light      = Color(0xFF2C2C2E)
+val ShInk2Dark       = Color(0xFFDAD8D2)
 
-// ── Accent (one per screen — never two) ──
-val ShVermillion  = Color(0xFFC84B31)
-val ShVermillion2 = Color(0xFFB23E27)
-val ShVermillionDark = Color(0xFFE0654A)
+val ShPaperLight      = Color(0xFFFAF9F6)
+val ShPaperDark       = Color(0xFF0F0F0F)
 
-// ── Success / completion ──
-val ShMatcha      = Color(0xFF4A7C59)
-val ShMatcha2     = Color(0xFF3D6849)
-val ShMatchaDark  = Color(0xFF6FAF80)
-val ShMatchaLight = Color(0x1F4A7C59) // 12% opacity
+val ShPaper2Light     = Color(0xFFF3F1EB)
+val ShPaper2Dark      = Color(0xFF1A1A1A)
 
-// ── Neutrals ──
-val ShSand        = Color(0xFFE8E4DC)
-val ShSandDark    = Color(0xFF262523)
-val ShFog         = Color(0xFF8A8580)
-val ShFogDark     = Color(0xFF9A968E)
-val ShFog2        = Color(0xFFB0ABA2)
-val ShFog2Dark    = Color(0xFF6B6862)
-val ShLine        = Color(0xFFE7E3DA)
-val ShLineDark    = Color(0x17FFFFFF) // ~9% opacity
-val ShLine2       = Color(0xFFD8D3C8)
-val ShLine2Dark   = Color(0x29FFFFFF) // ~16% opacity
+val ShSurfaceLight    = Color(0xFFFFFFFF)
+val ShSurfaceDark     = Color(0xFF1C1C1C)
 
-// ── Night / dark screens ──
+val ShVermillionLight = Color(0xFFC84B31)
+val ShVermillionDark  = Color(0xFFE0654A)
+
+val ShVermillion2Light = Color(0xFFB23E27)
+val ShVermillion2Dark  = Color(0xFFC84B31)
+
+val ShMatchaLightToken = Color(0xFF4A7C59)
+val ShMatchaDark       = Color(0xFF6FAF80)
+
+val ShMatcha2Light     = Color(0xFF3D6849)
+val ShMatcha2Dark      = Color(0xFF4A7C59)
+
+val ShSandLight        = Color(0xFFE8E4DC)
+val ShSandDark         = Color(0xFF262523)
+
+val ShFogLight         = Color(0xFF8A8580)
+val ShFogDark          = Color(0xFF9A968E)
+
+val ShFog2Light        = Color(0xFFB0ABA2)
+val ShFog2Dark         = Color(0xFF6B6862)
+
+val ShLineLight        = Color(0xFFE7E3DA)
+val ShLineDark         = Color(0x17FFFFFF) // rgba(255,255,255,0.09)
+
+val ShLine2Light       = Color(0xFFD8D3C8)
+val ShLine2Dark        = Color(0x29FFFFFF) // rgba(255,255,255,0.16)
+
+// ── Night / Fixed-Dark Tokens (Same both themes) ──
 // Used on: Splash, Activation, Camera, 71-Day, Paywall, Wrong Answer
-val ShNight       = Color(0xFF0F0F0F)
-val ShNight2      = Color(0xFF1A1A1A)
-val ShNight3      = Color(0xFF242424)
-val ShNightText   = Color(0xFFF2F1EC)
-val ShNightMuted  = Color(0xFF8C8A85)
+val ShNight            = Color(0xFF0F0F0F)
+val ShNight2           = Color(0xFF1A1A1A)
+val ShNight3           = Color(0xFF242424)
+val ShNightText        = Color(0xFFF2F1EC)
+val ShNightMuted       = Color(0xFF8C8A85)
+val ShNightLine        = Color(0x1AFFFFFF) // rgba(255,255,255,0.10)
 
-// ── Semantic ──
-val ShError       = Color(0xFFE53935)
-val ShScrim       = Color(0x80000000)
+// ── Semantic & Overlays ──
+val ShError            = Color(0xFFE53935)
+val ShScrim            = Color(0x80000000)
+val ShFabShadow        = Color(0x52C84B31) // rgba(200,75,49,0.32)
 
-// ── Surface overlays ──
-val ShNightBorder = Color(0x1AFFFFFF) // rgba(255,255,255,0.10)
-val ShFabShadow   = Color(0x52C84B31) // rgba(200,75,49,0.32)
+// Common Opacity
+val ShMatchaLightAlpha = Color(0x1F4A7C59) // 12% opacity (Light only)
 
-// Legacy compatibility aliases
-val Sumi = ShInk
-val Ink2 = ShInk2
-val Washi = ShPaper
-val Paper2 = ShPaper2
-val Surface = ShSurface
-val Vermillion = ShVermillion
-val Vermillion2 = ShVermillion2
-val Matcha = ShMatcha
-val Ink = ShInk
-val Paper = ShPaper
+// ── Theme Mapping Helpers ──
+val ShMatchaLight = ShMatchaLightAlpha
+
+// ── Legacy Aliases (DO NOT REMOVE: Required for broad code compatibility) ──
+val ShInk = ShInkLight
+val ShPaper = ShPaperLight
+val ShFog = ShFogLight
+val ShLine = ShLineLight
+val ShMatcha = ShMatchaLightToken
+val ShVermillion = ShVermillionLight
+val ShLine2 = ShLine2Light
+val ShFog2 = ShFog2Light
+val ShPaper2 = ShPaper2Light
+val ShSurface = ShSurfaceLight
+val ShSand = ShSandLight
+val ShNightBorder = ShNightLine
+
+// Additional direct aliases used in older screen versions
+val Sumi = ShInkLight
+val Ink = ShInkLight
+val Ink2 = ShInk2Light
+val Washi = ShPaperLight
+val Paper = ShPaperLight
+val Paper2 = ShPaper2Light
+val Surface = ShSurfaceLight
+val Vermillion = ShVermillionLight
+val Vermillion2 = ShVermillion2Light
+val Matcha = ShMatchaLightToken
+val Fog = ShFogLight
+val Fog2 = ShFog2Light
+val Line = ShLineLight
+val Line2 = ShLine2Light
+val Sand = ShSandLight
 val Night = ShNight
-val Fog = ShFog
-val Sand = ShSand
-val Line = ShLine
-val Line2 = ShLine2
-val Fog2 = ShFog2
 val NightText = ShNightText
 val NightMuted = ShNightMuted
-val NightLine = ShNightBorder
-val NightBorder = ShNightBorder
+val NightLine = ShNightLine
+val NightBorder = ShNightLine

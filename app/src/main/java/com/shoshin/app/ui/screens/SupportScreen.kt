@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -21,9 +21,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
@@ -32,7 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 fun SupportScreen(
     navController: NavController
 ) {
-    var expandedIndex by remember { mutableStateOf<Int?>(null) }
+    var expandedIndex by remember { mutableIntStateOf(-1) }
     val scrollState = rememberScrollState()
     val context = LocalContext.current
 
@@ -45,131 +45,154 @@ fun SupportScreen(
         "Is my data shared with anyone?" to "Never sold. See Settings → Privacy & Data for a full export or deletion of your account."
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp)
-    ) {
-        // App Bar
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 22.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
-            }
-            Text("Help & support", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold)
-        }
-
-        // Search
-        Row(
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(ShSurface)
-                .border(1.5.dp, ShLine2, RoundedCornerShape(14.dp))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .background(ShNight)
+                .statusBarsPadding()
         ) {
-            Icon(painterResource(R.drawable.ic_search), null, modifier = Modifier.size(18.dp), tint = ShFog)
-            Spacer(Modifier.width(10.dp))
-            Text("Search for help", fontSize = 15.sp, color = ShFog2)
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        // Contact Rows
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                SupportRow(
-                    icon = R.drawable.ic_mail, 
-                    title = "Message support", 
-                    sub = "Usually replies within a day",
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = Uri.parse("mailto:")
-                            putExtra(Intent.EXTRA_EMAIL, arrayOf("cobwebtechnologies1@gmail.com"))
-                            putExtra(Intent.EXTRA_SUBJECT, "Shoshin App Support")
-                        }
-                        context.startActivity(Intent.createChooser(intent, "Contact Support"))
-                    }
-                )
-                HorizontalDivider(color = ShLine)
-                SupportRow(
-                    icon = R.drawable.ic_help, 
-                    title = "Report a problem", 
-                    sub = "Bugs, crashes, unexpected behaviour",
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = Uri.parse("mailto:")
-                            putExtra(Intent.EXTRA_EMAIL, arrayOf("cobwebtechnologies1@gmail.com"))
-                            putExtra(Intent.EXTRA_SUBJECT, "Shoshin App - Bug Report")
-                        }
-                        context.startActivity(Intent.createChooser(intent, "Report a Problem"))
-                    }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        Kicker("Frequently asked", modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
-        
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                faqs.forEachIndexed { i, (q, a) ->
-                    FAQItem(
-                        question = q,
-                        answer = a,
-                        isExpanded = expandedIndex == i,
-                        onToggle = { expandedIndex = if (expandedIndex == i) null else i }
-                    )
-                    if (i < faqs.lastIndex) HorizontalDivider(color = ShLine)
+            // App Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = Color.White)
                 }
+                Spacer(Modifier.width(8.dp))
+                Text("Help & support", style = ShTitleStyle.copy(fontSize = 28.sp, color = Color.White))
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 24.dp)
+            ) {
+                // Search
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .border(1.2.dp, ShNightLine, RoundedCornerShape(16.dp))
+                        .background(ShNight2)
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(painterResource(R.drawable.ic_search), null, modifier = Modifier.size(20.dp), tint = ShNightMuted)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Search for help", style = ShBodyStyle.copy(color = ShNightMuted))
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // Contact Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(ShNight2)
+                ) {
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        SupportRowDark(
+                            icon = R.drawable.ic_mail, 
+                            title = "Message support", 
+                            sub = "Usually replies within a day",
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:")
+                                    putExtra(Intent.EXTRA_EMAIL, arrayOf("cobwebtechnologies1@gmail.com"))
+                                    putExtra(Intent.EXTRA_SUBJECT, "Shoshin App Support")
+                                }
+                                context.startActivity(Intent.createChooser(intent, "Contact Support"))
+                            }
+                        )
+                        HorizontalDivider(color = ShNightLine, modifier = Modifier.padding(horizontal = 24.dp))
+                        SupportRowDark(
+                            icon = R.drawable.ic_help, 
+                            title = "Report a problem", 
+                            sub = "Bugs, crashes, unexpected behaviour",
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:")
+                                    putExtra(Intent.EXTRA_EMAIL, arrayOf("cobwebtechnologies1@gmail.com"))
+                                    putExtra(Intent.EXTRA_SUBJECT, "Shoshin App - Bug Report")
+                                }
+                                context.startActivity(Intent.createChooser(intent, "Report a Problem"))
+                            }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                Kicker("FREQUENTLY ASKED", color = ShNightMuted)
+                
+                Spacer(Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(ShNight2)
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                ) {
+                    Column {
+                        faqs.forEachIndexed { i, (q, a) ->
+                            FAQItemDark(
+                                question = q,
+                                answer = a,
+                                isExpanded = expandedIndex == i,
+                                onToggle = { expandedIndex = if (expandedIndex == i) -1 else i }
+                            )
+                            if (i < faqs.lastIndex) HorizontalDivider(color = ShNightLine)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+                Text(
+                    text = "Shoshin v1.0 · Beginner's mind, every morning",
+                    style = ShLabelStyle.copy(fontSize = 13.sp),
+                    color = ShNightMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
+                )
             }
         }
-
-        Spacer(Modifier.height(24.dp))
-        Text(
-            text = "Shoshin v1.0 · Beginner's mind, every morning",
-            style = ShLabelStyle,
-            color = ShFog2,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
-        )
     }
 }
 
 @Composable
-private fun SupportRow(
+private fun SupportRowDark(
     icon: Int, 
     title: String, 
     sub: String,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 16.dp),
+            .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = ShInk)
-        Spacer(Modifier.width(14.dp))
+        Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = Color.White)
+        Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = ShInk)
-            Text(sub, fontSize = 12.5.sp, color = ShFog)
+            Text(title, style = ShH2Style.copy(fontSize = 16.sp, color = Color.White))
+            Text(sub, style = ShLabelStyle.copy(fontSize = 13.sp, color = ShNightMuted))
         }
-        Icon(painterResource(R.drawable.ic_arrow_right), null, modifier = Modifier.size(17.dp), tint = ShFog2)
+        Icon(painterResource(R.drawable.ic_arrow_right), null, modifier = Modifier.size(18.dp), tint = ShNightLine)
     }
 }
 
 @Composable
-private fun FAQItem(
+private fun FAQItemDark(
     question: String,
     answer: String,
     isExpanded: Boolean,
@@ -180,24 +203,22 @@ private fun FAQItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onToggle() }
-                .padding(vertical = 16.dp),
+                .padding(vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 question,
                 modifier = Modifier.weight(1f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = ShInk
+                style = ShH2Style.copy(fontSize = 16.sp, color = Color.White)
             )
             Icon(
                 painter = painterResource(R.drawable.ic_arrow_right),
                 null,
                 modifier = Modifier
-                    .size(17.dp)
+                    .size(18.dp)
                     .rotate(if (isExpanded) 90f else 0f),
-                tint = ShFog2
+                tint = ShNightMuted
             )
         }
         AnimatedVisibility(
@@ -207,10 +228,8 @@ private fun FAQItem(
         ) {
             Text(
                 answer,
-                fontSize = 13.5.sp,
-                color = ShInk,
-                lineHeight = 20.sp,
-                modifier = Modifier.padding(bottom = 16.dp)
+                style = ShBodyStyle.copy(fontSize = 14.sp, color = ShNightMuted, lineHeight = 20.sp),
+                modifier = Modifier.padding(bottom = 20.dp)
             )
         }
     }

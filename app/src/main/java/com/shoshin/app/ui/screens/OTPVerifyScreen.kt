@@ -1,6 +1,7 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -12,17 +13,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalContext
 import android.app.Activity
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
-import com.shoshin.app.R
-import com.shoshin.app.PhoneAuthManager
-import com.shoshin.app.data.ShoshinRepository
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.utils.ErrorHandler
+import com.Shoshin.app.R
+import com.Shoshin.app.PhoneAuthManager
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.ErrorHandler
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,174 +84,154 @@ fun OTPVerifyScreen(
     }
 
     if (isSending) {
-        LoadingDialog(message = "Sending verification...")
+        LoadingDialog(message = "Sending code...")
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        // App Bar
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp).align(Alignment.TopStart),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
-            }
-        }
+    if (isLoading) {
+        LoadingDialog(message = "Verifying...")
+    }
 
+    val subtitleText = buildAnnotatedString {
+        append("Sent to ")
+        withStyle(style = ShBodyStyle.toSpanStyle().copy(fontWeight = FontWeight.Bold, color = ShInk)) {
+            append("+91 $phone")
+        }
+    }
+
+    val resendText = buildAnnotatedString {
+        append("Didn't receive it? ")
+        val resendPart = if (resendCooldown > 0) {
+            val mins = resendCooldown / 60
+            val secs = resendCooldown % 60
+            "Resend in $mins:${String.format(java.util.Locale.US, "%02d", secs)}"
+        } else {
+            "Resend"
+        }
+        withStyle(style = ShLabelStyle.toSpanStyle().copy(fontWeight = FontWeight.Bold, color = ShVermillion)) {
+            append(resendPart)
+        }
+    }
+
+    fun onVerify() {
+        if (code.length != 6) {
+            errorMessage = "OTP must be 6 digits"
+            return
+        }
+        isLoading = true
+        errorMessage = ""
+        successMessage = ""
+        
+        phoneAuthManager.verifyOTP(
+            code,
+            onSuccess = {
+                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                onSuccess(userId, phone, referralCode)
+            },
+            onError = {
+                errorMessage = ErrorHandler.mapFirebaseError(it)
+                isLoading = false
+            }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            Box(modifier = Modifier.statusBarsPadding().padding(horizontal = 8.dp, vertical = 8.dp)) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
+                }
+            }
+        },
+        containerColor = ShPaper
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp)
-                .systemBarsPadding(),
+                .padding(padding)
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(100.dp))
-
-            // Logo
-            ShoshinLogoMark()
-            
             Spacer(Modifier.height(32.dp))
 
             Text(
-                text = "Verify Phone",
-                style = ShTitleStyle,
-                color = MaterialTheme.colorScheme.onBackground
+                text = "Enter the code",
+                style = ShTitleStyle.copy(fontSize = 32.sp),
+                color = ShInk,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Start
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = if (mode == OtpMode.Phone) 
-                    "Enter the 6-digit code sent to $phone"
-                else 
-                    "",
-                style = ShBodyStyle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                text = subtitleText,
+                style = ShBodyStyle.copy(fontSize = 14.sp, color = ShFog),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Start
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            if (mode == OtpMode.Phone) {
-                ShoshinOtpBoxes(
-                    value = code,
-                    length = 6,
-                    dark = false,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-                // Invisible interaction for actual keypad input could go here, 
-                // but for now we'll assume a custom keypad or system keyboard.
-                // Porting design's ShoshinKeypad:
-                ShoshinKeypad(
-                    onDigit = { if (code.length < 6) code += it },
-                    onClear = { code = code.dropLast(1) },
-                    onOk = { /* Submit logic below */ },
-                    dark = false,
-                    modifier = Modifier.padding(top = 24.dp)
+            ShoshinOtpBoxes(
+                value = code,
+                length = 6,
+                dark = true, // Dark boxes as per screenshot
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Didn’t receive it? ", style = ShLabelStyle.copy(color = ShFog))
+                Text(
+                    text = if (resendCooldown > 0) {
+                        "Resend in 0:${String.format(java.util.Locale.US, "%02d", resendCooldown)}"
+                    } else {
+                        "Resend"
+                    },
+                    style = ShLabelStyle.copy(color = ShVermillion, fontWeight = FontWeight.Bold),
+                    modifier = Modifier.clickable(enabled = resendCooldown == 0) {
+                        if (resendCooldown == 0 && !isSending && !isLoading) {
+                            errorMessage = ""
+                            successMessage = ""
+                            isSending = true
+                            phoneAuthManager.resendOTP(
+                                phone = phone,
+                                activity = activity!!,
+                                onCodeSent = {
+                                    isSending = false
+                                    resendCooldown = 60
+                                    successMessage = "New code sent!"
+                                },
+                                onError = { e ->
+                                    errorMessage = ErrorHandler.mapFirebaseError(e)
+                                    isSending = false
+                                }
+                            )
+                        }
+                    }
                 )
             }
 
             if (errorMessage.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = errorMessage,
                     color = MaterialTheme.colorScheme.error,
                     style = ShLabelStyle,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
-            
-            if (successMessage.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = successMessage,
-                    color = ShMatcha,
-                    style = ShLabelStyle,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            val interactionSource = remember { MutableInteractionSource() }
-
-            ShoshinButton(
-                onClick = {
-                    if (code.length != 6) {
-                        errorMessage = "OTP must be 6 digits"
-                        return@ShoshinButton
-                    }
-
-                    isLoading = true
-                    errorMessage = ""
-                    successMessage = ""
-
-                    when (mode) {
-                        OtpMode.Phone -> {
-                            phoneAuthManager.verifyOTP(
-                                code,
-                                onSuccess = {
-                                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                                    onSuccess(userId, phone, referralCode)
-                                },
-                                onError = {
-                                    errorMessage = ErrorHandler.mapFirebaseError(it)
-                                    isLoading = false
-                                }
-                            )
-                        }
-                    }
-                },
-                variant = ShButtonVariant.Accent,
-                enabled = !isLoading && !isSending,
-                modifier = Modifier.fillMaxWidth(),
-                interactionSource = interactionSource,
-                pressedColor = Color.Black
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
-                } else {
-                    Text(
-                        text = if (mode == OtpMode.Phone) "Verify & Continue" else "I've Clicked the Link",
-                        color = Color.White
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(
-                onClick = {
-                    errorMessage = ""
-                    successMessage = ""
-                    isSending = true
-                    if (mode == OtpMode.Phone && activity != null) {
-                        phoneAuthManager.resendOTP(
-                            phone = phone,
-                            activity = activity,
-                            onCodeSent = {
-                                isSending = false
-                                resendCooldown = 60
-                                successMessage = "New code sent!"
-                            },
-                            onError = { e ->
-                                errorMessage = ErrorHandler.mapFirebaseError(e)
-                                isSending = false
-                            }
-                        )
-                    }
-                },
-                enabled = resendCooldown == 0 && !isSending && !isLoading
-            ) {
-                Text(
-                    text = if (resendCooldown > 0) "Resend in ${resendCooldown}s" 
-                    else "Didn't receive code? Resend",
-                    color = if (resendCooldown > 0) MaterialTheme.colorScheme.onSurfaceVariant else ShVermillion,
-                    style = ShLabelStyle
-                )
-            }
-            
-            Spacer(Modifier.height(24.dp))
+            ShoshinKeypad(
+                onDigit = { if (code.length < 6) code += it },
+                onClear = { if (code.isNotEmpty()) code = code.dropLast(1) },
+                onOk = { onVerify() },
+                dark = false,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
         }
     }
 }

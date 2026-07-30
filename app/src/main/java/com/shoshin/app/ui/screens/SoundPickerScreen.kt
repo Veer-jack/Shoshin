@@ -1,5 +1,8 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
+import android.media.MediaPlayer
+import android.media.RingtoneManager
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,18 +15,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import kotlinx.coroutines.launch
 
-data class ShSound(val id: String, val name: String, val note: String)
+data class ShSound(val id: String, val name: String, val note: String, val previewUri: Uri? = null)
 
-val SH_SOUNDS = listOf(
+val SH_SOUNDS_LIST = listOf(
     ShSound("bell", "Temple bell", "A single resonant strike"),
     ShSound("bowl", "Singing bowl", "Slow rising hum"),
     ShSound("bamboo", "Bamboo (shishi-odoshi)", "Gentle wooden knock"),
@@ -35,86 +41,159 @@ val SH_SOUNDS = listOf(
 
 @Composable
 fun SoundPickerScreen(navController: NavController) {
-    var selectedSoundId by remember { mutableStateOf("bell") }
-    var volume by remember { mutableFloatStateOf(0.7f) }
+    val context = LocalContext.current
+    val repo = remember { ShoshinRepository(context) }
+    val scope = rememberCoroutineScope()
+
+    val savedTone by repo.alarmTone.collectAsState(initial = "bell")
+    val savedIntensity by repo.alarmIntensity.collectAsState(initial = 7)
+    val savedType by repo.alarmType.collectAsState(initial = "Normal")
+
+    var selectedSoundId by remember(savedTone) { mutableStateOf(savedTone) }
+    var volume by remember(savedIntensity) { mutableFloatStateOf(savedIntensity.toFloat() / 10f) }
     val scrollState = rememberScrollState()
+    
+    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            mediaPlayer?.release()
+            mediaPlayer = null
+        }
+    }
+
+    fun playPreview(sound: ShSound) {
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        val uri = sound.previewUri ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        try {
+            mediaPlayer = MediaPlayer.create(context, uri).apply {
+                if (this != null) {
+                    setVolume(volume, volume)
+                    start()
+                    setOnCompletionListener { 
+                        it.release()
+                        if (mediaPlayer == it) mediaPlayer = null
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SoundPicker", "Failed to play preview", e)
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp)
+            .background(ShNight)
     ) {
         // App Bar
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = Color.White)
             }
-            Text("Wake sound", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
+            Text("Wake sound", style = ShTitleStyle.copy(fontSize = 32.sp, color = Color.White))
         }
 
-        // Volume Card
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Kicker("Volume")
-                    Text("${(volume * 100).toInt()}%", style = ShNumeralStyle.copy(fontSize = 14.sp), color = MaterialTheme.colorScheme.onBackground)
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(painterResource(R.drawable.ic_moon), null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-                    Slider(
-                        value = volume,
-                        onValueChange = { volume = it },
-                        modifier = Modifier.weight(1f),
-                        colors = SliderDefaults.colors(
-                            thumbColor = ShVermillion,
-                            activeTrackColor = ShVermillion,
-                            inactiveTrackColor = MaterialTheme.colorScheme.outline
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp)
+        ) {
+            Spacer(Modifier.height(24.dp))
+
+            // Volume Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(ShNight2)
+                    .padding(24.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Kicker("VOLUME", color = ShNightMuted)
+                        Text(
+                            text = "${(volume * 100).toInt()}%",
+                            style = ShNumeralStyle.copy(fontSize = 15.sp, color = Color.White)
                         )
-                    )
-                    Icon(painterResource(R.drawable.ic_bell), null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(32.dp))
-        Kicker("Sounds", modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
-
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                SH_SOUNDS.forEachIndexed { index, sound ->
-                    val isSelected = selectedSoundId == sound.id
-                    SoundRow(
-                        sound = sound,
-                        isSelected = isSelected,
-                        onClick = { selectedSoundId = sound.id }
-                    )
-                    if (index < SH_SOUNDS.lastIndex) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                    }
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(painterResource(R.drawable.ic_moon), null, modifier = Modifier.size(18.dp), tint = ShNightMuted)
+                        Slider(
+                            value = volume,
+                            onValueChange = { 
+                                volume = it 
+                                mediaPlayer?.setVolume(it, it)
+                                scope.launch { repo.saveAlarmSettings(selectedSoundId, savedType, (it * 10).toInt()) }
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = SliderDefaults.colors(
+                                thumbColor = ShVermillion,
+                                activeTrackColor = ShVermillion,
+                                inactiveTrackColor = ShNight3
+                            )
+                        )
+                        Icon(painterResource(R.drawable.ic_bell), null, modifier = Modifier.size(18.dp), tint = ShNightMuted)
                     }
                 }
             }
-        }
 
-        Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height(32.dp))
+            Kicker("SOUNDS", color = ShNightMuted, modifier = Modifier.padding(bottom = 16.dp))
+
+            // Sounds List Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(ShNight2)
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+            ) {
+                Column {
+                    SH_SOUNDS_LIST.forEachIndexed { index, sound ->
+                        val isSelected = selectedSoundId == sound.id
+                        SoundRowDark(
+                            sound = sound,
+                            isSelected = isSelected,
+                            onClick = { 
+                                selectedSoundId = sound.id
+                                playPreview(sound)
+                                scope.launch { repo.saveAlarmSettings(sound.id, savedType, (volume * 10).toInt()) }
+                            }
+                        )
+                        if (index < SH_SOUNDS_LIST.lastIndex) {
+                            HorizontalDivider(color = ShNightLine, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(48.dp))
+        }
     }
 }
 
 @Composable
-private fun SoundRow(
+private fun SoundRowDark(
     sound: ShSound,
     isSelected: Boolean,
     onClick: () -> Unit
@@ -123,28 +202,28 @@ private fun SoundRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(38.dp)
-                .clip(RoundedCornerShape(11.dp))
-                .background(if (isSelected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.surfaceVariant),
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (isSelected) Color.White else ShNight3),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_play), // Need to ensure ic_play exists or use a generic play icon
-                contentDescription = null,
-                tint = if (isSelected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+                painter = painterResource(id = R.drawable.ic_play),
+                contentDescription = "Play",
+                tint = if (isSelected) Color.Black else Color.White,
                 modifier = Modifier.size(16.dp)
             )
         }
         
         Column(modifier = Modifier.weight(1f)) {
-            Text(sound.name, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-            Text(sound.note, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(sound.name, style = ShH2Style.copy(fontSize = 16.sp, color = Color.White))
+            Text(sound.note, style = ShLabelStyle.copy(fontSize = 13.sp, color = ShNightMuted))
         }
 
         if (isSelected) {

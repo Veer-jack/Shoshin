@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.theme
+package com.Shoshin.app.ui.theme
 
 import android.app.Application
 import android.content.Context
@@ -8,6 +8,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,12 +18,17 @@ import kotlinx.coroutines.flow.StateFlow
 // Shoshin (初心) — MaterialTheme wrapper
 // App-wide appearance: Light / Dark / System, chosen from
 // Settings → Appearance and persisted via ThemePreference.
-// `darkSurface` remains available to force specific celebration
-// screens (Badge Unlock, Activation, Camera, 71-Day) into the
-// night palette regardless of the app-wide setting.
 // ============================================================
 
 enum class ShThemeMode { LIGHT, DARK, SYSTEM }
+
+/**
+ * Categorization for Shoshin screens.
+ * DYNAMIC: Follows user preference (Dashboard, Settings, Circle, etc.)
+ * ALWAYS_LIGHT: Fixed light theme (Reserved for specific onboarding steps if needed)
+ * ALWAYS_DARK: "Night" screens for morning focus (Activation, Camera, 71-Day, etc.)
+ */
+enum class ShoshinThemeType { DYNAMIC, ALWAYS_LIGHT, ALWAYS_DARK }
 
 private const val PREFS_NAME = "shoshin_prefs"
 private const val KEY_THEME_MODE = "theme_mode"
@@ -58,19 +64,17 @@ class ThemeViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 private val ShLightColorScheme = lightColorScheme(
-    primary          = ShVermillion,
+    primary          = ShVermillionLight,
     onPrimary        = Color.White,
-    primaryContainer = ShVermillion2,
-    secondary        = ShMatcha,
+    secondary        = ShMatchaLightToken,
     onSecondary      = Color.White,
-    background       = ShPaper,
-    onBackground     = ShInk,
-    surface          = ShSurface,
-    onSurface        = ShInk,
-    surfaceVariant   = ShPaper2,
-    onSurfaceVariant = ShFog,
-    outline          = ShLine,
-    outlineVariant   = ShLine2,
+    background       = ShPaperLight,
+    onBackground     = ShInkLight,
+    surface          = ShSurfaceLight,
+    onSurface        = ShInkLight,
+    surfaceVariant   = ShPaper2Light,
+    onSurfaceVariant = ShFogLight,
+    outline          = ShLineLight,
     error            = ShError,
     scrim            = ShScrim,
 )
@@ -78,7 +82,6 @@ private val ShLightColorScheme = lightColorScheme(
 private val ShDarkColorScheme = darkColorScheme(
     primary          = ShVermillionDark,
     onPrimary        = Color.White,
-    primaryContainer = ShVermillion2,
     secondary        = ShMatchaDark,
     onSecondary      = Color.White,
     background       = ShPaperDark,
@@ -88,14 +91,13 @@ private val ShDarkColorScheme = darkColorScheme(
     surfaceVariant   = ShPaper2Dark,
     onSurfaceVariant = ShFogDark,
     outline          = ShLineDark,
-    outlineVariant   = ShLine2Dark,
     error            = ShError,
     scrim            = ShScrim,
 )
 
-// "Night" palette specifically for high-intensity or late-night focus screens
+// "Night" palette for fixed-dark screens (Camera, Activation, etc.)
 private val ShNightColorScheme = darkColorScheme(
-    primary          = ShVermillion,
+    primary          = ShVermillionLight,
     onPrimary        = Color.White,
     background       = ShNight,
     onBackground     = ShNightText,
@@ -103,29 +105,38 @@ private val ShNightColorScheme = darkColorScheme(
     onSurface        = ShNightText,
     surfaceVariant   = ShNight3,
     onSurfaceVariant = ShNightMuted,
-    outline          = ShNightBorder,
+    outline          = ShNightLine,
     error            = ShError,
 )
 
 @Composable
 fun ShoshinTheme(
-    darkSurface: Boolean = false, // force night palette for a specific celebration screen
+    type: ShoshinThemeType = ShoshinThemeType.DYNAMIC,
     content: @Composable () -> Unit,
 ) {
-    val themeViewModel: ThemeViewModel = viewModel()
+    val context = LocalContext.current
+    val themeViewModel: ThemeViewModel = viewModel(
+        key = "ShoshinThemeViewModel",
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return ThemeViewModel(context.applicationContext as Application) as T
+            }
+        }
+    )
     val mode by themeViewModel.mode.collectAsState()
     val systemIsDark = isSystemInDarkTheme()
     
-    val appIsDark = when (mode) {
-        ShThemeMode.DARK -> true
-        ShThemeMode.LIGHT -> false
-        ShThemeMode.SYSTEM -> systemIsDark
-    }
-
-    val colorScheme = when {
-        darkSurface -> ShNightColorScheme
-        appIsDark -> ShDarkColorScheme
-        else -> ShLightColorScheme
+    val colorScheme = when (type) {
+        ShoshinThemeType.ALWAYS_DARK -> ShNightColorScheme
+        ShoshinThemeType.ALWAYS_LIGHT -> ShLightColorScheme
+        ShoshinThemeType.DYNAMIC -> {
+            val appIsDark = when (mode) {
+                ShThemeMode.DARK -> true
+                ShThemeMode.LIGHT -> false
+                ShThemeMode.SYSTEM -> systemIsDark
+            }
+            if (appIsDark) ShDarkColorScheme else ShLightColorScheme
+        }
     }
 
     MaterialTheme(
@@ -134,12 +145,4 @@ fun ShoshinTheme(
         shapes      = ShShapes,
         content     = content,
     )
-}
-
-// Compatibility alias for the old theme name if used in MainActivity or elsewhere
-@Composable
-fun ShoshinAPPTheme(
-    content: @Composable () -> Unit
-) {
-    ShoshinTheme(content = content)
 }

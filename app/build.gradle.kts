@@ -7,14 +7,14 @@ plugins {
 }
 
 android {
-    namespace = "com.shoshin.app"
+    namespace = "com.Shoshin.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.shoshin.app"
+        applicationId = "com.Shoshin.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
+        versionCode = 6
         versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -38,6 +38,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            ndk {
+                abiFilters.add("arm64-v8a")
+                abiFilters.add("armeabi-v7a")
+            }
         }
     }
     compileOptions {
@@ -72,7 +76,6 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.appcheck.playintegrity)
     implementation(libs.firebase.appcheck.debug)
-    implementation(libs.androidx.material.icons.extended)
     implementation(libs.play.services.auth)
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
@@ -88,6 +91,7 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.compose.ui.google.fonts)
     ksp(libs.androidx.room.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

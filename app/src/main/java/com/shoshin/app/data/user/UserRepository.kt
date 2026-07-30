@@ -1,13 +1,14 @@
-package com.shoshin.app.data.user
+package com.Shoshin.app.data.user
 
 import android.graphics.Bitmap
-import com.shoshin.app.data.db.dao.UserDao
-import com.shoshin.app.data.db.entities.UserEntity
+import com.Shoshin.app.data.db.dao.UserDao
+import com.Shoshin.app.data.db.entities.UserEntity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
 
 class UserRepository(
@@ -53,11 +54,17 @@ class UserRepository(
     }
 
     suspend fun updateUser(user: UserEntity) {
-        userDao.insertUser(user) // Use insert with REPLACE strategy to handle both new and existing
-        try {
-            firestore.collection("users").document(user.userId).set(user).await()
-        } catch (e: Exception) {
-            // Handle error (queue for sync)
+        // 1. Always save to local DB first (Non-blocking source of truth)
+        userDao.insertUser(user) 
+        
+        // 2. Sync to cloud in the background so slow network doesn't block the app
+        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                firestore.collection("users").document(user.userId).set(user).await()
+                android.util.Log.d("UserRepository", "Cloud sync successful for user: ${user.userId}")
+            } catch (e: Exception) {
+                android.util.Log.e("UserRepository", "Cloud sync failed: ${e.message}. Will retry via SyncWorker.")
+            }
         }
     }
 

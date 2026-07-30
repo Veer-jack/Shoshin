@@ -1,4 +1,4 @@
-package com.shoshin.app.data.db.entities
+package com.Shoshin.app.data.db.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -35,6 +35,8 @@ data class UserEntity(
     val proExpiryDate: Long = 0,
     val lastSyncTime: Long = 0,
     val lastOpenDate: Long = 0,
+    val lastRoutineStepIndex: Int = 0,
+    val lastRoutineDate: String = "", // e.g. "2024-05-20"
     val totalSessionCount: Int = 0,
     val totalSessionMinutes: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),

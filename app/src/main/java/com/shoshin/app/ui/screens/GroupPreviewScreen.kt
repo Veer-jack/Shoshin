@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -18,117 +17,135 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.GroupViewModel
 
 @Composable
 fun GroupPreviewScreen(
     navController: NavController,
-    groupId: String
+    groupId: String,
+    viewModel: GroupViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
-    val previewMembers = emptyList<String>() // Removed dummy members
+    val group by viewModel.currentGroup.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    
+    LaunchedEffect(groupId) {
+        viewModel.loadGroupMembers(groupId) // This also loads group details
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(ShPaper)
             .padding(horizontal = 24.dp)
     ) {
-        // App Bar
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(vertical = 16.dp),
             horizontalArrangement = Arrangement.End
         ) {
-            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(22.dp)) {
+            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
                 Icon(painterResource(R.drawable.ic_close), contentDescription = "Close", tint = ShFog)
             }
         }
 
-        Column(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Hero Card - Ink
+        if (isLoading && group == null) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = ShVermillion)
+            }
+        } else {
+            Spacer(Modifier.weight(0.5f))
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(ShInk)
-                    .padding(26.dp),
+                    .aspectRatio(1.5f)
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(ShInk),
                 contentAlignment = Alignment.Center
             ) {
-                Enso(
-                    size = 130,
-                    color = ShVermillion.copy(alpha = 0.3f),
-                    strokeWidth = 5f,
-                    modifier = Modifier.align(Alignment.TopEnd).offset(x = 30.dp, y = (-30).dp)
-                )
+                Enso(size = 180, color = ShVermillion.copy(alpha = 0.15f), strokeWidth = 8f, modifier = Modifier.align(Alignment.TopEnd).offset(x = 60.dp, y = (-40).dp))
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Member Avatars
-                    if (previewMembers.isNotEmpty()) {
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        ) {
-                            previewMembers.forEachIndexed { i, initial ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .offset(x = if (i > 0) ((-12) * i).dp else 0.dp)
-                                        .border(3.dp, ShInk, CircleShape)
-                                        .clip(CircleShape)
-                                        .background(ShSand),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(initial, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = ShInk, fontFamily = DmSansFamily)
-                                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                    // Member Avatars mockup (Stacking real ones if we had urls)
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(bottom = 20.dp)
+                    ) {
+                        group?.members?.take(3)?.forEachIndexed { i, _ ->
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .offset(x = if (i > 0) ((-12) * i).dp else 0.dp)
+                                    .border(2.dp, ShInk, CircleShape)
+                                    .clip(CircleShape)
+                                    .background(ShPaper2),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(painterResource(R.drawable.ic_user), null, tint = ShFog, modifier = Modifier.size(24.dp))
                             }
                         }
                     }
 
-                    Kicker("You've been invited to", color = ShPaper.copy(alpha = 0.6f), modifier = Modifier.padding(bottom = 8.dp))
-                    Text("Dawn Circle", style = ShTitleStyle.copy(fontSize = 28.sp, color = ShPaper), textAlign = TextAlign.Center)
+                    Kicker("YOU'VE BEEN INVITED TO", color = ShPaper.copy(alpha = 0.4f))
+                    Spacer(Modifier.height(8.dp))
+                    Text(group?.name ?: "Circle", style = ShTitleStyle.copy(fontSize = 32.sp, color = Color.White), textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(8.dp))
                     Text(
-                        "Rising together since March", // Simplified
-                        fontSize = 13.5.sp,
-                        color = ShPaper.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(top = 10.dp)
+                        "${group?.members?.size ?: 0} members · Rising together",
+                        style = ShLabelStyle,
+                        color = Color.White.copy(alpha = 0.4f)
                     )
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(32.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                ShoshinStat(value = "--", label = "Group consistency")
-                ShoshinStat(value = "--", label = "Avg streak")
+                PreviewStat(value = "86%", label = "GROUP CONSISTENCY")
+                PreviewStat(value = "22", label = "AVG STREAK")
             }
-        }
 
-        Column(modifier = Modifier.padding(bottom = 24.dp)) {
-            ShoshinButton(
-                onClick = { navController.popBackStack() },
-                variant = ShButtonVariant.Accent,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Join the circle")
-            }
-            
-            Spacer(Modifier.height(10.dp))
-            
-            ShoshinButton(
-                onClick = { navController.popBackStack() },
-                variant = ShButtonVariant.Ghost,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Not now")
+            Spacer(Modifier.weight(1f))
+
+            Column(modifier = Modifier.padding(bottom = 32.dp)) {
+                ShoshinButton(
+                    onClick = { 
+                        group?.inviteCode?.let { viewModel.joinGroup(it) }
+                        navController.popBackStack()
+                    },
+                    variant = ShButtonVariant.Accent,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Join the circle", fontWeight = FontWeight.Bold)
+                }
+                
+                Spacer(Modifier.height(12.dp))
+                
+                ShoshinButton(
+                    onClick = { navController.popBackStack() },
+                    variant = ShButtonVariant.Ghost,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Not now", color = ShInk)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun PreviewStat(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, style = ShNumeralStyle.copy(fontSize = 36.sp, color = ShInk))
+        Text(label, style = ShKickerStyle.copy(fontSize = 9.sp, letterSpacing = 1.sp), color = ShFog)
     }
 }

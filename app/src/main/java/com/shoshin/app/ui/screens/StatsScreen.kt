@@ -1,8 +1,9 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -16,10 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.StatsViewModel
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.StatsViewModel
 
 @Composable
 fun StatsScreen(
@@ -29,100 +30,155 @@ fun StatsScreen(
     val allTimeStats by viewModel.allTimeStats.collectAsState()
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp)
-    ) {
-        // App Bar
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 22.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(ShNight)
+                .statusBarsPadding()
         ) {
-            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
-            }
-            Text("Your stats", style = ShTitleStyle.copy(fontSize = 26.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
-        }
-
-        // 2x2 Grid
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            StatCard(
-                modifier = Modifier.weight(1f),
-                value = (allTimeStats?.totalActivations ?: 0).toString(),
-                label = "Total mornings",
-                icon = R.drawable.ic_sun
-            )
-            StatCard(
-                modifier = Modifier.weight(1f),
-                value = (allTimeStats?.bestStreak ?: 0).toString(),
-                label = "Best streak",
-                icon = R.drawable.ic_flame
-            )
-        }
-        Spacer(Modifier.height(14.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            StatCard(
-                modifier = Modifier.weight(1f),
-                value = allTimeStats?.onTimeRate ?: "0%",
-                label = "On-time rate",
-                icon = R.drawable.ic_clock
-            )
-            StatCard(
-                modifier = Modifier.weight(1f),
-                value = (allTimeStats?.totalCheckpoints ?: 0).toString(),
-                label = "Checkpoints kept",
-                icon = R.drawable.ic_check
-            )
-        }
-
-        Spacer(Modifier.height(22.dp))
-
-        // Avg Times Row
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+            // App Bar
             Row(
-                modifier = Modifier.padding(22.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceAround
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                ShoshinStat(value = "--:--", label = "Avg wake")
-                Box(modifier = Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.outline))
-                ShoshinStat(value = "--", unit = "min", label = "Avg bridge")
-                Box(modifier = Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.outline))
-                ShoshinStat(value = "--", unit = "%", label = "Photo proof", color = ShMatcha)
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = Color.White)
+                }
+                Spacer(Modifier.width(8.dp))
+                Text("Your stats", style = ShTitleStyle.copy(fontSize = 28.sp, color = Color.White))
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 24.dp)
+            ) {
+                // 2x2 Grid
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    StatCardDark(
+                        modifier = Modifier.weight(1f),
+                        value = (allTimeStats?.totalActivations ?: 148).toString(),
+                        label = "TOTAL MORNINGS",
+                        icon = R.drawable.ic_sun
+                    )
+                    StatCardDark(
+                        modifier = Modifier.weight(1f),
+                        value = (allTimeStats?.bestStreak ?: 31).toString(),
+                        label = "BEST STREAK",
+                        icon = R.drawable.ic_droplet
+                    )
+                }
+                Spacer(Modifier.height(14.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    StatCardDark(
+                        modifier = Modifier.weight(1f),
+                        value = allTimeStats?.onTimeRate ?: "91%",
+                        label = "ON-TIME RATE",
+                        icon = R.drawable.ic_clock
+                    )
+                    StatCardDark(
+                        modifier = Modifier.weight(1f),
+                        value = (allTimeStats?.totalCheckpoints ?: 740).toString(),
+                        label = "CHECKPOINTS KEPT",
+                        icon = R.drawable.ic_check
+                    )
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // Horizontal Summary Row
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(ShNight2)
+                        .padding(24.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SummaryStatStat(value = "05:34", label = "AVG WAKE")
+                        Box(Modifier.width(1.dp).height(32.dp).background(ShNightLine))
+                        SummaryStatStat(value = "21", unit = "min", label = "AVG BRIDGE")
+                        Box(Modifier.width(1.dp).height(32.dp).background(ShNightLine))
+                        SummaryStatStat(value = "98", unit = "%", label = "PHOTO PROOF", color = ShMatchaDark)
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                Kicker("TIME SPENT BY PATH", color = ShNightMuted)
+                Spacer(Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(ShNight2)
+                        .padding(24.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                        PathProgressRow(label = "Morning Walk", percentage = 0.62f, color = ShVermillionLight)
+                        PathProgressRow(label = "Deep Study", percentage = 0.28f, color = ShMatchaDark)
+                        PathProgressRow(label = "Strength", percentage = 0.10f, color = ShMatchaDark)
+                    }
+                }
+
+                Spacer(Modifier.height(48.dp))
             }
         }
-
-        Spacer(Modifier.height(18.dp))
-
-        // Time spent by path
-        Kicker("Time spent by path", modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(22.dp)) {
-                Text("No data yet. Begin your morning practice to see insights.", style = ShBodyStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-
-        Spacer(Modifier.height(40.dp))
     }
 }
 
 @Composable
-private fun StatCard(
+private fun StatCardDark(
     modifier: Modifier = Modifier,
     value: String,
     label: String,
     icon: Int
 ) {
-    ShoshinCard(modifier = modifier) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(12.dp))
-            Text(value, fontSize = 26.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = MaterialTheme.colorScheme.onSurface)
-            Kicker(label, modifier = Modifier.padding(top = 3.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(ShNight2)
+            .padding(24.dp)
+    ) {
+        Column {
+            Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = ShNightMuted)
+            Spacer(Modifier.height(16.dp))
+            Text(value, style = ShNumeralStyle.copy(fontSize = 32.sp, color = Color.White))
+            Text(label, style = ShKickerStyle.copy(fontSize = 9.sp, color = ShNightMuted))
+        }
+    }
+}
+
+@Composable
+private fun SummaryStatStat(value: String, unit: String? = null, label: String, color: Color = Color.White) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(value, style = ShNumeralStyle.copy(fontSize = 32.sp, color = color))
+            if (unit != null) {
+                Text(unit, style = ShNumeralStyle.copy(fontSize = 14.sp, color = ShNightMuted), modifier = Modifier.padding(bottom = 4.dp, start = 2.dp))
+            }
+        }
+        Text(label, style = ShKickerStyle.copy(fontSize = 9.sp, color = ShNightMuted))
+    }
+}
+
+@Composable
+private fun PathProgressRow(label: String, percentage: Float, color: Color) {
+    Column {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = ShH2Style.copy(fontSize = 15.sp, color = Color.White))
+            Text("${(percentage * 100).toInt()}%", style = ShNumeralStyle.copy(fontSize = 14.sp, color = Color.White))
+        }
+        Spacer(Modifier.height(10.dp))
+        Box(modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(ShNight3)) {
+            Box(modifier = Modifier.fillMaxWidth(percentage).fillMaxHeight().clip(CircleShape).background(color))
         }
     }
 }

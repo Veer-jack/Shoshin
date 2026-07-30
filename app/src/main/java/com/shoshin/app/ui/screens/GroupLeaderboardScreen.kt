@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,87 +19,135 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.GroupViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun GroupLeaderboardScreen(
     navController: NavController,
-    groupId: String
+    groupId: String,
+    viewModel: GroupViewModel
 ) {
     val scrollState = rememberScrollState()
-    var selectedTimeframe by remember { mutableStateOf(0) }
+    var selectedTimeframe by remember { mutableIntStateOf(0) }
+    
+    val members by viewModel.groupMembers.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-    val leaderboard = emptyList<LeaderboardEntry>() // Removed SH_LEADERBOARD dummy data
+    LaunchedEffect(groupId) {
+        viewModel.loadGroupMembers(groupId)
+    }
+
+    // Convert GroupMember to LeaderboardEntry
+    val leaderboard = remember(members) {
+        members.sortedByDescending { it.consistencyStreak }.mapIndexed { index, m ->
+            LeaderboardEntry(
+                rank = index + 1,
+                initial = m.name.firstOrNull()?.toString()?.uppercase() ?: "U",
+                name = if (m.userId == userId) "${m.name} (you)" else m.name,
+                streak = m.consistencyStreak,
+                trend = "neutral", // Real trend would need history
+                isYou = m.userId == userId
+            )
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp)
+            .background(ShPaper)
     ) {
         // App Bar
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 22.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back")
+                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
             }
-            Text("Dawn Circle leaderboard", style = ShTitleStyle.copy(fontSize = 24.sp), fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.width(16.dp))
+            Text("Circle leaderboard", style = ShTitleStyle.copy(fontSize = 28.sp), color = ShInk)
         }
 
-        // Timeframe Tabs
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ShoshinPill(
-                label = "This week",
-                variant = if (selectedTimeframe == 0) ShPillVariant.Ink else ShPillVariant.Outline,
-                modifier = Modifier.clickable { selectedTimeframe = 0 }
-            )
-            ShoshinPill(
-                label = "All time",
-                variant = if (selectedTimeframe == 1) ShPillVariant.Ink else ShPillVariant.Outline,
-                modifier = Modifier.clickable { selectedTimeframe = 1 }
-            )
-        }
-
-        Spacer(Modifier.height(32.dp))
-
-        // Podium Top 3
-        if (leaderboard.isNotEmpty()) {
-            Podium(leaderboard.take(3))
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // Full List
-        ShoshinCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            if (leaderboard.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Leaderboard is quiet. Invite someone to begin!", style = ShLabelStyle, color = ShFog, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(24.dp))
+        if (isLoading && leaderboard.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = ShVermillion)
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 24.dp)
+            ) {
+                // Timeframe Selector
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    TimeframePill("This week", selectedTimeframe == 0) { selectedTimeframe = 0 }
+                    TimeframePill("All time", selectedTimeframe == 1) { selectedTimeframe = 1 }
                 }
-            } else {
-                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
-                    leaderboard.forEachIndexed { i, entry ->
-                        LeaderboardRow(entry)
-                        if (i < leaderboard.lastIndex) HorizontalDivider(color = ShLine)
+
+                Spacer(Modifier.height(48.dp))
+
+                // Podium Visualization
+                if (leaderboard.isNotEmpty()) {
+                    Podium(leaderboard.take(3))
+                }
+
+                Spacer(Modifier.height(48.dp))
+
+                // Full Ranking List
+                ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        leaderboard.forEachIndexed { i, entry ->
+                            LeaderboardRow(entry)
+                            if (i < leaderboard.lastIndex) {
+                                HorizontalDivider(
+                                    color = ShLine, 
+                                    thickness = 1.dp, 
+                                    modifier = Modifier.padding(horizontal = 24.dp)
+                                )
+                            }
+                        }
                     }
                 }
+                
+                Spacer(Modifier.height(48.dp))
             }
         }
-        
-        Spacer(Modifier.height(40.dp))
+    }
+}
+
+@Composable
+private fun TimeframePill(label: String, isSelected: Boolean, onClick: () -> Unit) {
+    Surface(
+        color = if (isSelected) ShInk else ShPaper2,
+        shape = RoundedCornerShape(999.dp),
+        modifier = Modifier.clickable { onClick() }
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) Color.White else ShFog,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            style = ShLabelStyle.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
+        )
     }
 }
 
 @Composable
 private fun Podium(top3: List<LeaderboardEntry>) {
-    // Top 3 sorted for podium: [2nd, 1st, 3rd]
-    if (top3.size < 3) return
-    val podiumOrder = listOf(top3[1], top3[0], top3[2])
+    // If only one or two members, still show them centered
+    val podiumOrder = when (top3.size) {
+        1 -> listOf(top3[0])
+        2 -> listOf(top3[1], top3[0])
+        else -> listOf(top3[1], top3[0], top3[2])
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -110,45 +158,50 @@ private fun Podium(top3: List<LeaderboardEntry>) {
             val isFirst = entry.rank == 1
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(horizontal = 7.dp)
+                modifier = Modifier.padding(horizontal = 12.dp)
             ) {
                 if (isFirst) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_crown),
-                        null,
-                        modifier = Modifier.size(22.dp),
+                        painter = painterResource(R.drawable.ic_trophy),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
                         tint = ShVermillion
                     )
                     Spacer(Modifier.height(8.dp))
                 }
+                
                 Box(
                     modifier = Modifier
-                        .size(if (isFirst) 64.dp else 52.dp)
+                        .size(if (isFirst) 84.dp else 72.dp)
                         .clip(CircleShape)
-                        .background(if (entry.isYou) ShInk else ShSand)
                         .then(
                             if (isFirst) Modifier.border(3.dp, ShVermillion, CircleShape) else Modifier
-                        ),
+                        )
+                        .background(if (entry.isYou) ShInk else ShPaper2),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = entry.initial,
-                        fontSize = if (isFirst) 24.sp else 19.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (entry.isYou) ShPaper else ShInk,
-                        fontFamily = DmSansFamily
+                        style = ShTitleStyle.copy(
+                            fontSize = if (isFirst) 32.sp else 28.sp,
+                            color = if (entry.isYou) Color.White else ShInk.copy(alpha = 0.6f)
+                        )
                     )
                 }
-                Spacer(Modifier.height(8.dp))
+                
+                Spacer(Modifier.height(12.dp))
+                
                 Text(
                     entry.name,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = ShInk
+                    style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, color = ShInk)
                 )
+                
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(13.dp), tint = ShVermillion)
-                    Text(entry.streak.toString(), style = ShNumeralStyle.copy(fontSize = 13.sp), color = ShInk)
+                    Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(12.dp), tint = ShVermillion)
+                    Text(
+                        entry.streak.toString(), 
+                        style = ShNumeralStyle.copy(fontSize = 14.sp, color = ShInk)
+                    )
                 }
             }
         }
@@ -157,52 +210,50 @@ private fun Podium(top3: List<LeaderboardEntry>) {
 
 @Composable
 private fun LeaderboardRow(entry: LeaderboardEntry) {
+    val rowBg = if (entry.isYou) ShPaper2.copy(alpha = 0.5f) else Color.Transparent
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (entry.isYou) ShPaper2 else Color.Transparent)
-            .padding(horizontal = if (entry.isYou) { 10.dp } else 0.dp, vertical = 12.dp),
+            .background(rowBg)
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = entry.rank.toString(),
-            modifier = Modifier.width(20.dp),
-            fontSize = 14.sp,
-            fontFamily = DmSansFamily,
-            color = ShFog2
+            style = ShLabelStyle,
+            color = ShFog,
+            modifier = Modifier.width(24.dp)
         )
+        
         Box(
             modifier = Modifier
-                .size(36.dp)
+                .size(40.dp)
                 .clip(CircleShape)
-                .background(ShSand),
+                .background(ShPaper2),
             contentAlignment = Alignment.Center
         ) {
-            Text(entry.initial, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = ShInk, fontFamily = DmSansFamily)
+            Text(
+                text = entry.initial,
+                style = ShH2Style.copy(fontSize = 17.sp, color = ShInk.copy(alpha = 0.6f))
+            )
         }
-        Spacer(Modifier.width(14.dp))
+        
+        Spacer(Modifier.width(16.dp))
+        
         Text(
             text = entry.name,
-            modifier = Modifier.weight(1f),
-            fontSize = 15.5.sp,
-            fontWeight = FontWeight.Medium,
-            color = ShInk
+            style = ShH2Style.copy(fontSize = 16.sp),
+            modifier = Modifier.weight(1f)
         )
         
-        // Trend Icon
-        val (trendIcon, trendColor) = when (entry.trend) {
-            "up" -> R.drawable.ic_arrow_up to ShMatcha
-            "down" -> R.drawable.ic_arrow_down to ShVermillion
-            else -> R.drawable.ic_check to ShFog2
-        }
-        Icon(painterResource(trendIcon), null, modifier = Modifier.size(14.dp), tint = trendColor)
-        
-        Spacer(Modifier.width(14.dp))
-        
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(15.dp), tint = ShVermillion)
-            Text(entry.streak.toString(), style = ShNumeralStyle.copy(fontSize = 15.sp), color = ShInk)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(14.dp), tint = ShVermillion)
+            Text(
+                text = entry.streak.toString(), 
+                style = ShNumeralStyle.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold),
+                color = ShInk
+            )
         }
     }
 }

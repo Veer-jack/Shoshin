@@ -7,19 +7,22 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:91496310161:android:9ab7ace05542381a572630",
+        "mobilesdk_app_id": "1:91496310161:android:041dd80a516325da572630",
         "android_client_info": {
-          "package_name": "com.shoshin.app",
-          "certificate_hash": [
-            "EE1B31D66C96A192658EF0E8501A6F68D24406EC",
-            "4EFAD0CB88064643125783DAC27F7C97006CC826",
-            "88788E13E5CC1C69CDD9118DC970B0792A37F630"
-          ]
+          "package_name": "com.Shoshin.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "91496310161-0rc0v6focf6olfnf0djkkehhh4hadv8a.apps.googleusercontent.com",
+          "client_id": "91496310161-938ct5vo756a11u3ivhmec74dtmojnqa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Shoshin.app",
+            "certificate_hash": "88788e13e5cc1c69cdd9118dc970b0792a37f630"
+          }
+        },
+        {
+          "client_id": "91496310161-p47cglgmku9hkoi5qfbshq1mga7815kp.apps.googleusercontent.com",
           "client_type": 3
         }
       ],

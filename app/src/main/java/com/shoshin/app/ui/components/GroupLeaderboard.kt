@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.components
+package com.Shoshin.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,8 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shoshin.app.data.models.UserSummary
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.data.models.UserSummary
+import com.Shoshin.app.ui.theme.*
 
 enum class LeaderboardTab { STREAK, CHECKPOINTS, BADGES }
 

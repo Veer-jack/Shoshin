@@ -1,4 +1,4 @@
-package com.shoshin.app.navigation
+package com.Shoshin.app.navigation
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -15,12 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import com.shoshin.app.R
-import com.shoshin.app.data.db.AppDatabase
-import com.shoshin.app.sync.*
-import com.shoshin.app.ui.screens.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.ProfileViewModel
+import com.Shoshin.app.R
+import com.Shoshin.app.data.db.AppDatabase
+import com.Shoshin.app.sync.*
+import com.Shoshin.app.ui.screens.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.ProfileViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
@@ -30,11 +30,11 @@ fun ShoshinMainShell(
     syncManager: SyncManager,
     networkMonitor: NetworkStateMonitor,
     conflictResolver: ConflictResolver,
-    userRepository: com.shoshin.app.data.user.UserRepository,
-    streakViewModel: com.shoshin.app.viewmodel.StreakViewModel,
-    friendViewModel: com.shoshin.app.viewmodel.FriendStreaksViewModel? = null,
-    referralViewModel: com.shoshin.app.viewmodel.ReferralViewModel? = null,
-    groupViewModel: com.shoshin.app.viewmodel.GroupViewModel? = null
+    userRepository: com.Shoshin.app.data.user.UserRepository,
+    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel,
+    friendViewModel: com.Shoshin.app.viewmodel.FriendStreaksViewModel? = null,
+    referralViewModel: com.Shoshin.app.viewmodel.ReferralViewModel? = null,
+    groupViewModel: com.Shoshin.app.viewmodel.GroupViewModel? = null
 ) {
     val innerNav = rememberNavController()
     val currentBackStack by innerNav.currentBackStackEntryAsState()
@@ -46,14 +46,24 @@ fun ShoshinMainShell(
             ShoshinBottomBar(
                 currentRoute = currentRoute,
                 onTabSelected = { tab ->
-                    innerNav.navigate(tab.route) {
+                    if (tab.route == ShRoutes.ACTIVATION) {
+                        // Practice sessions are full-screen, so use rootNavController
+                        rootNavController.navigate(ShRoutes.ACTIVATION)
+                    } else {
+                        innerNav.navigate(tab.route) {
+                            popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                },
+                onFabClick = {
+                    // Home button takes you back to the Dashboard
+                    innerNav.navigate(ShRoutes.HOME) {
                         popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }
-                },
-                onFabClick = {
-                    rootNavController.navigate(ShRoutes.ACTIVATION)
                 }
             )
         }
@@ -70,12 +80,19 @@ fun ShoshinMainShell(
                     networkMonitor = networkMonitor,
                     conflictResolver = conflictResolver,
                     streakViewModel = streakViewModel,
-                    friendViewModel = friendViewModel
+                    friendViewModel = friendViewModel,
+                    onNavigateToTab = { route ->
+                        innerNav.navigate(route) {
+                            popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 )
             }
 
             composable(ShRoutes.CONSISTENCY) {
-                ConsistencyScreen(navController = rootNavController)
+                ConsistencyScreen(navController = rootNavController, streakViewModel = streakViewModel)
             }
 
             composable(ShRoutes.GROUPS) {
@@ -84,6 +101,10 @@ fun ShoshinMainShell(
                     referralViewModel = referralViewModel,
                     groupViewModel = groupViewModel
                 )
+            }
+
+            composable(ShRoutes.STREAK_DETAILS) {
+                StreakDetailsScreen(navController = rootNavController, viewModel = streakViewModel)
             }
 
             composable(ShRoutes.PROFILE) {
@@ -167,8 +188,8 @@ fun ShoshinBottomBar(
             )
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_bolt_heavy),
-                contentDescription = "Begin morning",
+                painter = painterResource(R.drawable.ic_home_heavy),
+                contentDescription = "Home",
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -211,7 +232,7 @@ fun BottomNavItem(
 }
 
 enum class ShTab(val route: String, val iconRes: Int, val activeIconRes: Int, val label: String) {
-    Home(ShRoutes.HOME, R.drawable.ic_home, R.drawable.ic_home_heavy, "Home"),
+    Practice(ShRoutes.ACTIVATION, R.drawable.ic_bolt, R.drawable.ic_bolt_heavy, "Activate"),
     Progress(ShRoutes.CONSISTENCY, R.drawable.ic_pulse, R.drawable.ic_pulse_heavy, "Progress"),
     Groups(ShRoutes.GROUPS, R.drawable.ic_groups, R.drawable.ic_groups_heavy, "Groups"),
     You(ShRoutes.PROFILE, R.drawable.ic_user, R.drawable.ic_user_heavy, "You")

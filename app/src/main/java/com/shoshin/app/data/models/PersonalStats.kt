@@ -1,4 +1,4 @@
-package com.shoshin.app.data.models
+package com.Shoshin.app.data.models
 
 data class WeekStats(
     val daysCompleted: Int,

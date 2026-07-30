@@ -1,30 +1,29 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.SettingsViewModel
-import java.util.Locale
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.Shoshin.app.R
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.SettingsViewModel
 
 @Composable
 fun SettingsScreen(
@@ -32,284 +31,306 @@ fun SettingsScreen(
     viewModel: SettingsViewModel
 ) {
     val user by viewModel.user.collectAsState()
-    var showLogoutDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    val userName = user?.displayName ?: user?.email ?: "User"
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-    ) {
-        // App Bar
-        Row(
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding()
         ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
-            }
-            Spacer(Modifier.width(16.dp))
-            Text("Settings", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
-        }
-
-        user?.let { u ->
-            // Notifications
-            SettingsSection(title = "Notifications") {
-                SettingsSwitchRow(
-                    title = "Push Notifications",
-                    subtitle = "Receive alerts for routine starts",
-                    checked = u.notificationsEnabled,
-                    onCheckedChange = { viewModel.updateNotifications(it) },
-                    iconRes = R.drawable.ic_bell
-                )
-                
-                var showTimePicker by remember { mutableStateOf(false) }
-                SettingsRow(
-                    title = "Reminder Time",
-                    subtitle = u.notificationTime,
-                    onClick = { showTimePicker = true },
-                    iconRes = R.drawable.ic_clock
-                )
-
-                if (showTimePicker) {
-                    val timeParts = u.notificationTime.split(":")
-                    val currentHour = timeParts.getOrNull(0)?.toIntOrNull() ?: 6
-                    val currentMinute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
-                    
-                    TimePickerDialog(
-                        onDismiss = { showTimePicker = false },
-                        onTimeSelected = { hour, minute ->
-                            viewModel.updateNotificationTime(hour, minute)
-                            showTimePicker = false
-                        },
-                        title = "Reminder Time",
-                        initialHour = currentHour,
-                        initialMinute = currentMinute
+            // App Bar - Fix #2: Back Button + Username
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_arrow_left),
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
-            }
-
-            // Productivity
-            SettingsSection(title = "Productivity") {
-                var showStartTimePicker by remember { mutableStateOf(false) }
-                var showEndTimePicker by remember { mutableStateOf(false) }
-
-                SettingsRow(
-                    title = "Productive Window",
-                    subtitle = "${u.productiveStartTime} - ${u.productiveEndTime}",
-                    onClick = { showStartTimePicker = true },
-                    iconRes = R.drawable.ic_pulse
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = userName,
+                    style = ShTitleStyle.copy(fontSize = 28.sp, color = MaterialTheme.colorScheme.onBackground)
                 )
-
-                if (showStartTimePicker) {
-                    TimePickerDialog(
-                        onDismiss = { showStartTimePicker = false },
-                        onTimeSelected = { hour, minute ->
-                            val time = String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
-                            viewModel.updateProductiveHours(time, u.productiveEndTime)
-                            showStartTimePicker = false
-                            showEndTimePicker = true
-                        },
-                        title = "Start Time"
-                    )
-                }
-
-                if (showEndTimePicker) {
-                    TimePickerDialog(
-                        onDismiss = { showEndTimePicker = false },
-                        onTimeSelected = { hour, minute ->
-                            val time = String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
-                            viewModel.updateProductiveHours(u.productiveStartTime, time)
-                            showEndTimePicker = false
-                        },
-                        title = "End Time"
-                    )
-                }
             }
 
-            // Appearance
-            val themeViewModel: ThemeViewModel = viewModel()
-            val themeMode by themeViewModel.mode.collectAsState()
-
-            SettingsSection(title = "Appearance") {
-                Row(
+            user?.let { u ->
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = 32.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Theme", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
-                        Text(themeMode.name.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    
-                    var expanded by remember { mutableStateOf(false) }
-                    Box {
-                        TextButton(onClick = { expanded = true }) {
-                            Text("Change", color = ShVermillion)
-                        }
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
+                    // Profile Section - Fix #4: Design Layout
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(96.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
                         ) {
-                            ShThemeMode.entries.forEach { mode ->
-                                DropdownMenuItem(
-                                    text = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }, color = MaterialTheme.colorScheme.onSurface) },
-                                    onClick = {
-                                        themeViewModel.setMode(mode)
-                                        expanded = false
-                                    }
-                                )
-                            }
+                            Text(
+                                text = userName.firstOrNull()?.toString()?.uppercase() ?: "U",
+                                style = ShTitleStyle.copy(fontSize = 36.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            )
                         }
+                        Spacer(Modifier.height(16.dp))
+                        Text(u.email ?: "", style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Joined July 2026", style = ShLabelStyle.copy(fontSize = 11.sp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                     }
+
+                    // Fix #5: Prominent Mark Practice Button
+                    val isTodayMarked = u.lastRoutineStepIndex > 0 // In production, check date too
+                    MarkPracticeSection(isTodayMarked) {
+                        navController.navigate(ShRoutes.ACTIVATION)
+                    }
+
+                    // APPEARANCE
+                    val themeViewModel: ThemeViewModel = viewModel(key = "ShoshinThemeViewModel")
+                    val currentMode by themeViewModel.mode.collectAsState()
+                    
+                    SettingsSection(title = "APPEARANCE") {
+                        ThemeSelectorRow(
+                            selectedMode = currentMode,
+                            onModeSelected = { themeViewModel.setMode(it) }
+                        )
+                    }
+
+                    // ACCOUNT
+                    SettingsSection(title = "ACCOUNT") {
+                        SettingsRow(
+                            title = "Profile details",
+                            subtitle = u.phone ?: u.email,
+                            iconRes = R.drawable.ic_user,
+                            onClick = { /* Navigate to profile edit */ }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsRow(
+                            title = "Shoshin Pro",
+                            subtitle = "Renews 12 Jul",
+                            iconRes = R.drawable.ic_shield,
+                            onClick = { /* Navigate to pro */ }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsRow(
+                            title = "Invite the circle",
+                            subtitle = "Earn a month of Pro",
+                            iconRes = R.drawable.ic_plus,
+                            onClick = { navController.navigate(ShRoutes.REFERRALS) }
+                        )
+                    }
+
+                    // PRACTICE
+                    SettingsSection(title = "PRACTICE") {
+                        SettingsRow(
+                            title = "Default challenge",
+                            value = "Standard",
+                            iconRes = R.drawable.ic_bolt,
+                            onClick = { /* Change challenge */ }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsSwitchRow(
+                            title = "Require photo proof",
+                            checked = true,
+                            onCheckedChange = { },
+                            iconRes = R.drawable.ic_camera
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsSwitchRow(
+                            title = "Strict mode",
+                            subtitle = "No skips, no excuses",
+                            checked = false,
+                            onCheckedChange = { },
+                            iconRes = R.drawable.ic_lock
+                        )
+                    }
+
+                    // NOTIFICATIONS - Fix #6: Functional Button
+                    SettingsSection(title = "NOTIFICATIONS") {
+                        SettingsRow(
+                            title = "View all notifications",
+                            iconRes = R.drawable.ic_bell,
+                            onClick = { navController.navigate(ShRoutes.NOTIFICATIONS) }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsRow(
+                            title = "Wind-down reminder",
+                            value = "9:30 PM",
+                            iconRes = R.drawable.ic_moon,
+                            onClick = { /* Change time */ }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsSwitchRow(
+                            title = "Streak alerts",
+                            checked = true,
+                            onCheckedChange = { },
+                            iconRes = R.drawable.ic_droplet
+                        )
+                    }
+
+                    // LOGOUT
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        text = "Log Out",
+                        style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.logout { navController.navigate(ShRoutes.AUTH) { popUpTo(0) } } }
+                            .padding(vertical = 16.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
                 }
-            }
-
-            // About
-            SettingsSection(title = "About") {
-                SettingsRow(
-                    title = "Invite the circle",
-                    subtitle = "A month of Pro, on us",
-                    onClick = { navController.navigate(ShRoutes.REFERRALS) },
-                    iconRes = R.drawable.ic_plus
-                )
-                SettingsRow(
-                    title = "Help & support",
-                    subtitle = "FAQ, contact, feedback",
-                    onClick = { navController.navigate(ShRoutes.SUPPORT) },
-                    iconRes = R.drawable.ic_help
-                )
-                SettingsRow(
-                    title = "Privacy & data",
-                    subtitle = "Export, delete, privacy policy",
-                    onClick = { navController.navigate(ShRoutes.DATA_PRIVACY) },
-                    iconRes = R.drawable.ic_shield
-                )
-                SettingsRow(
-                    title = "App Version",
-                    subtitle = "1.0.1 (Beta)",
-                    iconRes = R.drawable.ic_info
-                )
-            }
-
-            // Account
-            SettingsSection(title = "Account") {
-                SettingsRow(
-                    title = "Log Out",
-                    titleColor = ShVermillion,
-                    onClick = { showLogoutDialog = true },
-                    iconRes = R.drawable.ic_logout,
-                    iconColor = ShVermillion
-                )
             }
         }
-
-        Spacer(Modifier.height(48.dp))
-    }
-
-    if (showLogoutDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Log Out?") },
-            text = { Text("Are you sure you want to log out of Shoshin?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.logout {
-                        navController.navigate(ShRoutes.AUTH) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                }) {
-                    Text("Log Out", color = ShVermillion)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancel", color = ShFog)
-                }
-            },
-            containerColor = ShSurface,
-            shape = RoundedCornerShape(20.dp)
-        )
-    }
-
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Account?", color = ShError) },
-            text = { Text("This action is permanent and will delete all your streaks, photos, and group memberships.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteAccount {
-                        navController.navigate(ShRoutes.AUTH) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                }) {
-                    Text("Delete Forever", color = ShError)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel", color = ShFog)
-                }
-            },
-            containerColor = ShSurface,
-            shape = RoundedCornerShape(20.dp)
-        )
     }
 }
 
 @Composable
-fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun MarkPracticeSection(isCompleted: Boolean, onStart: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(if (isCompleted) MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f) else Color.Transparent)
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = if (isCompleted) "Today's practice: Completed ✓" else "Mark today's practice",
+                style = ShLabelStyle,
+                color = if (isCompleted) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (isCompleted) {
+                Icon(painterResource(R.drawable.ic_check), null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+            }
+        }
+        
+        Spacer(Modifier.height(8.dp))
+        
+        ShoshinButton(
+            onClick = onStart,
+            variant = ShButtonVariant.Accent,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+        ) {
+            Icon(painterResource(R.drawable.ic_check), null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Mark Practice Complete", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun ThemeSelectorRow(
+    selectedMode: ShThemeMode,
+    onModeSelected: (ShThemeMode) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        ShThemeMode.entries.forEach { mode ->
+            val isSelected = mode == selectedMode
+            Surface(
+                onClick = { onModeSelected(mode) },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
+                contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+            ) {
+                Box(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = mode.name.lowercase().replaceFirstChar { it.uppercase() },
+                        style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
-        Kicker(title, color = ShFog)
+        Kicker(title, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(12.dp))
-        ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        ) {
             Column(content = content)
         }
     }
 }
 
 @Composable
-fun SettingsRow(
+private fun SettingsRow(
     title: String,
     subtitle: String? = null,
+    value: String? = null,
     iconRes: Int,
-    iconColor: Color = MaterialTheme.colorScheme.onBackground,
-    titleColor: Color = MaterialTheme.colorScheme.onBackground,
     onClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(enabled = onClick != null) { onClick?.invoke() }
-            .padding(16.dp),
+            .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(painterResource(iconRes), contentDescription = null, tint = iconColor, modifier = Modifier.size(22.dp))
+        Box(
+            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surface),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(painterResource(iconRes), null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+        }
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = titleColor, fontWeight = FontWeight.Medium)
+            Text(title, style = ShH2Style.copy(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface))
             if (subtitle != null) {
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = ShFog)
+                Text(subtitle, style = ShLabelStyle.copy(fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
             }
         }
-        if (onClick != null) {
-            Icon(painterResource(R.drawable.ic_arrow_right), contentDescription = null, tint = ShLine2, modifier = Modifier.size(20.dp))
+        if (value != null) {
+            Text(value, style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+            Spacer(Modifier.width(8.dp))
         }
+        Icon(painterResource(R.drawable.ic_arrow_right), null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
     }
 }
 
 @Composable
-fun SettingsSwitchRow(
+private fun SettingsSwitchRow(
     title: String,
-    subtitle: String,
+    subtitle: String? = null,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     iconRes: Int
@@ -317,23 +338,30 @@ fun SettingsSwitchRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(painterResource(iconRes), contentDescription = null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(22.dp))
+        Box(
+            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surface),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(painterResource(iconRes), null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+        }
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Medium)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = ShFog)
+            Text(title, style = ShH2Style.copy(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface))
+            if (subtitle != null) {
+                Text(subtitle, style = ShLabelStyle.copy(fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
+            }
         }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = ShVermillion,
-                uncheckedThumbColor = ShPaper2,
-                uncheckedTrackColor = ShLine
+                checkedTrackColor = ShMatcha,
+                uncheckedThumbColor = Color.White.copy(alpha = 0.4f),
+                uncheckedTrackColor = MaterialTheme.colorScheme.outline
             )
         )
     }

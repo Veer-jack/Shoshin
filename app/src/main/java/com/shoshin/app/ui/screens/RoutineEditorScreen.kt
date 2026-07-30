@@ -1,6 +1,8 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -11,15 +13,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 
 @Composable
 fun RoutineEditorScreen(navController: NavController) {
@@ -33,105 +36,138 @@ fun RoutineEditorScreen(navController: NavController) {
         Pair(R.drawable.ic_sun, "Out the door"),
         Pair(R.drawable.ic_walk, "Walk begun")
     )
-    val verify = listOf("Tap", "Photo", "Photo", "Photo + GPS", "Photo + GPS")
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp)
+            .background(ShNight)
+            .statusBarsPadding()
     ) {
         // App Bar
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 22.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Edit path", style = ShTitleStyle.copy(fontSize = 28.sp), color = MaterialTheme.colorScheme.onBackground)
-            ShoshinPill(label = "Active", variant = ShPillVariant.Accent)
-        }
-
-        // Path Name
-        Kicker("Path name", modifier = Modifier.padding(bottom = 10.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(pathName, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-            Icon(painterResource(R.drawable.ic_edit), null, modifier = Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-
-        Spacer(Modifier.height(22.dp))
-        Kicker("Checkpoints · drag to reorder", modifier = Modifier.padding(bottom = 14.dp))
-
-        steps.forEachIndexed { i, step ->
-            ShoshinCard(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                Row(
-                    modifier = Modifier.padding(14.dp, 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Drag Handle
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        repeat(3) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                repeat(2) {
-                                    Box(modifier = Modifier.size(3.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f), CircleShape))
-                                }
-                            }
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(11.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(painterResource(step.first), null, modifier = Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurface)
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(step.second, fontSize = 15.5.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-                        Text(verify[i], fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-
-                    Icon(painterResource(R.drawable.ic_arrow_right), null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(painterResource(R.drawable.ic_arrow_left), null, tint = Color.White)
                 }
+                Text("Back", style = ShLabelStyle.copy(color = ShNightMuted, fontWeight = FontWeight.Bold))
+            }
+            Surface(
+                color = ShVermillion.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(999.dp)
+            ) {
+                Text(
+                    "Movement",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ShVermillion)
+                )
             }
         }
 
-        Spacer(Modifier.height(14.dp))
-
-        ShoshinButton(
-            onClick = { /* Add checkpoint */ },
-            variant = ShButtonVariant.Ghost,
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp)
         ) {
-            Icon(painterResource(R.drawable.ic_plus), null, modifier = Modifier.size(19.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("Add checkpoint")
+            Text("Edit path", style = ShTitleStyle.copy(fontSize = 32.sp, color = Color.White))
+            
+            Spacer(Modifier.height(24.dp))
+
+            Kicker("PATH NAME", color = ShNightMuted)
+            Spacer(Modifier.height(10.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .border(1.2.dp, ShNightLine, RoundedCornerShape(16.dp))
+                    .background(ShNight2)
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(pathName, style = ShH2Style.copy(fontSize = 16.sp, color = Color.White))
+                    Icon(painterResource(R.drawable.ic_edit), null, modifier = Modifier.size(18.dp), tint = ShNightMuted)
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
+            Kicker("CHECKPOINTS · 5 MIN APART", color = ShNightMuted)
+            Spacer(Modifier.height(14.dp))
+
+            steps.forEach { step ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(ShNight2)
+                        .padding(18.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Drag Handle Mock
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Icon(painterResource(R.drawable.ic_arrow_left), null, modifier = Modifier.size(12.dp).rotate(90f), tint = ShNightLine)
+                            Icon(painterResource(R.drawable.ic_arrow_left), null, modifier = Modifier.size(12.dp).rotate(270f), tint = ShNightLine)
+                        }
+                        
+                        Spacer(Modifier.width(16.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(ShNightText.copy(alpha = 0.05f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(painterResource(step.first), null, modifier = Modifier.size(20.dp), tint = Color.White)
+                        }
+
+                        Spacer(Modifier.width(16.dp))
+                        Text(step.second, style = ShH2Style.copy(fontSize = 16.sp, color = Color.White), modifier = Modifier.weight(1f))
+                        
+                        IconButton(onClick = { }) {
+                            Icon(painterResource(R.drawable.ic_trash), null, modifier = Modifier.size(18.dp), tint = ShNightMuted)
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .border(1.2.dp, ShNightLine, RoundedCornerShape(20.dp))
+                    .clickable { }
+                    .padding(horizontal = 18.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(painterResource(R.drawable.ic_plus), null, modifier = Modifier.size(16.dp), tint = ShNightMuted)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Add checkpoint", style = ShLabelStyle.copy(color = ShNightMuted, fontWeight = FontWeight.Bold))
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            ShoshinButton(
+                onClick = { /* navController.popBackStack() */ },
+                variant = ShButtonVariant.Accent,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = false
+            ) {
+                Text("Save path (Coming soon)", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.height(48.dp))
         }
-
-        Spacer(Modifier.height(24.dp))
-
-        ShoshinButton(
-            onClick = { navController.popBackStack() },
-            variant = ShButtonVariant.Accent,
-            modifier = Modifier.fillMaxWidth(),
-            pressedColor = Color.Black
-        ) {
-            Text("Save path", color = Color.White)
-        }
-
-        Spacer(Modifier.height(48.dp))
     }
 }

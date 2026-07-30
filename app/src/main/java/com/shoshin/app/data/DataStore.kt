@@ -1,4 +1,4 @@
-package com.shoshin.app.data
+package com.Shoshin.app.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -22,6 +22,7 @@ object PrefsKeys {
     val ALARM_HOUR    = intPreferencesKey("alarm_hour")
     val ALARM_MINUTE  = intPreferencesKey("alarm_minute")
     val ALARM_TONE    = stringPreferencesKey("alarm_tone")
+    val ALARM_TYPE    = stringPreferencesKey("alarm_type") // Normal, Gentle, Shoshin
     val ALARM_INTENSITY = intPreferencesKey("alarm_intensity") // 1-10
     val ALARM_SET     = booleanPreferencesKey("alarm_set")
     val ONBOARDING    = booleanPreferencesKey("onboarding_done")
@@ -49,7 +50,10 @@ class ShoshinRepository(private val context: Context) {
         .map { it[PrefsKeys.ALARM_MINUTE] ?: 30 }
 
     val alarmTone: Flow<String> = context.dataStore.data
-        .map { it[PrefsKeys.ALARM_TONE] ?: "Standard" }
+        .map { it[PrefsKeys.ALARM_TONE] ?: "bell" }
+
+    val alarmType: Flow<String> = context.dataStore.data
+        .map { it[PrefsKeys.ALARM_TYPE] ?: "Normal" }
 
     val alarmIntensity: Flow<Int> = context.dataStore.data
         .map { it[PrefsKeys.ALARM_INTENSITY] ?: 7 }
@@ -82,9 +86,10 @@ class ShoshinRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveAlarmSettings(tone: String, intensity: Int) {
+    suspend fun saveAlarmSettings(tone: String, type: String, intensity: Int) {
         context.dataStore.edit { prefs ->
             prefs[PrefsKeys.ALARM_TONE] = tone
+            prefs[PrefsKeys.ALARM_TYPE] = type
             prefs[PrefsKeys.ALARM_INTENSITY] = intensity
         }
     }

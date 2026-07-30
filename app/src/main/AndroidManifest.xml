@@ -66,7 +66,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="com.shoshin.app.ALARM_TRIGGER" />
+                <action android:name="com.Shoshin.app.ALARM_TRIGGER" />
             </intent-filter>
         </receiver>
 
@@ -76,8 +76,8 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="com.shoshin.app.NOTIFICATION_ALARM" />
-                <action android:name="com.shoshin.app.SKIP_TODAY" />
+                <action android:name="com.Shoshin.app.NOTIFICATION_ALARM" />
+                <action android:name="com.Shoshin.app.SKIP_TODAY" />
             </intent-filter>
         </receiver>
 
@@ -88,7 +88,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.shoshin.app.fileprovider"
+            android:authorities="com.Shoshin.app.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

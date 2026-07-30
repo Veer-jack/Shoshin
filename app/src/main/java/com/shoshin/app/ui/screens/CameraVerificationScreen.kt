@@ -1,13 +1,13 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.util.Log
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,25 +29,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.shoshin.app.R
-import com.shoshin.app.data.db.AppDatabase
-import com.shoshin.app.data.db.entities.PhotoEntity
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.utils.LocationHelper
-import com.shoshin.app.utils.AnalyticsManager
-import com.shoshin.app.utils.PhotoStorageManager
-import com.shoshin.app.utils.SocialShareManager
-import com.google.common.util.concurrent.ListenableFuture
+import com.Shoshin.app.R
+import com.Shoshin.app.data.db.AppDatabase
+import com.Shoshin.app.data.db.entities.PhotoEntity
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.LocationHelper
+import com.Shoshin.app.utils.PhotoStorageManager
+import com.Shoshin.app.utils.VerificationResult
+import com.Shoshin.app.utils.ImageVerificationManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.util.UUID
 
 @Composable
@@ -63,365 +62,213 @@ fun CameraVerificationScreen(
     var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
     var isUploading by remember { mutableStateOf(false) }
     var isVerifying by remember { mutableStateOf(false) }
-    var verificationResult by remember { mutableStateOf<com.shoshin.app.utils.VerificationResult?>(null) }
-    var uploadError by remember { mutableStateOf<String?>(null) }
+    var verificationResult by remember { mutableStateOf<VerificationResult?>(null) }
     
-    var timeRemaining by remember { mutableStateOf(300) } // 5 minutes = 300 seconds
-    var isTimeExpired by remember { mutableStateOf(false) }
-
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    
-    val photoStorageManager = remember(context) { com.shoshin.app.utils.PhotoStorageManager(context) }
-    val shareManager = remember(context) { com.shoshin.app.utils.SocialShareManager(context, database!!) }
-    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val photoStorageManager = remember(context) { PhotoStorageManager(context) }
 
-    LaunchedEffect(Unit) {
-        while (timeRemaining > 0 && verificationResult !is com.shoshin.app.utils.VerificationResult.Success && !isTimeExpired) {
-            delay(1000)
-            timeRemaining--
-            if (timeRemaining <= 0) {
-                isTimeExpired = true
-                android.util.Log.e("CameraVerification", "Time expired for photo verification")
-            }
-        }
-    }
+    if (isUploading) LoadingDialog(message = "Saving proof...")
+    if (isVerifying) LoadingDialog(message = "Verifying...")
 
-    LaunchedEffect(isTimeExpired) {
-        if (isTimeExpired) {
-            android.util.Log.w("CameraVerification", "Photo verification timeout - routine failed")
-            // AnalyticsManager.logCheckpointFailed(
-            //    reason = "timeout",
-            //    timeSpent = 300 - timeRemaining
-            // )
-        }
-    }
-
-    if (isTimeExpired) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(24.dp)
-            ) {
-                Text(
-                    "Time's Up!",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = ShVermillion
+    ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
+        Box(modifier = Modifier.fillMaxSize().background(ShNight)) {
+            if (showCamera) {
+                CameraViewDark(
+                    label = label,
+                    onPhotoCapture = { bitmap ->
+                        capturedImage = bitmap
+                        showCamera = false
+                        
+                        if (targetLabels.isNotEmpty()) {
+                            isVerifying = true
+                            scope.launch {
+                                verificationResult = ImageVerificationManager.verifyImage(bitmap, targetLabels)
+                                isVerifying = false
+                            }
+                        }
+                    },
+                    onSkip = onSkip
                 )
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    "You didn't complete the photo verification in time.",
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    color = ShFog
-                )
-                Spacer(Modifier.height(32.dp))
-                ShoshinButton(
-                    onClick = { onSkip() },
-                    variant = ShButtonVariant.Accent,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Return to Routine", color = Color.White)
-                }
-            }
-        }
-        return
-    }
-
-    if (isUploading) {
-        LoadingDialog(message = "Uploading proof...")
-    }
-    
-    if (isVerifying) {
-        LoadingDialog(message = "Verifying photo...")
-    }
-
-    ShoshinTheme(darkSurface = true) {
-        if (showCamera) {
-            CameraPreviewUI(
-                label = label,
-                timeRemaining = timeRemaining,
-                onPhotoCapture = { bitmap ->
-                    capturedImage = bitmap
-                    showCamera = false
-                    
-                    // Trigger Verification automatically
-                    if (targetLabels.isNotEmpty()) {
-                        isVerifying = true
-                        scope.launch {
-                            verificationResult = com.shoshin.app.utils.ImageVerificationManager.verifyImage(bitmap, targetLabels)
-                            isVerifying = false
+            } else {
+                CameraConfirmUIDark(
+                    bitmap = capturedImage,
+                    label = label,
+                    verificationResult = verificationResult,
+                    onRetake = {
+                        capturedImage = null
+                        showCamera = true
+                        verificationResult = null
+                    },
+                    onConfirm = {
+                        capturedImage?.let { bitmap ->
+                            isUploading = true
+                            scope.launch {
+                                val location = LocationHelper.getLastLocation(context)
+                                uploadPhotoToFirebase(
+                                    bitmap = bitmap,
+                                    context = context,
+                                    database = database!!,
+                                    photoStorageManager = photoStorageManager,
+                                    latitude = location?.latitude,
+                                    longitude = location?.longitude,
+                                    onSuccess = { 
+                                        isUploading = false
+                                        onCapture() 
+                                    },
+                                    onError = { 
+                                        isUploading = false
+                                    }
+                                )
+                            }
                         }
                     }
-                },
-                onDismiss = onSkip
-            )
-        } else {
-            CameraConfirmScreen(
-                bitmap = capturedImage,
-                label = label,
-                timeRemaining = timeRemaining,
-                targetLabels = targetLabels,
-                isUploading = isUploading,
-                isVerifying = isVerifying,
-                verificationResult = verificationResult,
-                error = uploadError,
-                shareManager = shareManager,
-                userId = userId,
-                onRetake = {
-                    capturedImage = null
-                    showCamera = true
-                    uploadError = null
-                    verificationResult = null
-                },
-                onConfirm = {
-                    capturedImage?.let { bitmap ->
-                        isUploading = true
-                        scope.launch {
-                            // ... existing upload logic
-                            val location = com.shoshin.app.utils.LocationHelper.getLastLocation(context)
-                            val lat = location?.latitude?.let { Math.round(it * 100.0) / 100.0 }
-                            val long = location?.longitude?.let { Math.round(it * 100.0) / 100.0 }
-
-                            AnalyticsManager.logLocationCaptured(lat ?: 0.0, long ?: 0.0, "checkpoint")
-                            AnalyticsManager.logCheckpointCompleted("professional", 0, true, 0)
-
-                            uploadPhotoToFirebase(
-                                bitmap = bitmap,
-                                context = context,
-                                database = database!!,
-                                photoStorageManager = photoStorageManager,
-                                latitude = lat,
-                                longitude = long,
-                                onSuccess = {
-                                    isUploading = false
-                                    onCapture()
-                                },
-                                onError = { error ->
-                                    isUploading = false
-                                    uploadError = error
-                                }
-                            )
-                        }
-                    }
-                }
-            )
+                )
+            }
         }
     }
 }
 
 @Composable
-fun CameraPreviewUI(
-    label: String, 
-    timeRemaining: Int,
-    onPhotoCapture: (Bitmap) -> Unit, 
-    onDismiss: () -> Unit
+private fun CameraViewDark(
+    label: String,
+    onPhotoCapture: (Bitmap) -> Unit,
+    onSkip: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> = remember { 
-        ProcessCameraProvider.getInstance(context) 
-    }
-    
+    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
-    var cameraError by remember { mutableStateOf<String?>(null) }
-    val previewView = remember { mutableStateOf<PreviewView?>(null) }
 
-    // Check permissions
-    var hasPermission by remember {
-        mutableStateOf(
-            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    Box(modifier = Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = { ctx -> PreviewView(ctx).apply { implementationMode = PreviewView.ImplementationMode.COMPATIBLE } },
+            modifier = Modifier.fillMaxSize(),
+            update = { previewView ->
+                cameraProviderFuture.addListener({
+                    val cameraProvider = cameraProviderFuture.get()
+                    val preview = androidx.camera.core.Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+                    imageCapture = ImageCapture.Builder().build()
+                    try {
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
+                    } catch (e: Exception) { }
+                }, ContextCompat.getMainExecutor(context))
+            }
         )
-    }
 
-    if (!hasPermission) {
-        val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
-            androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
-        ) { hasPermission = it }
-        
-        LaunchedEffect(Unit) { launcher.launch(android.Manifest.permission.CAMERA) }
-        
-        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-            Text("Camera permission required", color = Color.White)
+        // Viewfinder Corners
+        Box(modifier = Modifier.fillMaxSize().padding(40.dp)) {
+            Box(modifier = Modifier.size(40.dp).border(width = 2.dp, color = ShVermillionLight, shape = RoundedCornerShape(topStart = 24.dp)).align(Alignment.TopStart))
+            Box(modifier = Modifier.size(40.dp).border(width = 2.dp, color = ShVermillionLight, shape = RoundedCornerShape(topEnd = 24.dp)).align(Alignment.TopEnd))
+            Box(modifier = Modifier.size(40.dp).border(width = 2.dp, color = ShVermillionLight, shape = RoundedCornerShape(bottomStart = 24.dp)).align(Alignment.BottomStart))
+            Box(modifier = Modifier.size(40.dp).border(width = 2.dp, color = ShVermillionLight, shape = RoundedCornerShape(bottomEnd = 24.dp)).align(Alignment.BottomEnd))
         }
-        return
-    }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        if (cameraError != null) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(painterResource(R.drawable.ic_info), null, tint = Color.White, modifier = Modifier.size(48.dp))
-                Spacer(Modifier.height(16.dp))
-                Text("Camera failed: $cameraError", color = Color.White)
-                Spacer(Modifier.height(24.dp))
-                Button(onClick = { cameraError = null }) {
-                    Text("Retry")
-                }
-            }
-        } else {
-            AndroidView(
-                factory = { ctx ->
-                    PreviewView(ctx).also {
-                        previewView.value = it
+        Column(modifier = Modifier.fillMaxSize().padding(24.dp).statusBarsPadding()) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Surface(color = ShNight2, shape = RoundedCornerShape(999.dp), modifier = Modifier.clickable { }) {
+                    Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                         Icon(painterResource(R.drawable.ic_camera), null, modifier = Modifier.size(14.dp), tint = Color.White)
+                         Spacer(Modifier.width(8.dp))
+                         Text("VERIFY CHECKPOINT", style = ShLabelStyle.copy(fontSize = 11.sp, color = Color.White))
                     }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-        LaunchedEffect(previewView.value, cameraError) {
-            val view = previewView.value ?: return@LaunchedEffect
-            if (cameraError != null) return@LaunchedEffect
-            
-            android.util.Log.d("CameraVerification", "LaunchedEffect triggered with previewView: $view")
-            
-            try {
-                val cameraProvider = withContext(Dispatchers.IO) {
-                    cameraProviderFuture.get()
                 }
-                
-                val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(view.surfaceProvider)
-                }
-                
-                imageCapture = ImageCapture.Builder()
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                    .setTargetRotation(view.display?.rotation ?: android.view.Surface.ROTATION_0)
-                    .build()
-
-                val availableCameras = cameraProvider.availableCameraInfos
-                android.util.Log.d("CameraVerification", "Available cameras: ${availableCameras.size}")
-                
-                val cameraSelector = when {
-                    availableCameras.any { it.lensFacing == CameraSelector.LENS_FACING_BACK } -> 
-                        CameraSelector.DEFAULT_BACK_CAMERA
-                    availableCameras.any { it.lensFacing == CameraSelector.LENS_FACING_FRONT } -> 
-                        CameraSelector.DEFAULT_FRONT_CAMERA
-                    availableCameras.isNotEmpty() -> 
-                        CameraSelector.Builder().addCameraFilter { it }.build() // Use first available
-                    else -> null
-                }
-
-                if (cameraSelector != null) {
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        preview,
-                        imageCapture
-                    )
-                    android.util.Log.d("CameraVerification", "Camera bound successfully")
-                } else {
-                    cameraError = "No camera found"
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("CameraPreviewUI", "Camera initialization failed", e)
-                cameraError = e.message ?: "Unknown error"
+                Text("Skip · -1 proof", style = ShLabelStyle.copy(color = ShNightMuted), modifier = Modifier.clickable { onSkip() })
             }
-        }
-
-        // Overlay UI
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 40.dp), contentAlignment = Alignment.TopCenter) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    val timerColor = when {
-                        timeRemaining > 180 -> ShMatcha       // More than 3 min
-                        timeRemaining > 60 -> Color.Yellow    // 1-3 min
-                        else -> ShVermillion                  // Less than 1 min
-                    }
-
-                    Text(
-                        text = formatTime(timeRemaining),
-                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 48.sp),
-                        color = timerColor
-                    )
-                    
-                    Spacer(Modifier.height(16.dp))
-
-                    Text(
-                        "Capture Proof", 
-                        color = Color.White.copy(alpha = 0.6f),
-                        style = ShLabelStyle
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        label, 
-                        color = Color.White, 
-                        style = MaterialTheme.typography.displayMedium.copy(fontSize = 24.sp)
-                    )
+            
+            Spacer(Modifier.weight(1f))
+            
+            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color.Black.copy(alpha = 0.6f)).padding(24.dp)) {
+                Column {
+                    Kicker("TAKE A PHOTO OF: ${label.uppercase()}", color = ShVermillionLight)
+                    Text(label, style = ShTitleStyle.copy(fontSize = 24.sp, color = Color.White))
                 }
             }
 
-            Box(
-                modifier = Modifier.fillMaxWidth().height(160.dp).background(ShInk2.copy(alpha = 0.8f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Spacer(Modifier.height(32.dp))
+
+            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { }, modifier = Modifier.size(48.dp).clip(CircleShape).background(ShNight2)) {
+                    Icon(painterResource(R.drawable.ic_moon), null, tint = Color.White)
+                }
+                
+                Box(
+                    modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.White).padding(4.dp).clickable {
+                        capturePhoto(context, imageCapture, onPhotoCapture)
+                    },
+                    contentAlignment = Alignment.Center
                 ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_left),
-                            contentDescription = "Back", 
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(ShVermillionLight))
+                }
 
-                    // Capture Button
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .border(2.dp, ShVermillion, CircleShape)
-                            .padding(4.dp)
-                            .clickable {
-                                capturePhoto(context, imageCapture, onPhotoCapture)
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(ShVermillion, CircleShape)
-                        )
-                    }
-
-                    IconButton(onClick = { }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_sun),
-                            contentDescription = "Flash",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                IconButton(onClick = { }, modifier = Modifier.size(48.dp).clip(CircleShape).background(ShNight2)) {
+                    Icon(painterResource(R.drawable.ic_user), null, tint = Color.White)
                 }
             }
         }
     }
 }
 
-fun capturePhoto(
-    context: Context,
-    imageCapture: ImageCapture?,
-    onPhotoCapture: (Bitmap) -> Unit
+@Composable
+private fun CameraConfirmUIDark(
+    bitmap: Bitmap?,
+    label: String,
+    verificationResult: VerificationResult?,
+    onRetake: () -> Unit,
+    onConfirm: () -> Unit
 ) {
-    val imageCaptureUseCase = imageCapture ?: return
+    Column(
+        modifier = Modifier.fillMaxSize().background(ShNight).padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.height(40.dp))
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(32.dp)),
+                contentScale = ContentScale.Crop
+            )
+        }
+        Spacer(Modifier.height(32.dp))
 
-    val outputOptions = ImageCapture.OutputFileOptions.Builder(
-        File(context.cacheDir, "temp_capture.jpg")
-    ).build()
+        when (verificationResult) {
+            is VerificationResult.Success -> {
+                Kicker("VERIFICATION SUCCESSFUL", color = ShMatchaDark)
+                Text("Detected: ${verificationResult.label}", style = ShTitleStyle.copy(fontSize = 20.sp, color = Color.White))
+            }
+            is VerificationResult.Failure -> {
+                Kicker("VERIFICATION FAILED", color = ShVermillionLight)
+                Text(verificationResult.message, style = ShBodyStyle.copy(color = ShNightMuted), textAlign = TextAlign.Center)
+            }
+            else -> {
+                Kicker("READY TO SAVE", color = ShNightMuted)
+                Text(label, style = ShTitleStyle.copy(color = Color.White))
+            }
+        }
 
-    imageCaptureUseCase.takePicture(
+        Spacer(Modifier.height(32.dp))
+        
+        val canConfirm = verificationResult is VerificationResult.Success || verificationResult == null
+        
+        ShoshinButton(
+            onClick = onConfirm, 
+            variant = if (canConfirm) ShButtonVariant.Ghost else ShButtonVariant.Dark, 
+            modifier = Modifier.fillMaxWidth(),
+            enabled = canConfirm
+        ) {
+            Text("Confirm & Continue", color = if (canConfirm) Color.Black else ShNightMuted, fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.height(16.dp))
+        Text("Retake", color = ShVermillionLight, modifier = Modifier.clickable { onRetake() })
+        Spacer(Modifier.height(40.dp))
+    }
+}
+
+private fun capturePhoto(context: Context, imageCapture: ImageCapture?, onPhotoCapture: (Bitmap) -> Unit) {
+    val capture = imageCapture ?: return
+    capture.takePicture(
         ContextCompat.getMainExecutor(context),
         object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(image: ImageProxy) {
@@ -429,151 +276,16 @@ fun capturePhoto(
                 image.close()
                 onPhotoCapture(bitmap)
             }
-
-            override fun onError(exception: ImageCaptureException) {
-                Log.e("CameraPreviewUI", "Photo capture failed: ${exception.message}", exception)
-            }
+            override fun onError(exception: ImageCaptureException) { }
         }
     )
 }
 
-fun imageProxyToBitmap(image: ImageProxy): Bitmap {
+private fun imageProxyToBitmap(image: ImageProxy): Bitmap {
     val buffer = image.planes[0].buffer
     val bytes = ByteArray(buffer.remaining())
     buffer.get(bytes)
     return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-}
-
-@Composable
-fun CameraConfirmScreen(
-    bitmap: Bitmap?,
-    label: String,
-    timeRemaining: Int,
-    targetLabels: List<String>,
-    isUploading: Boolean,
-    isVerifying: Boolean,
-    verificationResult: com.shoshin.app.utils.VerificationResult?,
-    error: String?,
-    shareManager: SocialShareManager,
-    userId: String,
-    onRetake: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-    ) {
-        val timerColor = when {
-            timeRemaining > 180 -> ShMatcha       // More than 3 min
-            timeRemaining > 60 -> Color.Yellow    // 1-3 min
-            else -> ShVermillion                  // Less than 1 min
-        }
-
-        Box(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), contentAlignment = Alignment.Center) {
-            Text(
-                text = formatTime(timeRemaining),
-                style = MaterialTheme.typography.headlineMedium,
-                color = timerColor
-            )
-        }
-
-        if (!isUploading && !isVerifying) {
-            TextButton(
-                onClick = onRetake, 
-                modifier = Modifier.align(Alignment.End).padding(16.dp)
-            ) {
-                Text("Retake", color = ShVermillion, style = MaterialTheme.typography.labelLarge)
-            }
-        }
-
-        if (bitmap != null) {
-            Box(modifier = Modifier.padding(horizontal = 24.dp)) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Captured photo",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(3f / 4f)
-                        .clip(RoundedCornerShape(24.dp))
-                        .border(1.dp, ShLine, RoundedCornerShape(24.dp)),
-                    contentScale = ContentScale.Crop
-                )
-                
-                // Verification Badge Overlay
-                verificationResult?.let { result ->
-                    val (icon, color, text) = when (result) {
-                        is com.shoshin.app.utils.VerificationResult.Success -> Triple(R.drawable.ic_check, ShMatcha, "Verified: ${result.label}")
-                        is com.shoshin.app.utils.VerificationResult.Failure -> Triple(R.drawable.ic_info, ShVermillion, "Detection Mismatch")
-                        is com.shoshin.app.utils.VerificationResult.Error -> Triple(R.drawable.ic_info, ShFog, "Scan Error")
-                    }
-                    
-                    Surface(
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
-                        color = color.copy(alpha = 0.9f),
-                        shape = CircleShape
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(painterResource(icon), null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            Text(text, color = Color.White, style = ShLabelStyle, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Info / Error text
-        Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-            if (isVerifying) {
-                Text("Checking image for ${targetLabels.joinToString("/")}...", color = ShFog, style = ShBodyStyle)
-            } else if (verificationResult is com.shoshin.app.utils.VerificationResult.Failure) {
-                Text(verificationResult.message, color = ShVermillion, style = ShBodyStyle)
-                Text("You can still confirm if the detection was incorrect.", color = ShFog, fontSize = 12.sp)
-            } else if (error != null) {
-                Text("Error: $error", color = ShVermillion, style = ShBodyStyle)
-            } else {
-                Text(label, style = ShTitleStyle.copy(fontSize = 24.sp), color = ShInk)
-                Text("Photo proof ready for validation.", style = ShBodyStyle, color = ShFog)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        if (isUploading) {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                color = ShVermillion,
-                trackColor = ShLine
-            )
-        } else {
-            ShoshinButton(
-                onClick = onConfirm,
-                modifier = Modifier.padding(horizontal = 24.dp),
-                variant = if (verificationResult is com.shoshin.app.utils.VerificationResult.Success) ShButtonVariant.Accent else ShButtonVariant.Primary
-            ) {
-                Text("Confirm & Continue")
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            ShoshinButton(
-                variant = ShButtonVariant.Ghost,
-                onClick = { onRetake() },
-                modifier = Modifier.padding(horizontal = 24.dp)
-            ) {
-                Text("Retake Photo")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(48.dp))
-    }
 }
 
 suspend fun uploadPhotoToFirebase(
@@ -581,67 +293,29 @@ suspend fun uploadPhotoToFirebase(
     context: Context,
     database: AppDatabase,
     photoStorageManager: PhotoStorageManager,
-    latitude: Double? = null,
-    longitude: Double? = null,
+    latitude: Double?,
+    longitude: Double?,
     onSuccess: () -> Unit,
     onError: (String) -> Unit
 ) {
     try {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
-            ?: throw Exception("User not authenticated")
-
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: throw Exception("User not authenticated")
         val compressionResult = photoStorageManager.saveCompressedPhoto(bitmap)
-        if (!compressionResult.isSuccess) {
-            onError("Failed to compress photo")
-            return
-        }
-
         val localPath = compressionResult.getOrNull() ?: ""
         val photoId = UUID.randomUUID().toString()
-
-        val photoEntity = PhotoEntity(
-            photoId = photoId,
-            userId = userId,
-            localCompressedPath = localPath,
-            firebaseUrl = null,
-            date = java.time.LocalDate.now().toString(),
-            timestamp = System.currentTimeMillis(),
-            latitude = latitude,
-            longitude = longitude,
-            syncStatus = "pending"
-        )
-
+        val photoEntity = PhotoEntity(photoId = photoId, userId = userId, localCompressedPath = localPath, firebaseUrl = null, date = java.time.LocalDate.now().toString(), timestamp = System.currentTimeMillis(), latitude = latitude, longitude = longitude, syncStatus = "pending")
         database.photoDao().insertPhoto(photoEntity)
         onSuccess()
-
         val storage = FirebaseStorage.getInstance()
-        val filename = "checkpoints/${userId}/${photoId}.jpg"
-        val storageRef = storage.reference.child(filename)
-
+        val storageRef = storage.reference.child("checkpoints/${userId}/${photoId}.jpg")
         val baos = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos)
-        val imageData = baos.toByteArray()
-
-        storageRef.putBytes(imageData)
-            .addOnSuccessListener {
-                storageRef.downloadUrl.addOnSuccessListener { uri ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        database.photoDao().updatePhoto(
-                            photoEntity.copy(
-                                firebaseUrl = uri.toString(),
-                                syncStatus = "synced"
-                            )
-                        )
-                    }
+        storageRef.putBytes(baos.toByteArray()).addOnSuccessListener {
+            storageRef.downloadUrl.addOnSuccessListener { uri ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    database.photoDao().updatePhoto(photoEntity.copy(firebaseUrl = uri.toString(), syncStatus = "synced"))
                 }
             }
-    } catch (e: Exception) {
-        onError(e.localizedMessage ?: "Unknown error")
-    }
-}
-
-private fun formatTime(seconds: Int): String {
-    val minutes = seconds / 60
-    val secs = seconds % 60
-    return String.format("%d:%02d", minutes, secs)
+        }
+    } catch (e: Exception) { onError(e.localizedMessage ?: "Unknown error") }
 }

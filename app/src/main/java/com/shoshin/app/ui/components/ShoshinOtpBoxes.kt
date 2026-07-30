@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.components
+package com.Shoshin.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,17 +8,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shoshin.app.ui.theme.*
-
-// ============================================================
-// ShoshinOtpBoxes
-// 6 boxes · aspect ~0.8 (w:h) · max-width 50dp per box
-// Radius: 12dp · Active: sh_ink border 2dp · Gap: 10dp
-// Variants: light (Auth) · dark (Activation)
-// ============================================================
+import com.Shoshin.app.ui.theme.*
 
 @Composable
 fun ShoshinOtpBoxes(
@@ -29,38 +24,34 @@ fun ShoshinOtpBoxes(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center, // Center the group of boxes
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         repeat(length) { index ->
             val char   = value.getOrNull(index)?.toString() ?: ""
             val active = index == value.length
-            val filled = index < value.length
 
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 4.dp) // Consistent small gap
-                    .size(width = 50.dp, height = 50.dp) // Uniform square size
-                    .background(
-                        color = if (dark) ShNight3 else ShPaper2,
-                        shape = RoundedCornerShape(12.dp),
-                    )
+                    .weight(1f)
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (dark) ShNight2 else ShPaper2)
                     .border(
-                        width = if (active) 2.dp else 1.5.dp,
+                        width = if (active) 2.dp else 1.2.dp,
                         color = when {
-                            active -> if (dark) ShNightText else ShInk
-                            filled -> if (dark) ShNightBorder else ShLine
-                            else   -> if (dark) ShNightBorder else ShLine
+                            active -> ShVermillion
+                            else   -> if (dark) ShNightLine else ShLine
                         },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
                     ),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text       = char,
-                    fontFamily = DmSansFamily,
+                    fontFamily = CormorantFamily,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize   = 22.sp,
-                    color      = if (dark) ShNightText else ShInk,
+                    fontSize   = 28.sp,
+                    color      = if (dark) Color.White else ShInk,
                 )
             }
         }

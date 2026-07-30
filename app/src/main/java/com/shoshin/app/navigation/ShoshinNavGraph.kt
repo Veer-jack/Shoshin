@@ -1,32 +1,32 @@
-package com.shoshin.app.navigation
+package com.Shoshin.app.navigation
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import androidx.navigation.*
 import androidx.navigation.compose.*
-import com.shoshin.app.data.db.AppDatabase
-import com.shoshin.app.sync.*
-import com.shoshin.app.ui.screens.*
+import com.Shoshin.app.data.db.AppDatabase
+import com.Shoshin.app.sync.*
+import com.Shoshin.app.ui.screens.*
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
-import com.shoshin.app.data.ShoshinRepository
-import com.shoshin.app.data.AuthRepository
-import com.shoshin.app.data.BadgeRepository
-import com.shoshin.app.data.FriendRepository
-import com.shoshin.app.data.ReferralRepository
-import com.shoshin.app.data.UserLimitsRepository
-import com.shoshin.app.data.user.UserRepository
-import com.shoshin.app.GoogleAuthManager
-import com.shoshin.app.utils.AnalyticsManager
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.data.AuthRepository
+import com.Shoshin.app.data.BadgeRepository
+import com.Shoshin.app.data.FriendRepository
+import com.Shoshin.app.data.ReferralRepository
+import com.Shoshin.app.data.UserLimitsRepository
+import com.Shoshin.app.data.user.UserRepository
+import com.Shoshin.app.GoogleAuthManager
+import com.Shoshin.app.utils.AnalyticsManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
-import com.shoshin.app.viewmodel.*
+import com.Shoshin.app.viewmodel.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,8 +57,8 @@ fun ShoshinNavGraph(
     val friendRepository = remember { FriendRepository(database.friendDao(), firestore) }
     val referralRepository = remember { ReferralRepository(database.userLimitsDao(), firestore) }
     val limitsRepository = remember { UserLimitsRepository(database.userLimitsDao(), firestore) }
-    val contactsRepository = remember { com.shoshin.app.data.ContactsRepository(context) }
-    val groupRepository = remember { com.shoshin.app.data.groups.GroupRepository(database.groupDao(), database.groupMemberDao()) }
+    val contactsRepository = remember { com.Shoshin.app.data.ContactsRepository(context) }
+    val groupRepository = remember { com.Shoshin.app.data.groups.GroupRepository(database.groupDao(), database.groupMemberDao()) }
     
     val onboardingViewModel = viewModel<OnboardingViewModel>(factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -124,6 +124,7 @@ fun ShoshinNavGraph(
     })
     
     var isGoogleLoading by remember { mutableStateOf(false) }
+    var googleAuthError by remember { mutableStateOf<String?>(null) }
 
     // Dynamic Navigation based on Auth/Onboarding state
     LaunchedEffect(isLoggedIn, hasCompletedOnboarding) {
@@ -177,26 +178,28 @@ fun ShoshinNavGraph(
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         googleAuthManager.handleSignInResult(
             task = task,
-            onSuccess = {
-                val account = task.result
-                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+            onSuccess = { userId ->
+                android.util.Log.d("Auth", "Google sign-in success, UID: $userId")
                 scope.launch {
+                    val account = GoogleSignIn.getLastSignedInAccount(context)
                     handleNewUser(
                         userId = userId,
                         displayName = account?.displayName ?: "User",
                         phone = null,
                         email = account?.email,
-                        referralCode = null, // Google sign in doesn't have a field for this yet in current UI
+                        referralCode = null,
                         referralRepository = referralRepository,
                         userRepository = userRepository,
                         shoshinRepository = shoshinRepository,
                         database = database,
                         navController = navController
                     )
+                    isGoogleLoading = false
                 }
             },
-            onError = { e ->
-                android.util.Log.e("Auth", "Google sign in failed", e)
+            onError = { error ->
+                android.util.Log.e("Auth", "Google sign in failed: $error")
+                googleAuthError = error
                 isGoogleLoading = false
             }
         )
@@ -239,7 +242,9 @@ fun ShoshinNavGraph(
                 onPrivacyClick = { navController.navigate(ShRoutes.PRIVACY) },
                 onTermsClick = { navController.navigate(ShRoutes.TERMS) },
                 isGoogleLoading = isGoogleLoading,
-                initialReferralCode = deepLinkCode
+                initialReferralCode = deepLinkCode,
+                externalError = googleAuthError,
+                onClearError = { googleAuthError = null }
             )
         }
 
@@ -307,8 +312,32 @@ fun ShoshinNavGraph(
         ) {
             GoalSelectionScreen(
                 onContinue = { goalKey ->
-                    navController.navigate(ShRoutes.routineTemplate(goalKey))
+                    if (goalKey == "custom") {
+                        navController.navigate(ShRoutes.BUILD_PATH)
+                    } else {
+                        navController.navigate(ShRoutes.routineTemplate(goalKey))
+                    }
                 },
+            )
+        }
+
+        // ── Build Path (Custom Goal) ─────────────────────────
+        composable(
+            route = ShRoutes.BUILD_PATH,
+            enterTransition  = { slideInHorizontally(tween(320)) { it } },
+            exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
+        ) {
+            BuildPathScreen(
+                navController = navController,
+                onComplete = { name, list ->
+                    // Logic to save custom path
+                    scope.launch {
+                        onboardingViewModel.completeOnboarding("06:00", "22:00")
+                        navController.navigate(ShRoutes.MAIN) {
+                            popUpTo(ShRoutes.SPLASH) { inclusive = true }
+                        }
+                    }
+                }
             )
         }
 
@@ -583,7 +612,7 @@ fun ShoshinNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupLeaderboardScreen(navController = navController, groupId = groupId)
+            GroupLeaderboardScreen(navController = navController, groupId = groupId, viewModel = groupViewModel)
         }
 
         // ── Support ──────────────────────────────────────────
@@ -725,15 +754,18 @@ private suspend fun handleNewUser(
     navController: NavHostController
 ) {
     try {
-        android.util.Log.d("Auth", "handleNewUser: userId=$userId, name=$displayName")
+        android.util.Log.d("Auth", "handleNewUser STARTED: userId=$userId, name=$displayName")
         
         // 1. Basic user save to DataStore
         shoshinRepository.saveUser(name = displayName, email = email ?: "", phone = phone ?: "")
+        android.util.Log.d("Auth", "handleNewUser: DataStore saved")
         
         // 2. Create or Update UserEntity in local DB and Firestore
         val existingUser = userRepository.getUser(userId)
+        android.util.Log.d("Auth", "handleNewUser: Fetched existing user: ${existingUser != null}")
+        
         val newUser = if (existingUser == null) {
-            com.shoshin.app.data.db.entities.UserEntity(
+            com.Shoshin.app.data.db.entities.UserEntity(
                 userId = userId,
                 displayName = displayName,
                 email = email,
@@ -749,30 +781,32 @@ private suspend fun handleNewUser(
             )
         }
         userRepository.updateUser(newUser)
+        android.util.Log.d("Auth", "handleNewUser: UserRepository updated (Firestore sync initiated)")
 
         // 3. Add Welcome Notifications
         try {
             val notifications = listOf(
-                com.shoshin.app.data.db.entities.NotificationEntity(
+                com.Shoshin.app.data.db.entities.NotificationEntity(
                     notificationId = java.util.UUID.randomUUID().toString(),
                     userId = userId,
                     type = "welcome",
                     title = "Welcome to Shoshin",
                     body = "Begin your morning practice today. Start with intention.",
-                    iconRes = com.shoshin.app.R.drawable.ic_sun,
+                    iconRes = com.Shoshin.app.R.drawable.ic_sun,
                     timestamp = System.currentTimeMillis()
                 ),
-                com.shoshin.app.data.db.entities.NotificationEntity(
+                com.Shoshin.app.data.db.entities.NotificationEntity(
                     notificationId = java.util.UUID.randomUUID().toString(),
                     userId = userId,
                     type = "achievement",
                     title = "First Step Taken",
                     body = "You've successfully created your account. The journey begins.",
-                    iconRes = com.shoshin.app.R.drawable.ic_bolt_heavy,
+                    iconRes = com.Shoshin.app.R.drawable.ic_bolt_heavy,
                     timestamp = System.currentTimeMillis() - 1000
                 )
             )
             notifications.forEach { database.notificationDao().insertNotification(it) }
+            android.util.Log.d("Auth", "handleNewUser: Welcome notifications inserted")
         } catch (e: Exception) {
             android.util.Log.e("Auth", "Failed to insert welcome notifications", e)
         }
@@ -780,6 +814,7 @@ private suspend fun handleNewUser(
         // 4. Generate referral code for new user
         try {
             referralRepository.generateAndSaveReferralCode(userId, displayName)
+            android.util.Log.d("Auth", "handleNewUser: Referral code generated")
         } catch (e: Exception) {
             android.util.Log.e("Auth", "Failed to generate referral code", e)
         }
@@ -805,6 +840,7 @@ private suspend fun handleNewUser(
         
         // 6. Navigate (Safety: check if already navigating)
         with(kotlinx.coroutines.Dispatchers.Main) {
+            android.util.Log.d("Auth", "handleNewUser: Navigating to ONBOARDING")
             if (navController.currentDestination?.route != ShRoutes.ONBOARDING) {
                 navController.navigate(ShRoutes.ONBOARDING) {
                     popUpTo(ShRoutes.AUTH) { inclusive = true }
@@ -812,6 +848,6 @@ private suspend fun handleNewUser(
             }
         }
     } catch (e: Exception) {
-        android.util.Log.e("Auth", "Critical error in handleNewUser", e)
+        android.util.Log.e("Auth", "Critical error in handleNewUser: ${e.message}", e)
     }
 }

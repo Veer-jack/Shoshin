@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,9 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 
 @Composable
 fun PaywallScreen(navController: NavController) {
@@ -37,7 +37,7 @@ fun PaywallScreen(navController: NavController) {
         Triple(R.drawable.ic_calendar, "Full history", "Every morning, kept forever")
     )
 
-    ShoshinTheme(darkSurface = true) {
+    ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

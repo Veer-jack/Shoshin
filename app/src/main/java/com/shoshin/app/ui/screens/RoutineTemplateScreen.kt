@@ -1,10 +1,10 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -12,23 +12,50 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shoshin.app.R
-import com.shoshin.app.data.ShoshinRepository
-import com.shoshin.app.navigation.ShRoutes
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
+import com.Shoshin.app.R
+import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
 import kotlinx.coroutines.launch
 
-private data class Template(val id: String, val name: String, val tag: String, val icon: Int, val steps: List<String>)
+private data class Template(
+    val id: String, 
+    val name: String, 
+    val tag: String, 
+    val duration: String, 
+    val icon: Int, 
+    val steps: List<Pair<String, Int>>
+)
 private val TEMPLATES = listOf(
-    Template("walk",  "Morning Walk", "Movement", R.drawable.ic_walk, listOf("Mind awake","Freshen up","Dressed","Out the door","Walk begun")),
-    Template("study", "Deep Study",   "Focus",    R.drawable.ic_book, listOf("Mind awake","Freshen up","Tea brewed","Desk ready","Study begun")),
-    Template("gym",   "Strength",     "Training", R.drawable.ic_dumbbell, listOf("Mind awake","Freshen up","Kit on","Out the door","Training begun"))
+    Template("walk",  "Morning Walk", "Movement", "22", R.drawable.ic_walk, listOf(
+        "Mind awake" to R.drawable.ic_brain,
+        "Freshen up" to R.drawable.ic_droplet,
+        "Dressed" to R.drawable.ic_shirt,
+        "Out the door" to R.drawable.ic_sun,
+        "Walk begun" to R.drawable.ic_walk
+    )),
+    Template("study", "Deep Study",   "Focus", "45", R.drawable.ic_book, listOf(
+        "Mind awake" to R.drawable.ic_brain,
+        "Freshen up" to R.drawable.ic_droplet,
+        "Tea brewed" to R.drawable.ic_check,
+        "Desk ready" to R.drawable.ic_check,
+        "Study begun" to R.drawable.ic_book
+    )),
+    Template("gym",   "Strength",     "Training", "60", R.drawable.ic_dumbbell, listOf(
+        "Mind awake" to R.drawable.ic_brain,
+        "Freshen up" to R.drawable.ic_droplet,
+        "Kit on" to R.drawable.ic_shirt,
+        "Out the door" to R.drawable.ic_sun,
+        "Training begun" to R.drawable.ic_dumbbell
+    ))
 )
 
 @Composable
@@ -39,56 +66,113 @@ fun RoutineTemplateScreen(goalKey: String, onContinue: (String) -> Unit) {
     val repo    = remember { ShoshinRepository(context) }
     val scope   = rememberCoroutineScope()
 
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Column(modifier = Modifier.fillMaxSize().background(ShPaper)) {
         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
-            Kicker("Step 2 of 2", color = ShVermillion)
+            Row(modifier = Modifier.fillMaxWidth().statusBarsPadding(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { /* Back logic */ }) {
+                    Icon(painterResource(R.drawable.ic_arrow_left), null, tint = ShInk)
+                }
+                Text("Change goal", style = ShLabelStyle.copy(color = ShFog, fontWeight = FontWeight.Bold))
+            }
+            
+            Spacer(Modifier.height(16.dp))
+            Kicker("A BEGINNING · 2 OF 2", color = ShFog2)
             Spacer(Modifier.height(8.dp))
-            Text("Pick your\npath", fontSize = 34.sp, fontWeight = FontWeight.SemiBold, fontFamily = CormorantFamily, color = ShInk)
-            Spacer(Modifier.height(8.dp))
-            Text("Start from a proven sequence. You can edit every checkpoint later.", fontSize = 15.sp, color = ShFog, fontFamily = DmSansFamily, lineHeight = 22.sp)
-            Spacer(Modifier.height(20.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Choose your path", style = ShTitleStyle.copy(fontSize = 36.sp), color = ShInk)
+            
+            Spacer(Modifier.height(32.dp))
+            
+            // Chips
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 TEMPLATES.forEach { tpl ->
                     val sel = selected == tpl.id
                     Column(
-                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(if (sel) ShInk else ShSurface).border(1.5.dp, if (sel) ShInk else ShLine, RoundedCornerShape(14.dp)).clickable { selected = tpl.id }.padding(14.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(100.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (sel) Color.White else ShPaper2) // Per screenshot: White for selected in dark mode
+                            .clickable { selected = tpl.id }
+                            .padding(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
                             painter = painterResource(id = tpl.icon),
                             contentDescription = null,
-                            modifier = Modifier.size(28.dp),
-                            tint = if (sel) ShPaper else ShInk
+                            modifier = Modifier.size(24.dp),
+                            tint = if (sel) Color.Black else ShInk
                         )
-                        Spacer(Modifier.height(10.dp))
-                        Text(tpl.name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, fontFamily = DmSansFamily, color = if (sel) ShPaper else ShInk, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 16.sp)
+                        Spacer(Modifier.height(12.dp))
+                        Text(tpl.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = if (sel) Color.Black else ShInk, textAlign = TextAlign.Center)
                     }
                 }
             }
-            Spacer(Modifier.height(20.dp))
-            ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    t.steps.forEachIndexed { i, step ->
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp), modifier = Modifier.padding(vertical = 11.dp)) {
-                            Box(modifier = Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(ShPaper2).border(1.dp, ShLine, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                                Text("${i+1}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ShFog, fontFamily = DmSansFamily)
+            
+            Spacer(Modifier.height(32.dp))
+
+            // Main Detail Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(ShNight2) // Dark card always
+                    .padding(24.dp)
+            ) {
+                Column {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PillTag(label = t.tag, color = ShVermillion.copy(alpha = 0.15f), textColor = ShVermillion)
+                        PillTag(label = "${t.steps.size} checkpoints", color = ShNight3, textColor = ShNightMuted)
+                        PillTag(label = "~${t.duration} min", color = ShNight3, textColor = ShNightMuted)
+                    }
+                    
+                    Spacer(Modifier.height(32.dp))
+
+                    t.steps.forEachIndexed { i, (label, icon) ->
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 24.dp)) {
+                            Box(
+                                modifier = Modifier.size(32.dp).clip(CircleShape).background(ShNight3),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("${i+1}", style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ShNightMuted))
                             }
-                            Text(step, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = DmSansFamily, color = ShInk, modifier = Modifier.weight(1f))
+                            Spacer(Modifier.width(16.dp))
+                            Icon(painterResource(icon), null, modifier = Modifier.size(18.dp), tint = ShNightMuted)
+                            Spacer(Modifier.width(16.dp))
+                            Text(label, style = ShBodyStyle.copy(fontSize = 16.sp, color = ShNightText))
                         }
-                        if (i < t.steps.lastIndex) HorizontalDivider(color = ShLine, thickness = 1.dp)
                     }
                 }
             }
         }
-        Column(modifier = Modifier.padding(24.dp)) {
-            ShoshinButton(onClick = {
-                scope.launch { 
-                    repo.saveTemplate(selected)
-                    onContinue(selected)
-                }
-            }) {
-                Text("Set this routine")
+        
+        Column(modifier = Modifier.padding(24.dp).navigationBarsPadding()) {
+            ShoshinButton(
+                onClick = {
+                    scope.launch { 
+                        repo.saveTemplate(selected)
+                        onContinue(selected)
+                    }
+                },
+                variant = ShButtonVariant.Accent,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Set this path", fontWeight = FontWeight.Bold)
             }
         }
+    }
+}
+
+@Composable
+private fun PillTag(label: String, color: Color, textColor: Color) {
+    Surface(
+        color = color,
+        shape = RoundedCornerShape(99.dp)
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            style = ShLabelStyle.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
+        )
     }
 }

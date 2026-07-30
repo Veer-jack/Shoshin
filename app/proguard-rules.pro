@@ -11,8 +11,8 @@
 -dontwarn androidx.room.**
 
 # Shoshin Data Models (Prevent obfuscation of Firestore/Room entities)
--keep class com.shoshin.app.data.db.entities.** { *; }
--keep class com.shoshin.app.data.groups.** { *; }
+-keep class com.Shoshin.app.data.db.entities.** { *; }
+-keep class com.Shoshin.app.data.groups.** { *; }
 
 # Compose Rules
 -keep class androidx.compose.runtime.** { *; }

@@ -1,4 +1,4 @@
-package com.shoshin.app
+package com.Shoshin.app
 
 import android.app.Activity
 import android.content.Context
@@ -11,14 +11,18 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import android.util.Log
+import kotlinx.coroutines.tasks.await
 
 class GoogleAuthManager(context: Context, private val auth: FirebaseAuth) {
 
+    private val TAG = "GoogleAuthManager"
+    
     private val googleSignInClient: GoogleSignInClient = GoogleSignIn.getClient(
         context,
         GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken("91496310161-0rc0v6focf6olfnf0djkkehhh4hadv8a.apps.googleusercontent.com")
             .requestEmail()
+            .requestProfile()
             .build()
     )
 
@@ -26,52 +30,84 @@ class GoogleAuthManager(context: Context, private val auth: FirebaseAuth) {
 
     fun handleSignInResult(
         task: Task<GoogleSignInAccount>,
-        onSuccess: () -> Unit,
-        onError: (Exception) -> Unit
+        onSuccess: (String) -> Unit,  // Pass userId
+        onError: (String) -> Unit     // Pass error message
     ) {
-        Log.d("GoogleAuth", "handleSignInResult called")
+        Log.d(TAG, "handleSignInResult called")
         try {
             val account = task.getResult(ApiException::class.java)
-            if (account != null) {
-                Log.d("GoogleAuth", "Got account: ${account.email}")
-                authenticateWithFirebase(account, onSuccess, onError)
-            } else {
-                Log.e("GoogleAuth", "Account is null")
-                onError(Exception("Google Account is null"))
+            
+            if (account == null) {
+                val error = "Google Account is null"
+                Log.e(TAG, error)
+                onError(error)
+                return
             }
+
+            Log.d(TAG, "Google Sign-In successful. Email: ${account.email}, ID Token: ${account.idToken != null}")
+            
+            // Authenticate with Firebase
+            authenticateWithFirebase(account, onSuccess, onError)
+            
         } catch (e: ApiException) {
-            Log.e("GoogleAuth", "Sign in failed: status code ${e.statusCode}")
-            onError(e)
+            val error = "Google Sign-In failed with status code: ${e.statusCode}. Error: ${e.message}"
+            Log.e(TAG, error)
+            onError(error)
         } catch (e: Exception) {
-            Log.e("GoogleAuth", "Unexpected error during sign in", e)
-            onError(e)
+            val error = "Unexpected error during Google Sign-In: ${e.message}"
+            Log.e(TAG, error, e)
+            onError(error)
         }
     }
 
     private fun authenticateWithFirebase(
         account: GoogleSignInAccount,
-        onSuccess: () -> Unit,
-        onError: (Exception) -> Unit
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
     ) {
-        Log.d("GoogleAuth", "Authenticating with Firebase...")
+        Log.d(TAG, "Starting Firebase authentication with Google account...")
+        
         val idToken = account.idToken
-        if (idToken == null) {
-            Log.e("GoogleAuth", "ID Token is null")
-            onError(Exception("Google ID Token is null"))
+        if (idToken.isNullOrEmpty()) {
+            val error = "Google ID Token is null or empty"
+            Log.e(TAG, error)
+            onError(error)
             return
         }
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Log.d("GoogleAuth", "Firebase sign in successful!")
-                    onSuccess()
-                } else {
-                    Log.e("GoogleAuth", "Firebase sign in failed: ${task.exception?.message}")
-                    onError(task.exception ?: Exception("Firebase sign in failed"))
+
+        Log.d(TAG, "ID Token obtained. Creating Firebase credential...")
+        
+        try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            
+            Log.d(TAG, "Signing in with Firebase credential...")
+            auth.signInWithCredential(credential)
+                .addOnSuccessListener { authResult ->
+                    val userId = authResult.user?.uid ?: ""
+                    Log.d(TAG, "Firebase authentication successful! UserID: $userId")
+                    onSuccess(userId)
                 }
-            }
+                .addOnFailureListener { exception ->
+                    val error = "Firebase sign-in failed: ${exception.message}"
+                    Log.e(TAG, error, exception)
+                    onError(error)
+                }
+                .addOnCanceledListener {
+                    val error = "Firebase sign-in was cancelled"
+                    Log.e(TAG, error)
+                    onError(error)
+                }
+        } catch (e: Exception) {
+            val error = "Error creating Firebase credential: ${e.message}"
+            Log.e(TAG, error, e)
+            onError(error)
+        }
     }
 
-    fun signOut() = googleSignInClient.signOut()
+    fun signOut() {
+        Log.d(TAG, "Signing out from Google...")
+        googleSignInClient.signOut()
+        auth.signOut()
+        Log.d(TAG, "Signed out successfully")
+    }
 }

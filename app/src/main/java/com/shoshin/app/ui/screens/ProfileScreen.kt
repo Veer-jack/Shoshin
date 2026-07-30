@@ -1,4 +1,4 @@
-package com.shoshin.app.ui.screens
+package com.Shoshin.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,8 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,16 +18,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.shoshin.app.R
-import com.shoshin.app.ui.components.*
-import com.shoshin.app.ui.theme.*
-import com.shoshin.app.viewmodel.ProfileViewModel
-import com.shoshin.app.viewmodel.BadgeViewModel
-import com.shoshin.app.navigation.ShRoutes
+import com.Shoshin.app.R
+import com.Shoshin.app.ui.components.*
+import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.ProfileViewModel
+import com.Shoshin.app.viewmodel.BadgeViewModel
+import com.Shoshin.app.navigation.ShRoutes
 
 @Composable
 fun ProfileScreen(
@@ -40,28 +39,50 @@ fun ProfileScreen(
     val user by viewModel.user.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val badges by badgeViewModel?.badges?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf(emptyList()) }
-    val earnedCount = badges.count { !it.isLocked }
+    
+    // Extract real data from user entity
+    val displayName = user?.displayName ?: "User"
+    val morningsCount = user?.totalActivations ?: 0
+    val currentStreak = user?.currentStreak ?: 0
+    val bestStreak = user?.bestStreak ?: 0
+    
+    // Calculate real consistency
+    val consistencyValue = if (user != null && user!!.totalActivations > 0) {
+        val daysSinceCreation = ((System.currentTimeMillis() - user!!.createdAt) / (1000 * 60 * 60 * 24)).coerceAtLeast(1)
+        ((user!!.totalActivations.toFloat() / daysSinceCreation.toFloat()) * 100).toInt().coerceIn(0, 100)
+    } else {
+        0
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(ShPaper)
             .verticalScroll(rememberScrollState())
     ) {
-        // Custom App Bar
+        // Top App Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
-            }
-            Text("Profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            IconButton(onClick = { navController.navigate("settings") }) {
-                Icon(painterResource(R.drawable.ic_settings), contentDescription = "Settings", tint = ShInk)
+            Text("You", style = ShTitleStyle.copy(fontSize = 32.sp))
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Icon(
+                    painterResource(R.drawable.ic_bell), 
+                    null, 
+                    tint = ShInk, 
+                    modifier = Modifier.size(24.dp).clickable { navController.navigate(ShRoutes.NOTIFICATIONS) }
+                )
+                Icon(
+                    painterResource(R.drawable.ic_settings),
+                    null, 
+                    tint = ShInk, 
+                    modifier = Modifier.size(24.dp).clickable { navController.navigate(ShRoutes.SETTINGS) }
+                )
             }
         }
 
@@ -69,237 +90,266 @@ fun ProfileScreen(
             Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = ShVermillion)
             }
-        } else if (user == null) {
-            Column(
-                modifier = Modifier.fillMaxWidth().height(400.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(painterResource(R.drawable.ic_info), null, tint = ShFog2, modifier = Modifier.size(48.dp))
-                Spacer(Modifier.height(16.dp))
-                Text("Profile not found.", color = ShFog)
-                Spacer(Modifier.height(24.dp))
-                ShoshinButton(onClick = { viewModel.loadUser() }, variant = ShButtonVariant.Ghost) {
-                    Text("Retry Loading")
-                }
-            }
         } else {
             user?.let { u ->
-                // Profile Info
-                Column(
+                // Main Profile Card
+                ShoshinCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(horizontal = 20.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .background(ShSand)
-                            .border(2.dp, ShLine, CircleShape),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (u.profilePictureUrl != null) {
-                            AsyncImage(
-                                model = u.profilePictureUrl,
-                                contentDescription = "Profile Picture",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Icon(
-                                painterResource(R.drawable.ic_user),
-                                contentDescription = null,
-                                modifier = Modifier.size(60.dp),
-                                tint = ShFog2
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Text(
-                        text = u.displayName,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = ShInk
-                    )
-
-                    u.bio?.let { bio ->
-                        Text(
-                            text = bio,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = ShFog,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-
-                    Spacer(Modifier.height(24.dp))
-
-                    ShoshinButton(
-                        onClick = { navController.navigate("edit_profile") },
-                        variant = ShButtonVariant.Ghost,
-                        modifier = Modifier.widthIn(max = 200.dp)
-                    ) {
-                        Text("Edit Profile")
-                    }
-                }
-
-                Spacer(Modifier.height(40.dp))
-
-                // Referral Section
-                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    Kicker("YOUR REFERRAL CODE", color = ShInk)
-                    Spacer(Modifier.height(12.dp))
-                    ShoshinCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { navController.navigate(ShRoutes.REFERRALS) }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(20.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        // Avatar
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(CircleShape)
+                                .background(ShPaper2),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Column {
-                                val referralCode = u.inviteCode.ifEmpty { "TAP TO GEN" }
-                                Text(text = referralCode, style = ShNumeralStyle.copy(fontSize = 24.sp), letterSpacing = 2.sp)
-                                Text("Tap to see your rewards", style = ShLabelStyle, color = ShFog)
+                            if (u.profilePictureUrl != null) {
+                                AsyncImage(
+                                    model = u.profilePictureUrl,
+                                    contentDescription = "Profile Picture",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Text(
+                                    text = displayName.firstOrNull()?.toString()?.uppercase() ?: "A",
+                                    style = ShTitleStyle.copy(fontSize = 36.sp, color = ShInk.copy(alpha = 0.6f))
+                                )
                             }
-                            Icon(painterResource(R.drawable.ic_arrow_right), contentDescription = null, tint = ShLine2, modifier = Modifier.size(24.dp))
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Text(
+                            text = displayName,
+                            style = ShTitleStyle.copy(fontSize = 28.sp),
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // Tiers
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Surface(
+                                color = ShInk,
+                                shape = RoundedCornerShape(999.dp)
+                            ) {
+                                val tierText = if (currentStreak >= 30) "Tier III · Master" 
+                                              else if (currentStreak >= 14) "Tier II · Disciplined" 
+                                              else "Tier I · Beginner"
+                                Text(
+                                    tierText,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                    style = ShKickerStyle.copy(fontSize = 11.sp, letterSpacing = 0.5.sp)
+                                )
+                            }
+                            Surface(
+                                color = Color.Transparent,
+                                shape = RoundedCornerShape(999.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, ShLine)
+                            ) {
+                                Text(
+                                    "Early Riser",
+                                    color = ShFog,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                    style = ShKickerStyle.copy(fontSize = 11.sp, letterSpacing = 0.5.sp)
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+                        HorizontalDivider(color = ShLine, thickness = 1.dp, modifier = Modifier.padding(horizontal = 24.dp))
+                        Spacer(Modifier.height(24.dp))
+
+                        // Row Stats
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceAround,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            ProfileStatItem(value = morningsCount.toString(), label = "MORNINGS")
+                            ProfileStatItem(value = currentStreak.toString(), label = "CURRENT", valueColor = ShVermillion)
+                            ProfileStatItem(value = consistencyValue.toString(), label = "CONSISTENCY", unit = "%")
                         }
                     }
                 }
 
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // Badges Section
+                // 71-Day Discipline Card (Real or Dynamic)
+                ShoshinCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .clickable { navController.navigate(ShRoutes.DISCIPLINE_71) }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Calculate discipline progress (max 71)
+                        val disciplineProgress = (currentStreak.toFloat() / 71f * 100f).coerceIn(0f, 100f).toInt()
+                        
+                        Box(contentAlignment = Alignment.Center) {
+                            RingProgress(
+                                percentage = disciplineProgress,
+                                size = 64,
+                                strokeWidth = 5f,
+                                valueText = "",
+                                color = ShVermillion,
+                                trackColor = ShLine.copy(alpha = 0.5f)
+                            )
+                        }
+                        
+                        Spacer(Modifier.width(20.dp))
+                        
+                        Column(modifier = Modifier.weight(1f)) {
+                            Kicker("IN PROGRESS", color = ShVermillion)
+                            Text("71-Day Discipline", style = ShH2Style.copy(fontSize = 18.sp))
+                            val dayText = if (currentStreak <= 71) "Day $currentStreak · Practice phase" else "Goal Achieved"
+                            Text(dayText, style = ShLabelStyle, color = ShFog)
+                        }
+                        
+                        Icon(painterResource(R.drawable.ic_arrow_right), null, tint = ShLine2, modifier = Modifier.size(24.dp))
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                // Marks of Practice Section
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.Bottom
                     ) {
-                        Kicker("My Badges ($earnedCount/${badges.size})", color = ShInk)
-                        TextButton(onClick = { navController.navigate(ShRoutes.BADGES) }) {
-                            Text("Show all", style = ShLabelStyle, color = ShVermillion)
+                        Column {
+                            Kicker("EARNED", color = ShFog)
+                            Text("Marks of practice", style = ShH2Style.copy(fontSize = 20.sp))
                         }
+                        Text(
+                            "See all", 
+                            style = ShLabelStyle, 
+                            color = ShVermillion, 
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { navController.navigate(ShRoutes.BADGES) }
+                        )
                     }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // Badge Grid (Dynamic based on earned badges)
+                    val earnedBadges = badges.filter { !it.isLocked }
+                    val lockedBadges = badges.filter { it.isLocked }
                     
-                    Spacer(Modifier.height(12.dp))
+                    val displayBadges = (earnedBadges + lockedBadges).take(6)
                     
-                    if (badges.isNotEmpty()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            badges.take(4).forEach { badge ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(64.dp)
-                                        .background(
-                                            if (badge.isLocked) ShSand else Color.parseColor(badge.color).copy(alpha = 0.15f),
-                                            RoundedCornerShape(12.dp)
+                    Column {
+                        displayBadges.chunked(3).forEach { row ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                row.forEach { badge ->
+                                    if (badge.isLocked) {
+                                        LockedBadgeItem(label = badge.name, modifier = Modifier.weight(1f))
+                                    } else {
+                                        EarnedBadgeItem(
+                                            icon = getBadgeIconRes(badge.icon), 
+                                            label = badge.name, 
+                                            modifier = Modifier.weight(1f),
+                                            onClick = { navController.navigate(ShRoutes.badgeDetail(badge.id)) }
                                         )
-                                        .clickable { navController.navigate(ShRoutes.badgeDetail(badge.id)) },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(if (badge.isLocked) R.drawable.ic_lock else getBadgeIconRes(badge.icon)),
-                                        contentDescription = null,
-                                        tint = if (badge.isLocked) ShFog2 else Color.parseColor(badge.color),
-                                        modifier = Modifier.size(28.dp).alpha(if (badge.isLocked) 0.5f else 1f)
-                                    )
+                                    }
+                                }
+                                // Fill empty slots in the row
+                                repeat(3 - row.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
                         }
                     }
                 }
 
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // Stats Section
-                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Kicker("Statistics", color = ShInk)
-                        TextButton(onClick = { navController.navigate(ShRoutes.STATS) }) {
-                            Text("View detail", style = ShLabelStyle, color = ShVermillion)
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        StatCard(
-                            label = "Best Streak",
-                            value = "${u.bestStreak}",
-                            icon = R.drawable.ic_flame,
-                            color = ShVermillion,
-                            modifier = Modifier.weight(1f)
-                        )
-                        StatCard(
-                            label = "Friends",
-                            value = "${u.friendCount}",
-                            icon = R.drawable.ic_groups,
-                            color = ShMatcha,
-                            modifier = Modifier.weight(1f),
-                            onClick = { navController.navigate(ShRoutes.ALL_FRIENDS) }
-                        )
-                    }
+                // View Full Stats Button
+                ShoshinButton(
+                    onClick = { navController.navigate(ShRoutes.STATS) },
+                    variant = ShButtonVariant.Ghost,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                    leadingIcon = { Icon(painterResource(R.drawable.ic_pulse), null, modifier = Modifier.size(18.dp), tint = ShFog) }
+                ) {
+                    Text("View full stats", color = ShFog)
                 }
 
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(48.dp))
             }
         }
     }
 }
 
-private fun Color.Companion.parseColor(colorString: String): Color {
-    return try {
-        Color(android.graphics.Color.parseColor(colorString))
-    } catch (e: Exception) {
-        ShVermillion // Default
+@Composable
+private fun ProfileStatItem(value: String, label: String, unit: String? = null, valueColor: Color = ShInk) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(value, style = ShNumeralStyle.copy(fontSize = 32.sp, color = valueColor))
+            if (unit != null) {
+                Text(unit, style = ShNumeralStyle.copy(fontSize = 16.sp, color = ShFog), modifier = Modifier.padding(bottom = 6.dp, start = 2.dp))
+            }
+        }
+        Text(label, style = ShKickerStyle.copy(fontSize = 9.sp, letterSpacing = 1.sp), color = ShFog)
     }
 }
 
 @Composable
-fun StatCard(
-    label: String,
-    value: String,
-    icon: Int,
-    color: Color,
+private fun EarnedBadgeItem(
+    icon: Int, 
+    label: String, 
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
-    ShoshinCard(
-        modifier = if (onClick != null) modifier.clickable { onClick() } else modifier
-    ) {
+    ShoshinCard(modifier = modifier.then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(24.dp)
-            )
+            Box(
+                modifier = Modifier.size(48.dp).clip(CircleShape).background(ShVermillion.copy(alpha = 0.05f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(painterResource(icon), null, tint = ShVermillion.copy(alpha = 0.6f), modifier = Modifier.size(24.dp))
+            }
             Spacer(Modifier.height(12.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = ShInk
-            )
-            Text(
-                text = label.uppercase(),
-                style = ShKickerStyle.copy(fontSize = 10.sp),
-                color = ShFog
-            )
+            Text(label, style = ShLabelStyle.copy(fontSize = 12.sp), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, lineHeight = 14.sp)
         }
     }
 }
+
+@Composable
+private fun LockedBadgeItem(label: String, modifier: Modifier = Modifier) {
+    ShoshinCard(modifier = modifier) {
+        Column(
+            modifier = Modifier.padding(16.dp).alpha(0.4f),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier.size(48.dp).clip(CircleShape).border(1.dp, ShLine, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(painterResource(R.drawable.ic_lock), null, tint = ShFog, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(label, style = ShLabelStyle.copy(fontSize = 12.sp), textAlign = TextAlign.Center, lineHeight = 14.sp)
+        }
+    }
+}
+
