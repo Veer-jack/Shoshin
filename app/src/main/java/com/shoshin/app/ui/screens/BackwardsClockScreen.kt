@@ -178,6 +178,7 @@ fun MotivationalMessage(timeRemaining: TimeRemaining) {
     }
 }
 
+@Composable
 fun getColorForPercentage(percentage: Float): Color {
     return when {
         percentage > 75 -> ShMatcha      // Green

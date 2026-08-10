@@ -10,7 +10,7 @@ object ImageVerificationManager {
 
     private val labeler = ImageLabeling.getClient(
         ImageLabelerOptions.Builder()
-            .setConfidenceThreshold(0.3f)
+            .setConfidenceThreshold(0.5f)
             .build()
     )
 
@@ -30,17 +30,21 @@ object ImageVerificationManager {
             android.util.Log.d("ImageVerification", "Targets: $targets")
             
             // Check if any target label or similar concept matches
-            val match = targets.any { target -> 
-                detected.any { it.contains(target) || target.contains(it) }
+            val matchedImageLabel = labels.firstOrNull { l ->
+                val text = l.text.lowercase()
+                targets.any { target -> text.contains(target) || target.contains(text) }
             }
 
-            if (match) {
-                val matchedLabel = detected.firstOrNull { d -> targets.any { t -> d.contains(t) } } ?: "Match"
-                android.util.Log.d("ImageVerification", "Match found: $matchedLabel")
-                VerificationResult.Success(matchedLabel)
+            if (matchedImageLabel != null) {
+                android.util.Log.d("ImageVerification", "Match found: ${matchedImageLabel.text}")
+                VerificationResult.Success(matchedImageLabel.text, matchedImageLabel.confidence)
             } else {
                 android.util.Log.d("ImageVerification", "No match found")
-                VerificationResult.Failure("Could not clearly identify ${targets.joinToString("/")}. Detected: ${detected.take(3).joinToString(", ")}")
+                val topConfidence = labels.maxOfOrNull { it.confidence } ?: 0f
+                VerificationResult.Failure(
+                    "Could not clearly identify ${targets.joinToString("/")}. Detected: ${detected.take(3).joinToString(", ")}",
+                    topConfidence
+                )
             }
         } catch (e: Exception) {
             android.util.Log.e("ImageVerification", "Error during verification", e)
@@ -50,7 +54,8 @@ object ImageVerificationManager {
 }
 
 sealed class VerificationResult {
-    data class Success(val label: String) : VerificationResult()
-    data class Failure(val message: String) : VerificationResult()
+    data class Success(val label: String, val confidence: Float = 0f) : VerificationResult()
+    data class Failure(val message: String, val confidence: Float = 0f) : VerificationResult()
     data class Error(val message: String) : VerificationResult()
+    data class AutoAccepted(val attemptNumber: Int) : VerificationResult()
 }

@@ -116,13 +116,17 @@ val ShButtonStyle = TextStyle(
     letterSpacing = 0.16.sp, // 0.01em
 )
 
-/** Kanji (JP): Noto Serif JP 500 · Japanese accents */
+/** Kanji (JP): Noto Serif JP 500 · Japanese accents
+ *  Default color is the frozen light vermillion — this is a top-level, non-composable
+ *  constant, so it can't read the theme-aware ShVermillion. Override with
+ *  `.copy(color = ShVermillion)` at the call site inside a @Composable scope for
+ *  dark-mode-correct color (every current caller already does this). */
 val ShKanjiStyle = TextStyle(
     fontFamily   = NotoSerifJpFamily,
     fontWeight   = FontWeight.Medium,
     fontSize     = 22.sp,
     letterSpacing = 6.6.sp, // 0.3em
-    color        = ShVermillion,
+    color        = ShVermillionLight,
 )
 
 // ── Material 3 Typography mapping ───────────────────────────

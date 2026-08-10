@@ -11,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,21 +27,23 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun NotificationsScreen(
-    navController: NavController
+    navController: NavController,
+    networkMonitor: com.Shoshin.app.sync.NetworkStateMonitor? = null
 ) {
     val context = LocalContext.current
     val database = remember { AppDatabase.getInstance(context) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val scope = rememberCoroutineScope()
-    
+
     val notifications by database.notificationDao().getNotificationsFlow(userId).collectAsState(initial = emptyList())
     val scrollState = rememberScrollState()
+    val isOnline by networkMonitor?.isOnline?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
 
     ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ShNight)
+                .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
         ) {
             // App Bar
@@ -55,15 +56,17 @@ fun NotificationsScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = Color.White)
+                        Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                     Spacer(Modifier.width(8.dp))
-                    Text("Notifications", style = ShTitleStyle.copy(fontSize = 28.sp, color = Color.White))
+                    Text("Notifications", style = ShTitleStyle.copy(fontSize = 32.sp), color = MaterialTheme.colorScheme.onBackground)
                 }
                 TextButton(onClick = { scope.launch { database.notificationDao().clearAll(userId) } }) {
-                    Text("Clear all", color = ShVermillionLight, style = ShLabelStyle.copy(fontWeight = FontWeight.Bold))
+                    Text("Clear all", color = ShVermillion, style = ShLabelStyle.copy(fontWeight = FontWeight.Bold))
                 }
             }
+
+            OfflineIndicator(isOffline = !isOnline)
 
             if (notifications.isEmpty()) {
                 EdgeLayout(
@@ -83,13 +86,13 @@ fun NotificationsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(24.dp))
-                            .background(ShNight2)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(modifier = Modifier.padding(vertical = 8.dp)) {
                             notifications.forEachIndexed { i, item ->
-                                NotificationRowDark(item)
+                                NotificationRow(item)
                                 if (i < notifications.lastIndex) {
-                                    HorizontalDivider(color = ShNightLine, modifier = Modifier.padding(horizontal = 16.dp))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
                                 }
                             }
                         }
@@ -102,7 +105,7 @@ fun NotificationsScreen(
 }
 
 @Composable
-private fun NotificationRowDark(item: NotificationEntity) {
+private fun NotificationRow(item: NotificationEntity) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -114,13 +117,13 @@ private fun NotificationRowDark(item: NotificationEntity) {
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .background(if (!item.isRead) ShVermillionLight.copy(alpha = 0.1f) else ShNight3),
+                .background(if (!item.isRead) ShVermillion.copy(alpha = 0.1f) else MaterialTheme.colorScheme.background.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 painter = painterResource(item.iconRes),
                 contentDescription = null,
-                tint = if (!item.isRead) ShVermillionLight else Color.White,
+                tint = if (!item.isRead) ShVermillion else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -129,23 +132,23 @@ private fun NotificationRowDark(item: NotificationEntity) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = item.title,
-                    style = ShH2Style.copy(fontSize = 15.5.sp, color = Color.White),
+                    style = ShH2Style.copy(fontSize = 15.5.sp, color = MaterialTheme.colorScheme.onSurface),
                     fontWeight = if (!item.isRead) FontWeight.Bold else FontWeight.Medium
                 )
                 if (!item.isRead) {
-                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ShVermillionLight))
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ShVermillion))
                 }
             }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = item.body,
-                style = ShBodyStyle.copy(fontSize = 14.sp, color = ShNightMuted, lineHeight = 19.sp)
+                style = ShBodyStyle.copy(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 19.sp)
             )
             Spacer(Modifier.height(8.dp))
             val dateStr = java.text.SimpleDateFormat("MMM d · h:mm a", java.util.Locale.getDefault()).format(java.util.Date(item.timestamp))
             Text(
                 text = dateStr.uppercase(),
-                style = ShKickerStyle.copy(fontSize = 9.sp, color = ShNightMuted.copy(alpha = 0.6f))
+                style = ShKickerStyle.copy(fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
             )
         }
     }

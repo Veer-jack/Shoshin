@@ -20,6 +20,7 @@ data class GroupMember(
     val consistencyStreak: Int = 0,
     val activations: Int = 0,
     val checkpointsCompleted: Int = 0,
+    val lastCompletionDate: String = "",
     @ServerTimestamp
     val joinedAt: Date? = null
 )

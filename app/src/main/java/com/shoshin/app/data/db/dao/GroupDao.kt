@@ -22,4 +22,7 @@ interface GroupDao {
     
     @Query("SELECT * FROM groups WHERE syncStatus = 'pending'")
     suspend fun getPendingGroups(): List<GroupEntity>
+
+    @Query("DELETE FROM groups WHERE groupId = :groupId")
+    suspend fun deleteGroup(groupId: String)
 }

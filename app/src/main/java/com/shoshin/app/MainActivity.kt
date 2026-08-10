@@ -136,15 +136,21 @@ class MainActivity : ComponentActivity() {
     private fun handleIntent(intent: Intent) {
         val openCheckpoint = intent.getBooleanExtra(ShoshinNotificationManager.EXTRA_OPEN_CHECKPOINT, false)
         val navigateTo = intent.getStringExtra("navigate_to")
-        
-        Log.d("MainActivity", "handleIntent: openCheckpoint=$openCheckpoint, navigateTo=$navigateTo")
-        
+        val data = intent.data
+
+        Log.d("MainActivity", "handleIntent: openCheckpoint=$openCheckpoint, navigateTo=$navigateTo, data=$data")
+
         if (openCheckpoint) {
             navController?.navigate(com.Shoshin.app.navigation.ShRoutes.ACTIVATION)
             intent.removeExtra(ShoshinNotificationManager.EXTRA_OPEN_CHECKPOINT)
         } else if (navigateTo != null) {
             navController?.navigate(navigateTo)
             intent.removeExtra("navigate_to")
+        } else if (data?.scheme == "shoshin" && data.host == "group") {
+            val inviteCode = data.lastPathSegment
+            if (!inviteCode.isNullOrBlank()) {
+                navController?.navigate(com.Shoshin.app.navigation.ShRoutes.groupPreview(inviteCode))
+            }
         }
     }
 

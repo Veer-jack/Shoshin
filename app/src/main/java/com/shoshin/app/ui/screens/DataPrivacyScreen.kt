@@ -24,14 +24,22 @@ import com.Shoshin.app.R
 import com.Shoshin.app.navigation.ShRoutes
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.SettingsViewModel
 
 @Composable
 fun DataPrivacyScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: SettingsViewModel? = null
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val context = LocalContext.current
+    val error by viewModel?.error?.collectAsState() ?: remember { mutableStateOf(null) }
+
+    LaunchedEffect(error) {
+        if (error != null) isDeleting = false
+    }
 
     ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -166,26 +174,36 @@ fun DataPrivacyScreen(
                                 style = ShBodyStyle.copy(fontSize = 14.sp, color = ShNightMuted, lineHeight = 20.sp),
                                 textAlign = TextAlign.Center
                             )
-                            
+
+                            if (error != null) {
+                                Spacer(Modifier.height(16.dp))
+                                Text(error ?: "", style = ShLabelStyle.copy(fontSize = 12.sp, color = ShVermillionLight), textAlign = TextAlign.Center)
+                            }
+
                             Spacer(Modifier.height(32.dp))
-                            
+
                             ShoshinButton(
-                                onClick = { 
-                                    showDeleteConfirm = false
-                                    navController.navigate(ShRoutes.SPLASH) {
-                                        popUpTo(ShRoutes.MAIN) { inclusive = true }
+                                onClick = {
+                                    isDeleting = true
+                                    viewModel?.deleteAccount {
+                                        isDeleting = false
+                                        showDeleteConfirm = false
+                                        navController.navigate(ShRoutes.SPLASH) {
+                                            popUpTo(ShRoutes.MAIN) { inclusive = true }
+                                        }
                                     }
                                 },
                                 variant = ShButtonVariant.Accent,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !isDeleting
                             ) {
-                                Text("Delete permanently", fontWeight = FontWeight.Bold)
+                                Text(if (isDeleting) "Deleting..." else "Delete permanently", fontWeight = FontWeight.Bold)
                             }
-                            
+
                             Spacer(Modifier.height(12.dp))
-                            
+
                             ShoshinButton(
-                                onClick = { showDeleteConfirm = false },
+                                onClick = { showDeleteConfirm = false; viewModel?.clearError() },
                                 variant = ShButtonVariant.Dark,
                                 modifier = Modifier.fillMaxWidth()
                             ) {

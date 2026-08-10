@@ -12,7 +12,7 @@ import com.Shoshin.app.ui.theme.*
 
 @Composable
 fun Challenge71Screen(navController: NavController) {
-    ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             EdgeLayout(
                 icon = R.drawable.ic_trophy,

@@ -41,7 +41,7 @@ fun BadgeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ShNight)
+                .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
         ) {
             // App Bar
@@ -52,16 +52,16 @@ fun BadgeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = Color.White)
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                 }
                 Spacer(Modifier.width(8.dp))
-                Text("Marks of practice", style = ShTitleStyle.copy(fontSize = 28.sp, color = Color.White))
+                Text("Marks of practice", style = ShTitleStyle.copy(fontSize = 32.sp), color = MaterialTheme.colorScheme.onBackground)
             }
 
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                 Text(
                     text = "$earnedCount of ${badges.size} earned",
-                    style = ShLabelStyle.copy(color = ShNightMuted)
+                    style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                 )
                 
                 Spacer(Modifier.height(16.dp))
@@ -69,8 +69,8 @@ fun BadgeScreen(
                 LinearProgressIndicator(
                     progress = { earnedCount.toFloat() / badges.size.coerceAtLeast(1) },
                     modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                    color = ShVermillionLight,
-                    trackColor = ShNight3,
+                    color = ShVermillion,
+                    trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                 )
             }
@@ -85,7 +85,7 @@ fun BadgeScreen(
                 modifier = Modifier.weight(1f)
             ) {
                 items(badges) { badge ->
-                    BadgeGridItemDark(badge = badge) {
+                    BadgeGridItem(badge = badge) {
                         navController.navigate(ShRoutes.badgeDetail(badge.id))
                     }
                 }
@@ -95,13 +95,13 @@ fun BadgeScreen(
 }
 
 @Composable
-private fun BadgeGridItemDark(badge: Badge, onClick: () -> Unit) {
+private fun BadgeGridItem(badge: Badge, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.9f)
             .clip(RoundedCornerShape(20.dp))
-            .background(ShNight2)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable { onClick() }
             .padding(12.dp),
         contentAlignment = Alignment.Center
@@ -114,20 +114,20 @@ private fun BadgeGridItemDark(badge: Badge, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(56.dp)
                     .clip(CircleShape)
-                    .background(if (badge.isLocked) Color.Transparent else ShVermillionLight.copy(alpha = 0.05f)),
+                    .background(if (badge.isLocked) Color.Transparent else ShVermillion.copy(alpha = 0.05f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(if (badge.isLocked) R.drawable.ic_lock else getBadgeIconRes(badge.icon)),
                     contentDescription = null,
-                    tint = if (badge.isLocked) ShNightMuted.copy(alpha = 0.4f) else ShVermillionLight,
+                    tint = if (badge.isLocked) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f) else ShVermillion,
                     modifier = Modifier.size(24.dp)
                 )
             }
             Spacer(Modifier.height(12.dp))
             Text(
                 text = badge.name,
-                style = ShLabelStyle.copy(fontSize = 11.sp, color = if (badge.isLocked) ShNightMuted.copy(alpha = 0.4f) else Color.White),
+                style = ShLabelStyle.copy(fontSize = 11.sp, color = if (badge.isLocked) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.onSurface),
                 fontWeight = if (badge.isLocked) FontWeight.Normal else FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 lineHeight = 14.sp

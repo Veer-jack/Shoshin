@@ -68,6 +68,16 @@ class UserRepository(
         }
     }
 
+    /** Removes this user's Firestore document and local Room row. Does not touch Firebase Auth. */
+    suspend fun deleteAccountData(uid: String) {
+        try {
+            firestore.collection("users").document(uid).delete().await()
+        } catch (e: Exception) {
+            android.util.Log.e("UserRepository", "Failed to delete Firestore user doc: ${e.message}")
+        }
+        userDao.getUser(uid)?.let { userDao.deleteUser(it) }
+    }
+
     suspend fun uploadProfilePicture(bitmap: Bitmap): Result<String> {
         val uid = userId ?: return Result.failure(Exception("Not authenticated"))
         return try {

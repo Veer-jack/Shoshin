@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import com.Shoshin.app.R
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun GroupInviteScreen(
@@ -33,6 +34,8 @@ fun GroupInviteScreen(
     val context = LocalContext.current
     val group by viewModel.currentGroup.collectAsState()
     var isCopied by remember { mutableStateOf(false) }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val isOwner = group?.createdBy == userId
 
     LaunchedEffect(groupId) {
         viewModel.loadGroupMembers(groupId) // This loads group details too
@@ -112,7 +115,7 @@ fun GroupInviteScreen(
                     Spacer(Modifier.height(24.dp))
                     
                     Text(
-                        group?.name ?: "Dawn Circle", 
+                        group?.name?.takeIf { it.isNotBlank() } ?: "Your circle",
                         style = ShTitleStyle.copy(fontSize = 24.sp, color = Color.White)
                     )
                     
@@ -144,7 +147,7 @@ fun GroupInviteScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = group?.inviteCode ?: "ARJUN-M14K",
+                        text = group?.inviteCode?.takeIf { it.isNotBlank() } ?: "···",
                         style = ShNumeralStyle.copy(fontSize = 24.sp, color = Color.White, letterSpacing = 1.sp)
                     )
                     Row(
@@ -176,11 +179,20 @@ fun GroupInviteScreen(
                 }
             }
 
+            if (isOwner) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Regenerate code",
+                    style = ShLabelStyle.copy(color = ShNightMuted, fontWeight = FontWeight.Bold),
+                    modifier = Modifier.clickable { viewModel.regenerateInviteCode(groupId) }
+                )
+            }
+
             Spacer(Modifier.height(48.dp))
 
             ShoshinButton(
-                onClick = { 
-                    val message = "Join my circle on Shoshin! We keep our mornings together. Use code ${group?.inviteCode} or join via https://shoshin.app/join/${group?.inviteCode}"
+                onClick = {
+                    val message = "Join my circle on Shoshin! We keep our mornings together. Use code ${group?.inviteCode} or join via shoshin://group/${group?.inviteCode}"
                     val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(android.content.Intent.EXTRA_TEXT, message)

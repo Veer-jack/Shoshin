@@ -34,7 +34,7 @@ fun StatsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ShNight)
+                .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
         ) {
             // App Bar
@@ -43,10 +43,10 @@ fun StatsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = Color.White)
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                 }
                 Spacer(Modifier.width(8.dp))
-                Text("Your stats", style = ShTitleStyle.copy(fontSize = 28.sp, color = Color.White))
+                Text("Your stats", style = ShTitleStyle.copy(fontSize = 32.sp), color = MaterialTheme.colorScheme.onBackground)
             }
 
             Column(
@@ -57,30 +57,30 @@ fun StatsScreen(
             ) {
                 // 2x2 Grid
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    StatCardDark(
+                    StatCard(
                         modifier = Modifier.weight(1f),
-                        value = (allTimeStats?.totalActivations ?: 148).toString(),
+                        value = (allTimeStats?.totalActivations ?: 0).toString(),
                         label = "TOTAL MORNINGS",
                         icon = R.drawable.ic_sun
                     )
-                    StatCardDark(
+                    StatCard(
                         modifier = Modifier.weight(1f),
-                        value = (allTimeStats?.bestStreak ?: 31).toString(),
+                        value = (allTimeStats?.bestStreak ?: 0).toString(),
                         label = "BEST STREAK",
                         icon = R.drawable.ic_droplet
                     )
                 }
                 Spacer(Modifier.height(14.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    StatCardDark(
+                    StatCard(
                         modifier = Modifier.weight(1f),
-                        value = allTimeStats?.onTimeRate ?: "91%",
+                        value = allTimeStats?.onTimeRate ?: "0%",
                         label = "ON-TIME RATE",
                         icon = R.drawable.ic_clock
                     )
-                    StatCardDark(
+                    StatCard(
                         modifier = Modifier.weight(1f),
-                        value = (allTimeStats?.totalCheckpoints ?: 740).toString(),
+                        value = (allTimeStats?.totalCheckpoints ?: 0).toString(),
                         label = "CHECKPOINTS KEPT",
                         icon = R.drawable.ic_check
                     )
@@ -88,12 +88,14 @@ fun StatsScreen(
 
                 Spacer(Modifier.height(24.dp))
 
-                // Horizontal Summary Row
+                // Horizontal Summary Row — these aren't tracked yet (no wake-time,
+                // bridge-duration, or photo-proof data source exists), so show an
+                // honest "not yet available" placeholder rather than fake numbers.
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(24.dp))
-                        .background(ShNight2)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                         .padding(24.dp)
                 ) {
                     Row(
@@ -101,31 +103,32 @@ fun StatsScreen(
                         horizontalArrangement = Arrangement.SpaceAround,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SummaryStatStat(value = "05:34", label = "AVG WAKE")
-                        Box(Modifier.width(1.dp).height(32.dp).background(ShNightLine))
-                        SummaryStatStat(value = "21", unit = "min", label = "AVG BRIDGE")
-                        Box(Modifier.width(1.dp).height(32.dp).background(ShNightLine))
-                        SummaryStatStat(value = "98", unit = "%", label = "PHOTO PROOF", color = ShMatchaDark)
+                        SummaryStat(value = "—", label = "AVG WAKE")
+                        Box(Modifier.width(1.dp).height(32.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)))
+                        SummaryStat(value = "—", label = "AVG BRIDGE")
+                        Box(Modifier.width(1.dp).height(32.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)))
+                        SummaryStat(value = "—", label = "PHOTO PROOF")
                     }
                 }
 
                 Spacer(Modifier.height(32.dp))
 
-                Kicker("TIME SPENT BY PATH", color = ShNightMuted)
+                Kicker("TIME SPENT BY PATH", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(16.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(24.dp))
-                        .background(ShNight2)
-                        .padding(24.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                        PathProgressRow(label = "Morning Walk", percentage = 0.62f, color = ShVermillionLight)
-                        PathProgressRow(label = "Deep Study", percentage = 0.28f, color = ShMatchaDark)
-                        PathProgressRow(label = "Strength", percentage = 0.10f, color = ShMatchaDark)
-                    }
+                    Text(
+                        "Not yet available",
+                        style = ShLabelStyle,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
 
                 Spacer(Modifier.height(48.dp))
@@ -135,7 +138,21 @@ fun StatsScreen(
 }
 
 @Composable
-private fun StatCardDark(
+private fun SummaryStat(value: String, unit: String? = null, label: String, color: Color? = null) {
+    val finalColor = color ?: MaterialTheme.colorScheme.onSurface
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(value, style = ShNumeralStyle.copy(fontSize = 32.sp, color = finalColor))
+            if (unit != null) {
+                Text(unit, style = ShNumeralStyle.copy(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant), modifier = Modifier.padding(bottom = 4.dp, start = 2.dp))
+            }
+        }
+        Text(label, style = ShKickerStyle.copy(fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
+    }
+}
+
+@Composable
+private fun StatCard(
     modifier: Modifier = Modifier,
     value: String,
     label: String,
@@ -144,41 +161,15 @@ private fun StatCardDark(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(24.dp))
-            .background(ShNight2)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(24.dp)
     ) {
         Column {
-            Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = ShNightMuted)
+            Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(16.dp))
-            Text(value, style = ShNumeralStyle.copy(fontSize = 32.sp, color = Color.White))
-            Text(label, style = ShKickerStyle.copy(fontSize = 9.sp, color = ShNightMuted))
+            Text(value, style = ShNumeralStyle.copy(fontSize = 32.sp, color = MaterialTheme.colorScheme.onSurface))
+            Text(label, style = ShKickerStyle.copy(fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
         }
     }
 }
 
-@Composable
-private fun SummaryStatStat(value: String, unit: String? = null, label: String, color: Color = Color.White) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, style = ShNumeralStyle.copy(fontSize = 32.sp, color = color))
-            if (unit != null) {
-                Text(unit, style = ShNumeralStyle.copy(fontSize = 14.sp, color = ShNightMuted), modifier = Modifier.padding(bottom = 4.dp, start = 2.dp))
-            }
-        }
-        Text(label, style = ShKickerStyle.copy(fontSize = 9.sp, color = ShNightMuted))
-    }
-}
-
-@Composable
-private fun PathProgressRow(label: String, percentage: Float, color: Color) {
-    Column {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = ShH2Style.copy(fontSize = 15.sp, color = Color.White))
-            Text("${(percentage * 100).toInt()}%", style = ShNumeralStyle.copy(fontSize = 14.sp, color = Color.White))
-        }
-        Spacer(Modifier.height(10.dp))
-        Box(modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(ShNight3)) {
-            Box(modifier = Modifier.fillMaxWidth(percentage).fillMaxHeight().clip(CircleShape).background(color))
-        }
-    }
-}

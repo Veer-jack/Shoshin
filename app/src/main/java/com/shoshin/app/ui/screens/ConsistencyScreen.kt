@@ -27,25 +27,33 @@ import com.Shoshin.app.ui.theme.*
 @Composable
 fun ConsistencyScreen(
     navController: NavController,
-    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel? = null
+    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel? = null,
+    networkMonitor: com.Shoshin.app.sync.NetworkStateMonitor? = null
 ) {
     val user by streakViewModel?.user?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
     val streak = user?.currentStreak ?: 0
 
     if (streak == 0) {
-        CleanPageScreen(onSetWake = { navController.navigate(ShRoutes.ALARM_SETUP) })
+        CleanPageScreen(networkMonitor = networkMonitor)
     } else {
-        PopulatedConsistencyScreen(navController, streakViewModel)
+        PopulatedConsistencyScreen(navController, streakViewModel, networkMonitor)
     }
 }
 
 @Composable
-private fun CleanPageScreen(onSetWake: () -> Unit) {
-    ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
+private fun CleanPageScreen(networkMonitor: com.Shoshin.app.sync.NetworkStateMonitor? = null) {
+    val isOnline by networkMonitor?.isOnline?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
+
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ShNight)
+                .background(MaterialTheme.colorScheme.background),
+        ) {
+            OfflineIndicator(isOffline = !isOnline)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -56,18 +64,18 @@ private fun CleanPageScreen(onSetWake: () -> Unit) {
                 modifier = Modifier.size(240.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Enso(size = 200, color = Color.White, strokeWidth = 8f)
+                Enso(size = 200, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f), strokeWidth = 8f)
             }
 
             Spacer(Modifier.height(48.dp))
 
-            Kicker("DAY ONE", color = ShVermillionLight)
+            Kicker("DAY ONE", color = ShVermillion)
             
             Spacer(Modifier.height(12.dp))
             
             Text(
                 "A clean page",
-                style = ShTitleStyle.copy(fontSize = 36.sp, color = Color.White),
+                style = ShTitleStyle.copy(fontSize = 36.sp, color = MaterialTheme.colorScheme.onBackground),
                 textAlign = TextAlign.Center
             )
 
@@ -76,7 +84,7 @@ private fun CleanPageScreen(onSetWake: () -> Unit) {
             Text(
                 "No streak yet, no history — just tomorrow morning, and the first small step across the bridge.",
                 style = ShBodyStyle,
-                color = ShNightMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 24.dp),
                 lineHeight = 24.sp
@@ -84,24 +92,15 @@ private fun CleanPageScreen(onSetWake: () -> Unit) {
 
             Spacer(Modifier.weight(1.2f))
 
-            ShoshinButton(
-                onClick = onSetWake,
-                variant = ShButtonVariant.Accent,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Set your first wake", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(Modifier.height(16.dp))
-
             Text(
                 "Every practice begins once.",
                 style = ShLabelStyle,
-                color = ShNightMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
             Spacer(Modifier.height(24.dp))
+        }
         }
     }
 }
@@ -109,14 +108,16 @@ private fun CleanPageScreen(onSetWake: () -> Unit) {
 @Composable
 private fun PopulatedConsistencyScreen(
     navController: NavController,
-    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel? = null
+    streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel? = null,
+    networkMonitor: com.Shoshin.app.sync.NetworkStateMonitor? = null
 ) {
     val user by streakViewModel?.user?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
-    
+    val weekPattern by streakViewModel?.weekPattern?.collectAsState(initial = List(7) { null }) ?: remember { mutableStateOf(List<Boolean?>(7) { null }) }
+
     val streak = user?.currentStreak ?: 0
     val bestStreak = user?.bestStreak ?: 0
     val totalMornings = user?.totalActivations ?: 0
-    
+
     val consistencyValue = if (user != null && user!!.totalActivations > 0) {
         val daysSinceCreation = ((System.currentTimeMillis() - user!!.createdAt) / (1000 * 60 * 60 * 24)).coerceAtLeast(1)
         ((user!!.totalActivations.toFloat() / daysSinceCreation.toFloat()) * 100).toInt().coerceIn(0, 100)
@@ -124,11 +125,14 @@ private fun PopulatedConsistencyScreen(
         0
     }
 
+    val isOnline by networkMonitor?.isOnline?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
+
     ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            OfflineIndicator(isOffline = !isOnline)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
         ) {
@@ -199,7 +203,6 @@ private fun PopulatedConsistencyScreen(
                         
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             StatSmall(value = user?.productiveStartTime ?: "06:00", label = "AVG START")
-                            StatSmall(value = "22 min", label = "AVG BRIDGE")
                         }
                     }
                 }
@@ -232,20 +235,34 @@ private fun PopulatedConsistencyScreen(
                         verticalAlignment = Alignment.Bottom
                     ) {
                         val days = listOf("M", "T", "W", "T", "F", "S", "S")
-                        val heights = listOf(0.6f, 0.9f, 0.5f, 0.1f, 0.8f, 1.0f, 0.1f)
-                        val colors = listOf(ShMatcha, ShMatcha, ShMatcha, MaterialTheme.colorScheme.outline, ShMatcha, ShVermillion, MaterialTheme.colorScheme.outline)
-                        
+                        // Monday-first offset of today, so the current day can be highlighted for real.
+                        val todayIndex = remember {
+                            val dow = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)
+                            (dow + 5) % 7 // Calendar.SUNDAY=1..SATURDAY=7 -> Monday-first 0..6
+                        }
+
                         days.forEachIndexed { i, day ->
+                            val kept = weekPattern.getOrNull(i)
+                            val height = when (kept) {
+                                true -> 1.0f
+                                false -> 0.12f
+                                null -> 0.06f // day hasn't happened yet
+                            }
+                            val barColor = when (kept) {
+                                true -> ShMatcha
+                                false -> MaterialTheme.colorScheme.outline
+                                null -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            }
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth(0.6f)
-                                        .fillMaxHeight(heights[i])
+                                        .fillMaxHeight(height)
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(colors[i])
+                                        .background(barColor)
                                 )
                                 Spacer(Modifier.height(8.dp))
-                                Text(day, style = ShLabelStyle.copy(fontSize = 11.sp), color = if (i == 5) ShVermillion else MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(day, style = ShLabelStyle.copy(fontSize = 11.sp), color = if (i == todayIndex) ShVermillion else MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -267,6 +284,7 @@ private fun PopulatedConsistencyScreen(
             }
 
             Spacer(Modifier.height(32.dp))
+        }
         }
     }
 }

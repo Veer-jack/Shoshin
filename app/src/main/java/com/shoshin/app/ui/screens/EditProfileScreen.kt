@@ -45,11 +45,19 @@ fun EditProfileScreen(
 
     var name by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
-    
+    var height by remember { mutableStateOf("") }
+    var heightUnit by remember { mutableStateOf("cm") }
+    var weight by remember { mutableStateOf("") }
+    var weightUnit by remember { mutableStateOf("kg") }
+
     LaunchedEffect(user) {
         user?.let {
             name = it.displayName
             bio = it.bio ?: ""
+            height = it.height?.toString() ?: ""
+            heightUnit = it.heightUnit
+            weight = it.weight?.toString() ?: ""
+            weightUnit = it.weightUnit
         }
     }
 
@@ -92,8 +100,15 @@ fun EditProfileScreen(
             }
             Text("Edit Profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             TextButton(
-                onClick = { 
-                    viewModel.updateProfile(name, bio)
+                onClick = {
+                    viewModel.updateProfile(
+                        name = name,
+                        bio = bio,
+                        height = height.toFloatOrNull(),
+                        heightUnit = heightUnit,
+                        weight = weight.toFloatOrNull(),
+                        weightUnit = weightUnit
+                    )
                     navController.popBackStack()
                 },
                 enabled = !isLoading && name.isNotEmpty()
@@ -171,6 +186,54 @@ fun EditProfileScreen(
             modifier = Modifier.height(120.dp)
         )
 
+        Spacer(Modifier.height(24.dp))
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                ShoshinTextField(
+                    value = height,
+                    onValueChange = { new -> height = new.filter { it.isDigit() || it == '.' } },
+                    label = "Height",
+                    placeholder = "Optional",
+                    enabled = !isLoading
+                )
+                Spacer(Modifier.height(8.dp))
+                UnitToggle(options = listOf("cm", "in"), selected = heightUnit, onSelect = { heightUnit = it }, enabled = !isLoading)
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                ShoshinTextField(
+                    value = weight,
+                    onValueChange = { new -> weight = new.filter { it.isDigit() || it == '.' } },
+                    label = "Weight",
+                    placeholder = "Optional",
+                    enabled = !isLoading
+                )
+                Spacer(Modifier.height(8.dp))
+                UnitToggle(options = listOf("kg", "lbs"), selected = weightUnit, onSelect = { weightUnit = it }, enabled = !isLoading)
+            }
+        }
+
+        Spacer(Modifier.height(32.dp))
+
+        Text("Your sign-in identity", style = ShLabelStyle, color = ShFog)
+        Spacer(Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(ShSand)
+                .padding(16.dp)
+        ) {
+            if (!user?.email.isNullOrBlank()) {
+                Text(user?.email.orEmpty(), style = ShH2Style.copy(fontSize = 15.sp, color = ShInk))
+            }
+            if (!user?.phone.isNullOrBlank()) {
+                Text(user?.phone.orEmpty(), style = ShH2Style.copy(fontSize = 15.sp, color = ShInk))
+            }
+            Spacer(Modifier.height(4.dp))
+            Text("Contact support to change this", style = ShLabelStyle.copy(fontSize = 12.sp), color = ShFog)
+        }
+
         Spacer(Modifier.height(40.dp))
 
         if (user?.profilePictureUrl != null) {
@@ -180,6 +243,32 @@ fun EditProfileScreen(
                 colors = ButtonDefaults.textButtonColors(contentColor = ShError)
             ) {
                 Text("Remove Profile Picture")
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnitToggle(
+    options: List<String>,
+    selected: String,
+    onSelect: (String) -> Unit,
+    enabled: Boolean
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        options.forEach { option ->
+            val isSelected = option == selected
+            Surface(
+                onClick = { if (enabled) onSelect(option) },
+                shape = RoundedCornerShape(999.dp),
+                color = if (isSelected) ShInk else ShSand,
+                contentColor = if (isSelected) ShPaper else ShFog
+            ) {
+                Text(
+                    option,
+                    style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.Shoshin.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -116,13 +117,13 @@ fun SyncStatusDialog(
 }
 
 @Composable
-fun OfflineIndicator(isOffline: Boolean) {
+fun OfflineIndicator(isOffline: Boolean, onRetry: (() -> Unit)? = null) {
     if (!isOffline) return
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Paper2) // Subdued color from DS
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -133,15 +134,24 @@ fun OfflineIndicator(isOffline: Boolean) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_bell),
                 contentDescription = "Offline",
-                tint = Vermillion,
+                tint = ShVermillion,
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "You're offline - Changes saved locally",
+                text = "You're offline — showing saved content",
                 style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.sp),
-                color = Sumi
+                color = MaterialTheme.colorScheme.onSurface
             )
+            if (onRetry != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Retry",
+                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
+                    color = ShVermillion,
+                    modifier = Modifier.clickable { onRetry() }
+                )
+            }
         }
     }
 }

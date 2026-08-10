@@ -18,10 +18,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import com.Shoshin.app.R
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.CheckpointNudge
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import java.util.*
 import java.text.SimpleDateFormat
 
@@ -61,6 +65,27 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
     var error by remember { mutableStateOf(false) }
     val prob  = problems[step]
 
+    val context = LocalContext.current
+    var showNudgeBanner by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        var secondsUntilNudge = CheckpointNudge.INTERVAL_SECONDS
+        while (isActive) {
+            delay(1000)
+            secondsUntilNudge -= 1
+            if (secondsUntilNudge <= 0) {
+                showNudgeBanner = true
+                CheckpointNudge.ringAndVibrate(context)
+                secondsUntilNudge = CheckpointNudge.INTERVAL_SECONDS
+            }
+        }
+    }
+    LaunchedEffect(showNudgeBanner) {
+        if (showNudgeBanner) {
+            delay(4000)
+            showNudgeBanner = false
+        }
+    }
+
     val calendar = Calendar.getInstance()
     val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(calendar.time)
 
@@ -84,6 +109,26 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
                 WrongAnswerUI(onRetry = { error = false }, time = timeStr)
             } else {
                 Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+                    if (showNudgeBanner) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(ShAmberNight.copy(alpha = 0.15f))
+                                .padding(14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Take your time. Solve it whenever you're ready.",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = ShAmberNight,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
                     Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(timeStr, fontSize = 48.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = Color.White)
                     }
@@ -123,11 +168,11 @@ private fun WrongAnswerUI(onRetry: () -> Unit, time: String) {
             modifier = Modifier.size(80.dp).clip(CircleShape).background(ShNight2),
             contentAlignment = Alignment.Center
         ) {
-            Icon(painterResource(R.drawable.ic_info), null, tint = ShVermillionLight, modifier = Modifier.size(32.dp))
+            Icon(painterResource(R.drawable.ic_info), null, tint = ShVermillion, modifier = Modifier.size(32.dp))
         }
 
         Spacer(Modifier.height(32.dp))
-        Kicker("NOT QUITE", color = ShVermillionLight)
+        Kicker("NOT QUITE", color = ShVermillion)
         Spacer(Modifier.height(12.dp))
         Text("Breathe. Look again.", style = ShTitleStyle.copy(fontSize = 32.sp, color = Color.White))
         Spacer(Modifier.height(16.dp))
@@ -141,7 +186,7 @@ private fun WrongAnswerUI(onRetry: () -> Unit, time: String) {
 
         Spacer(Modifier.height(32.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ShVermillionLight))
+            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ShVermillion))
             Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ShNight3))
             Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ShNight3))
         }

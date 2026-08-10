@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,7 +30,7 @@ fun ShoshinTextField(
         Text(
             text = label,
             style = ShLabelStyle,
-            color = if (enabled) ShFog else ShFog.copy(alpha = 0.5f)
+            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         )
         Spacer(Modifier.height(8.dp))
         Row(
@@ -37,7 +38,7 @@ fun ShoshinTextField(
                 .fillMaxWidth()
                 .height(56.dp)
                 .background(
-                    if (enabled) ShPaper2 else ShPaper2.copy(alpha = 0.5f), 
+                    if (enabled) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), 
                     RoundedCornerShape(12.dp)
                 )
                 .padding(horizontal = 16.dp),
@@ -50,7 +51,7 @@ fun ShoshinTextField(
                         fontFamily = DmSansFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
-                        color = if (enabled) ShInk else ShInk.copy(alpha = 0.5f)
+                        color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 )
                 Spacer(Modifier.width(8.dp))
@@ -64,7 +65,7 @@ fun ShoshinTextField(
                             fontFamily = DmSansFamily,
                             fontWeight = FontWeight.Normal,
                             fontSize = 16.sp,
-                            color = ShFog2
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     )
                 }
@@ -77,7 +78,7 @@ fun ShoshinTextField(
                         fontFamily = DmSansFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
-                        color = if (enabled) ShInk else ShInk.copy(alpha = 0.5f)
+                        color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     ),
                     cursorBrush = SolidColor(ShVermillion),
                     singleLine = true

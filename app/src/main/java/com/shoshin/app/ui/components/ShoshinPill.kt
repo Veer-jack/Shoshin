@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,8 +30,10 @@ fun ShoshinPill(
     variant: ShPillVariant = ShPillVariant.Default,
     leadingContent: @Composable (() -> Unit)? = null,
 ) {
+    val isDark = MaterialTheme.colorScheme.background == ShNight
     val (bg, fg, border) = when (variant) {
-        ShPillVariant.Default  -> Triple(ShSand,      ShInk,       Color.Transparent)
+        // Dark override: background var(--sh-sand), color var(--sh-ink) — both flip with theme
+        ShPillVariant.Default  -> Triple(if (isDark) ShSandDark else ShSand, if (isDark) ShInkDark else ShInk, Color.Transparent)
         ShPillVariant.Ink      -> Triple(ShInk,        ShNightText, Color.Transparent)
         ShPillVariant.Accent   -> Triple(ShVermillion, Color.White, Color.Transparent)
         ShPillVariant.Matcha   -> Triple(ShMatchaLight, ShMatcha,  Color.Transparent)

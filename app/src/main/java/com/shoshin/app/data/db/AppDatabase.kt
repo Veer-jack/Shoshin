@@ -22,9 +22,11 @@ import com.Shoshin.app.data.db.entities.*
         FriendEntity::class,
         UserLimitsEntity::class,
         CheckpointEntity::class,
-        NotificationEntity::class
+        NotificationEntity::class,
+        RoutineCheckpointEntity::class,
+        FeedbackEntity::class
     ],
-    version = 9,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -43,6 +45,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun statsDao(): StatsDao
     abstract fun notificationDao(): NotificationDao
     abstract fun checkpointDao(): CheckpointDao
+    abstract fun routineCheckpointDao(): RoutineCheckpointDao
+    abstract fun feedbackDao(): FeedbackDao
 
     companion object {
         @Volatile

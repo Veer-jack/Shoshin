@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.Shoshin.app.data.groups.Group
 import com.Shoshin.app.data.groups.GroupMember
 import com.Shoshin.app.data.groups.GroupRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -92,6 +93,20 @@ class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
         _groupFull.value = null
     }
 
+    fun loadGroupPreviewByCode(inviteCode: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val groupResult = repository.getGroupByInviteCode(inviteCode)
+            groupResult.onSuccess { group ->
+                _currentGroup.value = group
+                val membersResult = repository.getGroupMembers(group.id)
+                membersResult.onSuccess { _groupMembers.value = it }
+            }
+            groupResult.onFailure { _error.value = it.message }
+            _isLoading.value = false
+        }
+    }
+
     fun loadGroupMembers(groupId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -106,6 +121,21 @@ class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
         }
     }
 
+    private var membersObserverJob: Job? = null
+
+    /** Live leaderboard: keeps [groupMembers] in sync with Firestore as it changes. */
+    fun observeGroupMembers(groupId: String) {
+        membersObserverJob?.cancel()
+        membersObserverJob = viewModelScope.launch {
+            repository.getGroupMembersFlow(groupId).collect { _groupMembers.value = it }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        membersObserverJob?.cancel()
+    }
+
     fun leaveGroup(groupId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -113,6 +143,36 @@ class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
             result.onSuccess {
                 loadGroups()
             }
+            result.onFailure { _error.value = it.message }
+            _isLoading.value = false
+        }
+    }
+
+    fun removeMember(groupId: String, targetUserId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.removeMember(groupId, targetUserId)
+            result.onSuccess { loadGroupMembers(groupId) }
+            result.onFailure { _error.value = it.message }
+            _isLoading.value = false
+        }
+    }
+
+    fun updateGroupDetails(groupId: String, name: String, description: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.updateGroupDetails(groupId, name, description)
+            result.onSuccess { loadGroupMembers(groupId) }
+            result.onFailure { _error.value = it.message }
+            _isLoading.value = false
+        }
+    }
+
+    fun regenerateInviteCode(groupId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.regenerateInviteCode(groupId)
+            result.onSuccess { loadGroupMembers(groupId) }
             result.onFailure { _error.value = it.message }
             _isLoading.value = false
         }

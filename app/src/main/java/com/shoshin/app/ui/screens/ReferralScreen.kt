@@ -112,7 +112,7 @@ fun ReferralScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = limits?.referralCode ?: "ARJUN-M14K",
+                            text = limits?.referralCode?.takeIf { it.isNotBlank() } ?: "···",
                             style = ShNumeralStyle.copy(fontSize = 24.sp, color = Color.White, letterSpacing = 1.sp)
                         )
                         Row(
@@ -122,7 +122,7 @@ fun ReferralScreen(
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                                 .clickable {
                                     val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                                    val clip = android.content.ClipData.newPlainText("Invite Code", limits?.referralCode)
+                                    val clip = android.content.ClipData.newPlainText("Invite Code", limits?.referralCode ?: "")
                                     clipboard.setPrimaryClip(clip)
                                 },
                             verticalAlignment = Alignment.CenterVertically,
@@ -149,7 +149,7 @@ fun ReferralScreen(
                             Text("Invited so far", style = ShH2Style.copy(fontSize = 17.sp, color = Color.White))
                             Text(
                                 text = buildAnnotatedString {
-                                    append((limits?.totalReferrals ?: 2).toString())
+                                    append((limits?.totalReferrals ?: 0).toString())
                                     withStyle(style = SpanStyle(color = ShNightMuted)) { append("/5") }
                                 },
                                 style = ShNumeralStyle.copy(fontSize = 17.sp, color = Color.White)
@@ -157,7 +157,7 @@ fun ReferralScreen(
                         }
                         Spacer(Modifier.height(16.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            val referrals = limits?.totalReferrals ?: 2
+                            val referrals = limits?.totalReferrals ?: 0
                             repeat(5) { i ->
                                 Box(
                                     modifier = Modifier

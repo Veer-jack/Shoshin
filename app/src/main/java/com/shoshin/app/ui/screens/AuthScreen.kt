@@ -3,8 +3,10 @@ package com.Shoshin.app.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -40,19 +42,19 @@ fun AuthScreen(
     var phoneInput by remember { mutableStateOf("") }
     var referralCodeInput by remember { mutableStateOf(initialReferralCode ?: "") }
     var phoneError by remember { mutableStateOf<String?>(null) }
-    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Phone, 1 = Email
+    val scrollState = rememberScrollState()
 
-    ShoshinTheme(type = ShoshinThemeType.ALWAYS_LIGHT) {
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
         val termsText = buildAnnotatedString {
             append("By continuing you agree to our ")
             pushStringAnnotation(tag = "terms", annotation = "terms")
-            withStyle(style = ShLabelStyle.toSpanStyle().copy(color = Color.Black)) {
+            withStyle(style = ShLabelStyle.toSpanStyle().copy(color = MaterialTheme.colorScheme.onBackground)) {
                 append("Terms")
             }
             pop()
             append(" and ")
             pushStringAnnotation(tag = "privacy", annotation = "privacy")
-            withStyle(style = ShLabelStyle.toSpanStyle().copy(color = Color.Black)) {
+            withStyle(style = ShLabelStyle.toSpanStyle().copy(color = MaterialTheme.colorScheme.onBackground)) {
                 append("Privacy Policy")
             }
             pop()
@@ -69,7 +71,7 @@ fun AuthScreen(
                         Text("OK", color = ShVermillion, fontWeight = FontWeight.Bold)
                     }
                 },
-                containerColor = ShSurface,
+                containerColor = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(24.dp)
             )
         }
@@ -83,6 +85,9 @@ fun AuthScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
+                .navigationBarsPadding()
+                .imePadding()
+                .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -112,24 +117,14 @@ fun AuthScreen(
             Spacer(Modifier.height(40.dp))
 
             // OAuth Options
-            ShoshinButton(
+            OAuthButton(
+                provider = OAuthProvider.Google,
                 onClick = {
                     AnalyticsManager.logAuthMethodSelected("google")
                     onGoogleSignIn()
                 },
-                variant = ShButtonVariant.Ghost,
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { 
-                    Icon(
-                        painter = androidx.compose.ui.res.painterResource(R.drawable.ic_google), 
-                        contentDescription = null, 
-                        tint = Color.Unspecified, 
-                        modifier = Modifier.size(20.dp)
-                    ) 
-                }
-            ) {
-                Text("Continue with Google", color = Color.Black, fontWeight = FontWeight.Bold)
-            }
+                enabled = !isGoogleLoading
+            )
 
             Spacer(Modifier.height(24.dp))
 
@@ -137,63 +132,19 @@ fun AuthScreen(
             
             Spacer(Modifier.height(24.dp))
 
-            // Tabs
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(4.dp)
-            ) {
-                listOf("Phone", "Email").forEachIndexed { index, label ->
-                    val isSelected = selectedTab == index
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
-                            .clickable { selectedTab = index },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = label,
-                            style = ShLabelStyle.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
-
             // Phone Input
-            if (selectedTab == 0) {
-                ShoshinTextField(
-                    value = phoneInput,
-                    onValueChange = { input ->
-                        val filtered = input.filter { it.isDigit() }.take(10)
-                        phoneInput = filtered
-                        phoneError = null
-                    },
-                    label = "MOBILE NUMBER",
-                    prefix = "+91 ",
-                    placeholder = "98765 43210",
-                    enabled = !isGoogleLoading
-                )
-            } else {
-                // Email Input (Mock)
-                ShoshinTextField(
-                    value = "",
-                    onValueChange = { },
-                    label = "EMAIL ADDRESS",
-                    placeholder = "name@example.com",
-                    enabled = !isGoogleLoading
-                )
-            }
+            ShoshinTextField(
+                value = phoneInput,
+                onValueChange = { input ->
+                    val filtered = input.filter { it.isDigit() }.take(10)
+                    phoneInput = filtered
+                    phoneError = null
+                },
+                label = "MOBILE NUMBER",
+                prefix = "+91 ",
+                placeholder = "98765 43210",
+                enabled = !isGoogleLoading
+            )
             
             phoneError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = ShLabelStyle, modifier = Modifier.padding(top = 4.dp).align(Alignment.Start))
@@ -210,7 +161,7 @@ fun AuthScreen(
                 enabled = !isGoogleLoading
             )
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(48.dp))
 
             // CTA
             ShoshinButton(
@@ -221,7 +172,7 @@ fun AuthScreen(
                         phoneError = "Enter a valid 10-digit number"
                     }
                 },
-                variant = ShButtonVariant.Accent,
+                variant = ShButtonVariant.Primary,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 trailingIcon = { Icon(painterResource(R.drawable.ic_arrow_right), null, modifier = Modifier.size(18.dp)) }
             ) {
@@ -237,20 +188,8 @@ fun AuthScreen(
                     termsText.getStringAnnotations(tag = "privacy", start = offset, end = offset)
                         .firstOrNull()?.let { onPrivacyClick() }
                 },
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 24.dp)
             )
-            
-            Row(
-                modifier = Modifier.padding(bottom = 24.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("New here? ", style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
-                Text(
-                    "Create an account", 
-                    style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold),
-                    modifier = Modifier.clickable { /* Logic to Sign Up */ }
-                )
-            }
         }
     }
 }

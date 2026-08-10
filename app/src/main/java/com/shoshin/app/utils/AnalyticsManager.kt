@@ -152,6 +152,38 @@ object AnalyticsManager {
         logEvent("share_completed", bundle)
     }
 
+    // --- Checkpoint Nudge / Verification Events ---
+    fun logCheckpointAlarmTriggered(checkpointIndex: Int) {
+        val bundle = Bundle().apply { putInt("checkpoint_index", checkpointIndex) }
+        logEvent("checkpoint_alarm_triggered", bundle)
+    }
+
+    fun logPhotoVerificationPassed(confidence: Float, attemptNumber: Int) {
+        val bundle = Bundle().apply {
+            putDouble("confidence", confidence.toDouble())
+            putInt("attempt_number", attemptNumber)
+        }
+        logEvent("photo_verification_passed", bundle)
+    }
+
+    fun logPhotoVerificationFailed(confidence: Float, attemptNumber: Int) {
+        val bundle = Bundle().apply {
+            putDouble("confidence", confidence.toDouble())
+            putInt("attempt_number", attemptNumber)
+        }
+        logEvent("photo_verification_failed", bundle)
+    }
+
+    fun logPhotoAutoAccepted(attemptNumber: Int) {
+        val bundle = Bundle().apply { putInt("attempt_number", attemptNumber) }
+        logEvent("photo_auto_accepted", bundle)
+    }
+
+    fun logStreakReset(reason: String) {
+        val bundle = Bundle().apply { putString("reason", reason) }
+        logEvent("streak_reset", bundle)
+    }
+
     // --- Badge Events ---
     fun logBadgeUnlocked(badgeId: String, badgeName: String, category: String, userType: String) {
         val bundle = Bundle().apply {

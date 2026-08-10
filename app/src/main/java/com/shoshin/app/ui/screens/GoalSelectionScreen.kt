@@ -26,7 +26,7 @@ import com.Shoshin.app.ui.theme.*
 fun GoalSelectionScreen(onContinue: (String) -> Unit) {
     var selectedGoal by remember { mutableStateOf<String?>(null) }
 
-    ShoshinTheme(type = ShoshinThemeType.ALWAYS_LIGHT) {
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
@@ -42,7 +42,7 @@ fun GoalSelectionScreen(onContinue: (String) -> Unit) {
                             Icon(painterResource(R.drawable.ic_arrow_right), null, modifier = Modifier.size(18.dp))
                         }
                     ) {
-                        Text("Continue", style = ShButtonStyle.copy(color = Color.White))
+                        Text("Continue", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -126,14 +126,19 @@ private fun GoalOption(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outline
+    val isDark = MaterialTheme.colorScheme.background == ShNight
+    val borderColor = if (isSelected) {
+        if (isDark) Color.White else MaterialTheme.colorScheme.onBackground
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+    }
     val borderWith = if (isSelected) 1.5.dp else 1.dp
     
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(borderWith, borderColor, RoundedCornerShape(20.dp))
             .clickable { onClick() }
             .padding(18.dp)
@@ -144,14 +149,14 @@ private fun GoalOption(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(if (isSelected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.surfaceVariant),
+                    .background(if (isSelected && !isDark) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.background.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = if (isSelected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onBackground
+                    tint = if (isSelected && !isDark) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onBackground
                 )
             }
             
@@ -175,8 +180,8 @@ private fun GoalOption(
                 modifier = Modifier
                     .size(22.dp)
                     .clip(CircleShape)
-                    .background(if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent)
-                    .border(1.5.dp, if (isSelected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outline, CircleShape),
+                    .background(if (isSelected) (if (isDark) Color.White else MaterialTheme.colorScheme.onBackground) else Color.Transparent)
+                    .border(1.5.dp, if (isSelected) (if (isDark) Color.White else MaterialTheme.colorScheme.onBackground) else MaterialTheme.colorScheme.outline, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 if (isSelected) {

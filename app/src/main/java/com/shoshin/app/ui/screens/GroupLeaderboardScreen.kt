@@ -29,17 +29,21 @@ import com.google.firebase.auth.FirebaseAuth
 fun GroupLeaderboardScreen(
     navController: NavController,
     groupId: String,
-    viewModel: GroupViewModel
+    viewModel: GroupViewModel,
+    networkMonitor: com.Shoshin.app.sync.NetworkStateMonitor? = null
 ) {
     val scrollState = rememberScrollState()
     var selectedTimeframe by remember { mutableIntStateOf(0) }
-    
+
     val members by viewModel.groupMembers.collectAsState()
+    val currentGroup by viewModel.currentGroup.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val isOnline by networkMonitor?.isOnline?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
 
     LaunchedEffect(groupId) {
-        viewModel.loadGroupMembers(groupId)
+        viewModel.loadGroupMembers(groupId) // one-time fetch, just for the header/currentGroup
+        viewModel.observeGroupMembers(groupId) // live leaderboard
     }
 
     // Convert GroupMember to LeaderboardEntry
@@ -50,75 +54,84 @@ fun GroupLeaderboardScreen(
                 initial = m.name.firstOrNull()?.toString()?.uppercase() ?: "U",
                 name = if (m.userId == userId) "${m.name} (you)" else m.name,
                 streak = m.consistencyStreak,
+                lastActive = m.lastCompletionDate,
                 trend = "neutral", // Real trend would need history
                 isYou = m.userId == userId
             )
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ShPaper)
-    ) {
-        // App Bar
-        Row(
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
-            }
-            Spacer(Modifier.width(16.dp))
-            Text("Circle leaderboard", style = ShTitleStyle.copy(fontSize = 28.sp), color = ShInk)
-        }
-
-        if (isLoading && leaderboard.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = ShVermillion)
-            }
-        } else {
-            Column(
+            // App Bar
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 24.dp)
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Timeframe Selector
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TimeframePill("This week", selectedTimeframe == 0) { selectedTimeframe = 0 }
-                    TimeframePill("All time", selectedTimeframe == 1) { selectedTimeframe = 1 }
+                IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                 }
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    "${currentGroup?.name?.takeIf { it.isNotBlank() } ?: "Circle"} leaderboard",
+                    style = ShTitleStyle.copy(fontSize = 32.sp),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
 
-                Spacer(Modifier.height(48.dp))
+            OfflineIndicator(isOffline = !isOnline)
 
-                // Podium Visualization
-                if (leaderboard.isNotEmpty()) {
-                    Podium(leaderboard.take(3))
+            if (isLoading && leaderboard.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = ShVermillion)
                 }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 24.dp)
+                ) {
+                    // Timeframe Selector
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        TimeframePill("This week", selectedTimeframe == 0) { selectedTimeframe = 0 }
+                        TimeframePill("All time", selectedTimeframe == 1) { selectedTimeframe = 1 }
+                    }
 
-                Spacer(Modifier.height(48.dp))
+                    Spacer(Modifier.height(48.dp))
 
-                // Full Ranking List
-                ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                        leaderboard.forEachIndexed { i, entry ->
-                            LeaderboardRow(entry)
-                            if (i < leaderboard.lastIndex) {
-                                HorizontalDivider(
-                                    color = ShLine, 
-                                    thickness = 1.dp, 
-                                    modifier = Modifier.padding(horizontal = 24.dp)
-                                )
+                    // Podium Visualization
+                    if (leaderboard.isNotEmpty()) {
+                        Podium(leaderboard.take(3))
+                    }
+
+                    Spacer(Modifier.height(48.dp))
+
+                    // Full Ranking List
+                    ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            leaderboard.forEachIndexed { i, entry ->
+                                LeaderboardRow(entry)
+                                if (i < leaderboard.lastIndex) {
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), 
+                                        thickness = 1.dp, 
+                                        modifier = Modifier.padding(horizontal = 24.dp)
+                                    )
+                                }
                             }
                         }
                     }
+                    
+                    Spacer(Modifier.height(48.dp))
                 }
-                
-                Spacer(Modifier.height(48.dp))
             }
         }
     }
@@ -127,13 +140,13 @@ fun GroupLeaderboardScreen(
 @Composable
 private fun TimeframePill(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
-        color = if (isSelected) ShInk else ShPaper2,
+        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(999.dp),
         modifier = Modifier.clickable { onClick() }
     ) {
         Text(
             text = label,
-            color = if (isSelected) Color.White else ShFog,
+            color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             style = ShLabelStyle.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
         )
@@ -142,7 +155,6 @@ private fun TimeframePill(label: String, isSelected: Boolean, onClick: () -> Uni
 
 @Composable
 private fun Podium(top3: List<LeaderboardEntry>) {
-    // If only one or two members, still show them centered
     val podiumOrder = when (top3.size) {
         1 -> listOf(top3[0])
         2 -> listOf(top3[1], top3[0])
@@ -162,7 +174,7 @@ private fun Podium(top3: List<LeaderboardEntry>) {
             ) {
                 if (isFirst) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_trophy),
+                        painter = painterResource(R.drawable.ic_trophy), // Use crown if available, trophy is placeholder
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
                         tint = ShVermillion
@@ -177,14 +189,14 @@ private fun Podium(top3: List<LeaderboardEntry>) {
                         .then(
                             if (isFirst) Modifier.border(3.dp, ShVermillion, CircleShape) else Modifier
                         )
-                        .background(if (entry.isYou) ShInk else ShPaper2),
+                        .background(if (entry.isYou) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = entry.initial,
                         style = ShTitleStyle.copy(
                             fontSize = if (isFirst) 32.sp else 28.sp,
-                            color = if (entry.isYou) Color.White else ShInk.copy(alpha = 0.6f)
+                            color = if (entry.isYou) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     )
                 }
@@ -193,14 +205,14 @@ private fun Podium(top3: List<LeaderboardEntry>) {
                 
                 Text(
                     entry.name,
-                    style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, color = ShInk)
+                    style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 )
                 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(12.dp), tint = ShVermillion)
                     Text(
                         entry.streak.toString(), 
-                        style = ShNumeralStyle.copy(fontSize = 14.sp, color = ShInk)
+                        style = ShNumeralStyle.copy(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     )
                 }
             }
@@ -210,7 +222,7 @@ private fun Podium(top3: List<LeaderboardEntry>) {
 
 @Composable
 private fun LeaderboardRow(entry: LeaderboardEntry) {
-    val rowBg = if (entry.isYou) ShPaper2.copy(alpha = 0.5f) else Color.Transparent
+    val rowBg = if (entry.isYou) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else Color.Transparent
     
     Row(
         modifier = Modifier
@@ -222,7 +234,7 @@ private fun LeaderboardRow(entry: LeaderboardEntry) {
         Text(
             text = entry.rank.toString(),
             style = ShLabelStyle,
-            color = ShFog,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(24.dp)
         )
         
@@ -230,29 +242,38 @@ private fun LeaderboardRow(entry: LeaderboardEntry) {
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(ShPaper2),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = entry.initial,
-                style = ShH2Style.copy(fontSize = 17.sp, color = ShInk.copy(alpha = 0.6f))
+                style = ShH2Style.copy(fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             )
         }
         
         Spacer(Modifier.width(16.dp))
         
-        Text(
-            text = entry.name,
-            style = ShH2Style.copy(fontSize = 16.sp),
-            modifier = Modifier.weight(1f)
-        )
-        
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = entry.name,
+                style = ShH2Style.copy(fontSize = 16.sp),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (entry.lastActive.isNotBlank()) {
+                Text(
+                    text = "Last active ${entry.lastActive}",
+                    style = ShLabelStyle.copy(fontSize = 11.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(14.dp), tint = ShVermillion)
             Text(
                 text = entry.streak.toString(), 
                 style = ShNumeralStyle.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold),
-                color = ShInk
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -263,6 +284,7 @@ private data class LeaderboardEntry(
     val initial: String,
     val name: String,
     val streak: Int,
+    val lastActive: String,
     val trend: String,
     val isYou: Boolean = false
 )

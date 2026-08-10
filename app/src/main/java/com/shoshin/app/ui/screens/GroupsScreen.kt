@@ -27,10 +27,12 @@ import com.Shoshin.app.ui.theme.*
 fun GroupsScreen(
     navController: NavController,
     referralViewModel: com.Shoshin.app.viewmodel.ReferralViewModel? = null,
-    groupViewModel: com.Shoshin.app.viewmodel.GroupViewModel? = null
+    groupViewModel: com.Shoshin.app.viewmodel.GroupViewModel? = null,
+    networkMonitor: com.Shoshin.app.sync.NetworkStateMonitor? = null
 ) {
     val groups by groupViewModel?.groups?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
     val isLoading by groupViewModel?.isLoading?.collectAsState() ?: remember { mutableStateOf(false) }
+    val isOnline by networkMonitor?.isOnline?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
 
     var showJoinDialog by remember { mutableStateOf(false) }
     var joinCode by remember { mutableStateOf("") }
@@ -60,9 +62,11 @@ fun GroupsScreen(
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 IconButton(onClick = { navController.navigate(ShRoutes.REFERRALS) }) {
-                    Icon(painterResource(R.drawable.ic_bolt), null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(painterResource(R.drawable.ic_bolt), null, tint = ShVermillion)
                 }
             }
+
+            OfflineIndicator(isOffline = !isOnline)
 
             Column(
                 modifier = Modifier
@@ -74,7 +78,7 @@ fun GroupsScreen(
 
                 if (isLoading && groups.isEmpty()) {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        CircularProgressIndicator(color = ShVermillion)
                     }
                 } else if (groups.isEmpty()) {
                     EdgeLayout(

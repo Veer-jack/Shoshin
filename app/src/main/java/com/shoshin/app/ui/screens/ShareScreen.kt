@@ -33,14 +33,15 @@ fun ShareScreen(
     viewModel: ShareViewModel,
     streak: Int,
     habitName: String,
-    startDate: Long
+    startDate: Long,
+    consistencyPercent: Int = 0
 ) {
     val bitmap by viewModel.shareBitmap.collectAsState()
     val selectedStyle by viewModel.selectedStyle.collectAsState()
     val scrollState = rememberScrollState()
 
-    LaunchedEffect(streak, habitName, startDate, selectedStyle) {
-        viewModel.generatePreview(streak, habitName, startDate)
+    LaunchedEffect(streak, habitName, startDate, consistencyPercent, selectedStyle) {
+        viewModel.generatePreview(streak, habitName, startDate, consistencyPercent)
     }
 
     ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {

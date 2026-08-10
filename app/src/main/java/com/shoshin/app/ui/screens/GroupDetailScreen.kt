@@ -1,8 +1,10 @@
 package com.Shoshin.app.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.Shoshin.app.R
+import com.Shoshin.app.data.groups.GroupMember
 import com.Shoshin.app.navigation.ShRoutes
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
@@ -28,6 +31,7 @@ import com.Shoshin.app.viewmodel.GroupViewModel
 import com.Shoshin.app.viewmodel.GroupStatsViewModel
 import com.google.firebase.auth.FirebaseAuth
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GroupDetailScreen(
     navController: NavController,
@@ -42,6 +46,10 @@ fun GroupDetailScreen(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showLeaveDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editName by remember { mutableStateOf("") }
+    var editDescription by remember { mutableStateOf("") }
+    var memberToRemove by remember { mutableStateOf<GroupMember?>(null) }
     val isOwner = group?.createdBy == userId
 
     LaunchedEffect(groupId) {
@@ -68,18 +76,30 @@ fun GroupDetailScreen(
                     Icon(painterResource(R.drawable.ic_arrow_left), null, tint = MaterialTheme.colorScheme.onBackground)
                 }
                 Surface(
+                    onClick = {
+                        if (isOwner) {
+                            editName = group?.name.orEmpty()
+                            editDescription = group?.description.orEmpty()
+                            showEditDialog = true
+                        }
+                    },
                     color = MaterialTheme.colorScheme.onBackground,
                     shape = RoundedCornerShape(999.dp)
                 ) {
                     Text(
-                        text = group?.name ?: "Dawn Circle",
+                        text = group?.name?.takeIf { it.isNotBlank() } ?: "Your circle",
                         color = MaterialTheme.colorScheme.background,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                         style = ShLabelStyle.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     )
                 }
-                IconButton(onClick = { navController.navigate(ShRoutes.groupLeaderboard(groupId)) }) {
-                    Icon(painterResource(R.drawable.ic_trophy), null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(24.dp))
+                Row {
+                    IconButton(onClick = { navController.navigate(ShRoutes.groupStats(groupId)) }) {
+                        Icon(painterResource(R.drawable.ic_pulse), null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(22.dp))
+                    }
+                    IconButton(onClick = { navController.navigate(ShRoutes.groupLeaderboard(groupId)) }) {
+                        Icon(painterResource(R.drawable.ic_trophy), null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(24.dp))
+                    }
                 }
             }
 
@@ -105,6 +125,9 @@ fun GroupDetailScreen(
 
                     // Summary Hero Card - Stays Dark for "Nike focus"
                     val activeCount = members.count { it.consistencyStreak > 0 }
+                    val risenWithNames = members
+                        .filter { it.consistencyStreak > 0 && it.userId != userId }
+                        .map { it.name }
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -114,7 +137,7 @@ fun GroupDetailScreen(
                     ) {
                         Enso(size = 140, color = ShVermillionLight.copy(alpha = 0.12f), strokeWidth = 6f, modifier = Modifier.align(Alignment.TopEnd).offset(x = 40.dp, y = (-20).dp))
                         Column {
-                            Kicker("THIS MORNING · 5:30 AM", color = ShNightMuted)
+                            Kicker("THIS MORNING", color = ShNightMuted)
                             Spacer(Modifier.height(16.dp))
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(activeCount.toString(), style = ShNumeralStyle.copy(fontSize = 48.sp, color = Color.White))
@@ -122,8 +145,15 @@ fun GroupDetailScreen(
                                 Text("of ${members.size} have begun", style = ShTitleStyle.copy(fontSize = 24.sp, color = ShNightMuted))
                             }
                             Spacer(Modifier.height(16.dp))
+                            val risenText = when {
+                                risenWithNames.isEmpty() && activeCount == 0 -> "No one has risen yet today."
+                                risenWithNames.isEmpty() -> "You're the first to rise today."
+                                risenWithNames.size == 1 -> "You rose with ${risenWithNames[0]}. Sit together at dawn."
+                                risenWithNames.size == 2 -> "You rose with ${risenWithNames[0]} and ${risenWithNames[1]}. Sit together at dawn."
+                                else -> "You rose with ${risenWithNames[0]}, ${risenWithNames[1]}, and ${risenWithNames.size - 2} others. Sit together at dawn."
+                            }
                             Text(
-                                "You rose with Mei and Rahul. Sit together at dawn.",
+                                risenText,
                                 style = ShBodyStyle,
                                 color = ShNightMuted,
                                 lineHeight = 22.sp
@@ -148,7 +178,8 @@ fun GroupDetailScreen(
                                     status = if (m.consistencyStreak > 0) "Practicing" else "Asleep",
                                     statusColor = if (m.consistencyStreak > 0) ShMatcha else MaterialTheme.colorScheme.outline,
                                     streak = m.consistencyStreak,
-                                    isMe = isMe
+                                    isMe = isMe,
+                                    onLongPress = if (isOwner && !isMe) ({ memberToRemove = m }) else null
                                 )
                                 if (index < members.lastIndex) {
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), modifier = Modifier.padding(start = 72.dp, end = 24.dp))
@@ -255,19 +286,74 @@ fun GroupDetailScreen(
             shape = RoundedCornerShape(24.dp)
         )
     }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit circle", style = ShTitleStyle.copy(fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)) },
+            text = {
+                Column {
+                    OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("Name") }, singleLine = true)
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(value = editDescription, onValueChange = { editDescription = it }, label = { Text("Description") })
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (editName.isNotBlank()) viewModel.updateGroupDetails(groupId, editName.trim(), editDescription.trim())
+                    showEditDialog = false
+                }) {
+                    Text("Save", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    memberToRemove?.let { target ->
+        AlertDialog(
+            onDismissRequest = { memberToRemove = null },
+            title = { Text("Remove '${target.name}'?", style = ShTitleStyle.copy(fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)) },
+            text = { Text("They'll be removed from the circle and can rejoin later with a new invite code.", style = ShBodyStyle, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.removeMember(groupId, target.userId)
+                    memberToRemove = null
+                }) {
+                    Text("Remove", color = ShError, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { memberToRemove = null }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MemberRow(
     name: String,
     status: String,
     statusColor: Color,
     streak: Int,
-    isMe: Boolean = false
+    isMe: Boolean = false,
+    onLongPress: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .combinedClickable(onClick = {}, onLongClick = onLongPress, enabled = onLongPress != null)
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

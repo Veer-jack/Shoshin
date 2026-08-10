@@ -38,7 +38,7 @@ fun BadgeDetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ShNight)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp)
         ) {
             // App Bar
@@ -50,7 +50,7 @@ fun BadgeDetailScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = Color.White)
+                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                 }
             }
 
@@ -64,20 +64,20 @@ fun BadgeDetailScreen(
                     modifier = Modifier
                         .size(160.dp)
                         .clip(CircleShape)
-                        .background(ShNight2),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
                             .size(100.dp)
                             .clip(CircleShape)
-                            .background(if (!badge.isLocked) ShVermillionLight else ShNight3),
+                            .background(if (!badge.isLocked) ShVermillion else MaterialTheme.colorScheme.background),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(if (badge.isLocked) R.drawable.ic_lock else getBadgeIconRes(badge.icon)),
                             contentDescription = null,
-                            tint = if (badge.isLocked) ShNightMuted else Color.White,
+                            tint = if (badge.isLocked) MaterialTheme.colorScheme.onSurfaceVariant else Color.White,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -87,13 +87,13 @@ fun BadgeDetailScreen(
 
                 Kicker(
                     text = if (badge.isLocked) "LOCKED" else "EARNED",
-                    color = if (badge.isLocked) ShNightMuted else ShVermillionLight,
+                    color = if (badge.isLocked) MaterialTheme.colorScheme.onSurfaceVariant else ShVermillion,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
                 Text(
                     text = if (!badge.isLocked) badge.name else "???",
-                    style = ShTitleStyle.copy(fontSize = 40.sp, color = Color.White),
+                    style = ShTitleStyle.copy(fontSize = 40.sp, color = MaterialTheme.colorScheme.onSurface),
                     textAlign = TextAlign.Center
                 )
 
@@ -106,7 +106,7 @@ fun BadgeDetailScreen(
                         badge.requirementDescription
                     },
                     style = ShBodyStyle,
-                    color = ShNightMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.widthIn(max = 300.dp),
                     lineHeight = 24.sp
@@ -133,7 +133,7 @@ fun BadgeDetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = false
                     ) {
-                        Text("Keep practicing to unlock", color = ShNightMuted, fontWeight = FontWeight.Bold)
+                        Text("Keep practicing to unlock", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
                     }
                 }
             }

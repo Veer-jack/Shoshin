@@ -44,7 +44,6 @@ object ShRoutes {
     const val SETTINGS        = "settings"
     const val ROUTINE_EDITOR  = "routine_editor"
     const val CLOCK           = "clock"
-    const val PAYWALL         = "paywall"
     const val PRIVACY         = "legal/privacy"
     const val TERMS           = "legal/terms"
     const val SUPPORT         = "support"
@@ -64,8 +63,9 @@ object ShRoutes {
 
     // Group extensions
     const val GROUP_INVITE    = "group_invite/{groupId}"
-    const val GROUP_PREVIEW   = "group_preview/{groupId}"
+    const val GROUP_PREVIEW   = "group_preview/{inviteCode}"
     const val GROUP_LEADERBOARD = "group_leaderboard/{groupId}"
+    const val GROUP_STATS     = "group_stats/{groupId}"
 
     // Helpers
     fun otpPhone(number: String, code: String? = null)  = "otp/phone/$number" + (if (code != null) "?code=$code" else "")
@@ -80,7 +80,8 @@ object ShRoutes {
     fun badgeDetail(badgeId: String) = "badge_detail/$badgeId"
     fun friendProfile(userId: String) = "friend_profile/$userId"
     fun groupInvite(groupId: String) = "group_invite/$groupId"
-    fun groupPreview(groupId: String) = "group_preview/$groupId"
+    fun groupPreview(inviteCode: String) = "group_preview/$inviteCode"
     fun groupLeaderboard(groupId: String) = "group_leaderboard/$groupId"
     fun groupDetail(groupId: String) = "group_detail/$groupId"
+    fun groupStats(groupId: String) = "group_stats/$groupId"
 }

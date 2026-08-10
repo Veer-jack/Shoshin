@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,9 +19,23 @@ import androidx.navigation.NavController
 import com.Shoshin.app.R
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.StreakViewModel
 
 @Composable
-fun BrokenStreakScreen(navController: NavController) {
+fun BrokenStreakScreen(
+    navController: NavController,
+    streakViewModel: StreakViewModel? = null
+) {
+    val user by streakViewModel?.user?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
+    val bestStreak = user?.bestStreak ?: 0
+    val totalMornings = user?.totalActivations ?: 0
+    val allTimeRate = if (user != null && user!!.totalActivations > 0) {
+        val daysSinceCreation = ((System.currentTimeMillis() - user!!.createdAt) / (1000 * 60 * 60 * 24)).coerceAtLeast(1)
+        ((user!!.totalActivations.toFloat() / daysSinceCreation.toFloat()) * 100).toInt().coerceIn(0, 100)
+    } else {
+        0
+    }
+
     ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
         Column(
             modifier = Modifier
@@ -30,42 +44,56 @@ fun BrokenStreakScreen(navController: NavController) {
                 .padding(horizontal = 24.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.weight(0.5f))
+            Spacer(Modifier.weight(0.3f))
 
-            // Broken chain motif
-            Row(
-                modifier = Modifier.height(64.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Box(modifier = Modifier.size(24.dp).clip(CircleShape).background(ShMatchaDark.copy(alpha = 0.4f)))
-                Box(modifier = Modifier.width(32.dp).height(2.dp).background(ShNightLine))
-                Box(modifier = Modifier.size(24.dp).clip(CircleShape).background(ShVermillion.copy(alpha = 0.4f)))
-                Box(modifier = Modifier.width(32.dp).height(2.dp).background(ShNightLine))
-                Box(modifier = Modifier.size(24.dp).clip(CircleShape).background(ShNight3))
+            // Broken Streak Icon
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(120.dp)) {
+                Enso(size = 120, color = ShNightLine, strokeWidth = 3f)
+                Icon(
+                    painter = painterResource(R.drawable.ic_flame), 
+                    contentDescription = null, 
+                    tint = ShVermillion.copy(alpha = 0.4f),
+                    modifier = Modifier.size(48.dp)
+                )
+                // Diagonal slash mockup
+                val slashColor = ShVermillion
+                androidx.compose.foundation.Canvas(modifier = Modifier.size(60.dp)) {
+                    drawLine(
+                        color = slashColor,
+                        start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                        end = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                        strokeWidth = 4.dp.toPx(),
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round
+                    )
+                }
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(48.dp))
+
             Kicker("THE CHAIN RESTED", color = ShNightMuted)
+            
             Spacer(Modifier.height(12.dp))
+
             Text(
                 "A miss is not\na failure",
                 style = ShTitleStyle.copy(fontSize = 36.sp, color = Color.White),
                 textAlign = TextAlign.Center
             )
+
             Spacer(Modifier.height(16.dp))
+
             Text(
-                "You held 14 mornings. That practice is yours to keep. Shoshin means beginning again — without judgement.",
+                "You held $bestStreak mornings. That practice is yours to keep. Shoshin means beginning again — without judgement.",
                 style = ShBodyStyle,
                 color = ShNightMuted,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 20.dp),
+                modifier = Modifier.padding(horizontal = 24.dp),
                 lineHeight = 24.sp
             )
 
             Spacer(Modifier.height(48.dp))
 
-            // Preserved Stats
+            // Stats Card
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -78,15 +106,15 @@ fun BrokenStreakScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    SummaryStatItem(value = "14", label = "Best held", color = ShMatchaDark)
+                    BrokenStatItem(value = bestStreak.toString(), label = "BEST HELD", color = ShMatchaDark)
                     Box(Modifier.width(1.dp).height(32.dp).background(ShNightLine))
-                    SummaryStatItem(value = "148", label = "Total kept")
+                    BrokenStatItem(value = totalMornings.toString(), label = "TOTAL KEPT")
                     Box(Modifier.width(1.dp).height(32.dp).background(ShNightLine))
-                    SummaryStatItem(value = "86", unit = "%", label = "All-time")
+                    BrokenStatItem(value = allTimeRate.toString(), unit = "%", label = "ALL-TIME")
                 }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(0.7f))
 
             ShoshinButton(
                 onClick = { navController.popBackStack() },
@@ -95,27 +123,28 @@ fun BrokenStreakScreen(navController: NavController) {
             ) {
                 Text("Begin again", fontWeight = FontWeight.Bold)
             }
-            
+
             Spacer(Modifier.height(24.dp))
+
             Text(
                 "Tomorrow is day one of the next chain.",
-                style = ShLabelStyle,
+                style = ShLabelStyle.copy(fontSize = 13.sp),
                 color = ShNightMuted,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-private fun SummaryStatItem(value: String, unit: String? = null, label: String, color: Color = Color.White) {
+private fun BrokenStatItem(value: String, unit: String? = null, label: String, color: Color = Color.White) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, style = ShNumeralStyle.copy(fontSize = 28.sp, color = color))
+            Text(value, style = ShNumeralStyle.copy(fontSize = 32.sp, color = color))
             if (unit != null) {
-                Text(unit, style = ShNumeralStyle.copy(fontSize = 14.sp, color = ShNightMuted), modifier = Modifier.padding(bottom = 4.dp, start = 2.dp))
+                Text(unit, style = ShNumeralStyle.copy(fontSize = 14.sp, color = ShNightMuted), modifier = Modifier.padding(bottom = 6.dp, start = 2.dp))
             }
         }
         Text(label.uppercase(), style = ShKickerStyle.copy(fontSize = 9.sp, color = ShNightMuted))

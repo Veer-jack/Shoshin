@@ -16,10 +16,10 @@ val ShInk2Light      = Color(0xFF2C2C2E)
 val ShInk2Dark       = Color(0xFFDAD8D2)
 
 val ShPaperLight      = Color(0xFFFAF9F6)
-val ShPaperDark       = Color(0xFF0F0F0F)
+val ShPaperDark       = Color(0xFF0F0F0F) // Ink background
 
 val ShPaper2Light     = Color(0xFFF3F1EB)
-val ShPaper2Dark      = Color(0xFF1A1A1A)
+val ShPaper2Dark      = Color(0xFF1A1A1A) // Darker card background
 
 val ShSurfaceLight    = Color(0xFFFFFFFF)
 val ShSurfaceDark     = Color(0xFF1C1C1C)
@@ -59,6 +59,7 @@ val ShNight3           = Color(0xFF242424)
 val ShNightText        = Color(0xFFF2F1EC)
 val ShNightMuted       = Color(0xFF8C8A85)
 val ShNightLine        = Color(0x1AFFFFFF) // rgba(255,255,255,0.10)
+val ShAmberNight       = Color(0xFFE0A93F) // Checkpoint timer warning state (fixed-dark)
 
 // ── Semantic & Overlays ──
 val ShError            = Color(0xFFE53935)
@@ -76,14 +77,23 @@ val ShInk = ShInkLight
 val ShPaper = ShPaperLight
 val ShFog = ShFogLight
 val ShLine = ShLineLight
-val ShMatcha = ShMatchaLightToken
-val ShVermillion = ShVermillionLight
 val ShLine2 = ShLine2Light
 val ShFog2 = ShFog2Light
 val ShPaper2 = ShPaper2Light
 val ShSurface = ShSurfaceLight
 val ShSand = ShSandLight
 val ShNightBorder = ShNightLine
+
+// Accent colors: theme-responsive (unlike the rest of this block, which is frozen to
+// the light value on purpose). Reads MaterialTheme.colorScheme, so callers must be
+// in a @Composable context — matches every existing call site.
+val ShMatcha: Color
+    @androidx.compose.runtime.Composable
+    get() = if (androidx.compose.material3.MaterialTheme.colorScheme.background == ShNight) ShMatchaDark else ShMatchaLightToken
+
+val ShVermillion: Color
+    @androidx.compose.runtime.Composable
+    get() = if (androidx.compose.material3.MaterialTheme.colorScheme.background == ShNight) ShVermillionDark else ShVermillionLight
 
 // Additional direct aliases used in older screen versions
 val Sumi = ShInkLight
@@ -93,9 +103,7 @@ val Washi = ShPaperLight
 val Paper = ShPaperLight
 val Paper2 = ShPaper2Light
 val Surface = ShSurfaceLight
-val Vermillion = ShVermillionLight
 val Vermillion2 = ShVermillion2Light
-val Matcha = ShMatchaLightToken
 val Fog = ShFogLight
 val Fog2 = ShFog2Light
 val Line = ShLineLight
@@ -106,3 +114,11 @@ val NightText = ShNightText
 val NightMuted = ShNightMuted
 val NightLine = ShNightLine
 val NightBorder = ShNightLine
+
+val Vermillion: Color
+    @androidx.compose.runtime.Composable
+    get() = ShVermillion
+
+val Matcha: Color
+    @androidx.compose.runtime.Composable
+    get() = ShMatcha

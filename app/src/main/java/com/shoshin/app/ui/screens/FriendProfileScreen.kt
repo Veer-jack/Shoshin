@@ -86,21 +86,22 @@ fun FriendProfileScreen(
                 )
                 
                 Spacer(Modifier.height(12.dp))
-                
-                // Shared Circles Pill
+
+                // Shared-circle count isn't tracked yet (no cross-user query exists) —
+                // honest placeholder, not a fabricated number.
                 Surface(
                     color = Color.Transparent,
                     shape = RoundedCornerShape(999.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, ShLine)
                 ) {
                     Text(
-                        "2 shared circles",
+                        "Shared circles: —",
                         color = ShFog,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                         style = ShLabelStyle.copy(fontSize = 11.sp)
                     )
                 }
-                
+
                 Spacer(Modifier.height(32.dp))
                 HorizontalDivider(color = ShLine, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
                 Spacer(Modifier.height(24.dp))
@@ -121,16 +122,16 @@ fun FriendProfileScreen(
         // Info / Connection Rows
         ShoshinCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                // Shared Circle Row
+                // Shared Circle Row — no cross-user "shared groups" query exists yet
                 FriendProfileRow(
-                    icon = R.drawable.ic_groups, 
-                    title = "Dawn Circle", 
-                    sub = "Shared accountability group",
-                    hasChevron = true
+                    icon = R.drawable.ic_groups,
+                    title = "Shared circles",
+                    sub = "Not yet available",
+                    hasChevron = false
                 )
-                
+
                 HorizontalDivider(color = ShLine, modifier = Modifier.padding(horizontal = 24.dp))
-                
+
                 // Following Status Row
                 FriendProfileRow(
                     icon = R.drawable.ic_check, 

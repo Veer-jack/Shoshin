@@ -65,14 +65,14 @@ fun DashboardTab(
     val user by streakViewModel.user.collectAsState()
     val scope = rememberCoroutineScope()
     
-    val userName = user?.displayName ?: "Arjun"
-    val streak = user?.currentStreak ?: 14
-    
+    val userName = user?.displayName?.takeIf { it.isNotBlank() } ?: "Friend"
+    val streak = user?.currentStreak ?: 0
+
     val consistencyValue = if (user != null && user!!.totalActivations > 0) {
         val daysSinceCreation = ((System.currentTimeMillis() - user!!.createdAt) / (1000 * 60 * 60 * 24)).coerceAtLeast(1)
         ((user!!.totalActivations.toFloat() / daysSinceCreation.toFloat()) * 100).toInt().coerceIn(0, 100)
     } else {
-        86
+        0
     }
     
     val savedHour by repo.alarmHour.collectAsState(initial = 5)
@@ -84,6 +84,8 @@ fun DashboardTab(
     val isOnline by networkMonitor.isOnline.collectAsState(initial = true)
     
     ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        val isDark = MaterialTheme.colorScheme.background == ShNight
+        
         if (!isOnline) {
             OfflineDashboard(onReconnect = { scope.launch { syncManager.syncAll() } })
         } else {
@@ -117,16 +119,17 @@ fun DashboardTab(
                         )
                     }
                     
-                    // Avatar - Match Screenshot "A"
+                    // Avatar
                     Box(
                         modifier = Modifier
                             .size(56.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { navController.navigate(ShRoutes.PROFILE) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = userName.firstOrNull()?.toString()?.uppercase() ?: "A",
+                            text = userName.firstOrNull()?.toString()?.uppercase() ?: "F",
                             style = ShTitleStyle.copy(fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                         )
                     }
@@ -139,13 +142,13 @@ fun DashboardTab(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(32.dp))
-                        .background(ShNight2) // Always dark/Ink
+                        .background(if (isDark) ShNight2 else ShInk) // Always dark/Ink
                         .padding(24.dp)
                 ) {
                     // Subtle Enso Detail
                     Enso(
                         size = 160, 
-                        color = Color(0xFFC84B31).copy(alpha = 0.08f), // Deep dark red
+                        color = ShVermillion.copy(alpha = 0.08f),
                         strokeWidth = 6f, 
                         modifier = Modifier.align(Alignment.TopEnd).offset(x = 30.dp, y = (-20).dp)
                     )
@@ -153,7 +156,7 @@ fun DashboardTab(
                     Column {
                         // Status Pill
                         Surface(
-                            color = Color(0xFF4A7C59).copy(alpha = 0.15f), // ShMatcha Alpha
+                            color = ShMatcha.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(999.dp)
                         ) {
                             Row(
@@ -161,8 +164,8 @@ fun DashboardTab(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF6FAF80))) // Matcha Dot
-                                Text("SET FOR DAWN", style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6FAF80)))
+                                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ShMatchaDark))
+                                Text("SET FOR DAWN", style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ShMatchaDark))
                             }
                         }
 
@@ -197,7 +200,7 @@ fun DashboardTab(
                         // Adjust Button
                         ShoshinButton(
                             onClick = { navController.navigate(ShRoutes.ALARM_SETUP) },
-                            variant = ShButtonVariant.Dark, // Dark transparent-ish button
+                            variant = ShButtonVariant.Dark,
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             leadingIcon = { Icon(painterResource(R.drawable.ic_bell), null, tint = Color.White, modifier = Modifier.size(18.dp)) }
                         ) {
@@ -216,7 +219,7 @@ fun DashboardTab(
                             modifier = Modifier.padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RingProgress(percentage = consistencyValue, size = 64, strokeWidth = 8f, valueText = "", color = Color(0xFF4A7C59), trackColor = MaterialTheme.colorScheme.outline)
+                            RingProgress(percentage = consistencyValue, size = 64, strokeWidth = 8f, valueText = "", color = ShMatcha, trackColor = MaterialTheme.colorScheme.outline)
                             Spacer(Modifier.width(12.dp))
                             Column {
                                 Row(verticalAlignment = Alignment.Bottom) {
@@ -235,10 +238,10 @@ fun DashboardTab(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier.size(44.dp).clip(CircleShape).background(Color(0xFFC84B31).copy(alpha = 0.05f)),
+                                modifier = Modifier.size(44.dp).clip(CircleShape).background(ShVermillion.copy(alpha = 0.05f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(painterResource(R.drawable.ic_flame), null, tint = Color(0xFFC84B31), modifier = Modifier.size(20.dp))
+                                Icon(painterResource(R.drawable.ic_flame), null, tint = ShVermillion, modifier = Modifier.size(20.dp))
                             }
                             Spacer(Modifier.width(12.dp))
                             Column {
@@ -263,7 +266,7 @@ fun DashboardTab(
                     }
                     Text(
                         "Edit", 
-                        style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, color = ShVermillionLight), 
+                        style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, color = ShVermillion), 
                         modifier = Modifier.clickable { navController.navigate(ShRoutes.ROUTINE_EDITOR) }
                     )
                 }

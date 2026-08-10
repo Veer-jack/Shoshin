@@ -31,7 +31,7 @@ fun BuildPathScreen(
     var pathName by remember { mutableStateOf("") }
     var checkpoints by remember { mutableStateOf(listOf("Checkpoint 1", "Checkpoint 2")) }
 
-    ShoshinTheme(type = ShoshinThemeType.ALWAYS_LIGHT) {
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
         Scaffold(
             topBar = {
                 Row(

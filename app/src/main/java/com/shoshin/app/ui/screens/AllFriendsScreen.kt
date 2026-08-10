@@ -35,90 +35,92 @@ fun AllFriendsScreen(
     val friends by viewModel.allFriends.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ShPaper)
-    ) {
-        // App Bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
-                }
-                Spacer(Modifier.width(16.dp))
-                Text("Friends", style = ShTitleStyle.copy(fontSize = 28.sp), color = ShInk)
-            }
-            IconButton(onClick = { navController.navigate(ShRoutes.INVITE) }, modifier = Modifier.size(24.dp)) {
-                Icon(painterResource(R.drawable.ic_plus), contentDescription = "Add", tint = ShInk)
-            }
-        }
-
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Search friends", style = ShLabelStyle, color = ShFog) },
-                leadingIcon = { Icon(painterResource(R.drawable.ic_search), null, tint = ShFog, modifier = Modifier.size(20.dp)) },
+            // App Bar
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ShLine,
-                    unfocusedBorderColor = ShLine,
-                    cursorColor = ShInk,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                ),
-                singleLine = true
-            )
+                    .statusBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
+                        Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Text("Friends", style = ShTitleStyle.copy(fontSize = 32.sp), color = MaterialTheme.colorScheme.onBackground)
+                }
+                IconButton(onClick = { navController.navigate(ShRoutes.INVITE) }, modifier = Modifier.size(24.dp)) {
+                    Icon(painterResource(R.drawable.ic_plus), contentDescription = "Add", tint = MaterialTheme.colorScheme.onBackground)
+                }
+            }
 
-            Spacer(Modifier.height(24.dp))
-
-            if (friends.isEmpty()) {
-                EdgeLayout(
-                    icon = R.drawable.ic_user,
-                    kicker = "Your circle is quiet",
-                    title = "No friends yet",
-                    body = "Invite someone who needs a reason to rise.",
-                    actionLabel = "Invite Friends",
-                    onAction = { navController.navigate(ShRoutes.INVITE) }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+            ) {
+                // Search Bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search friends", style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
+                    leadingIcon = { Icon(painterResource(R.drawable.ic_search), null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    singleLine = true
                 )
-            } else {
-                ShoshinCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                        friends.forEachIndexed { i, friend ->
-                            FriendListRow(
-                                friend = friend,
-                                onClick = { navController.navigate(ShRoutes.friendProfile(friend.userId)) }
-                            )
-                            if (i < friends.lastIndex) {
-                                HorizontalDivider(
-                                    color = ShLine, 
-                                    thickness = 1.dp, 
-                                    modifier = Modifier.padding(start = 72.dp, end = 24.dp)
+
+                Spacer(Modifier.height(24.dp))
+
+                if (friends.isEmpty()) {
+                    EdgeLayout(
+                        icon = R.drawable.ic_user,
+                        kicker = "Your circle is quiet",
+                        title = "No friends yet",
+                        body = "Invite someone who needs a reason to rise.",
+                        actionLabel = "Invite Friends",
+                        onAction = { navController.navigate(ShRoutes.INVITE) }
+                    )
+                } else {
+                    ShoshinCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            friends.forEachIndexed { i, friend ->
+                                FriendListRow(
+                                    friend = friend,
+                                    onClick = { navController.navigate(ShRoutes.friendProfile(friend.userId)) }
                                 )
+                                if (i < friends.lastIndex) {
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), 
+                                        thickness = 1.dp, 
+                                        modifier = Modifier.padding(start = 72.dp, end = 24.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
+                
+                Spacer(Modifier.height(48.dp))
             }
-            
-            Spacer(Modifier.height(48.dp))
         }
     }
 }
@@ -140,20 +142,21 @@ private fun FriendListRow(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(ShPaper2),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = friend.userName.take(1).uppercase(),
-                style = ShH2Style.copy(fontSize = 17.sp, color = ShInk.copy(alpha = 0.6f))
+                style = ShH2Style.copy(fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             )
         }
         
         Spacer(Modifier.width(16.dp))
         
         Column(modifier = Modifier.weight(1f)) {
-            Text(friend.userName, style = ShH2Style.copy(fontSize = 16.sp))
-            Text("2 shared circles", style = ShLabelStyle, color = ShFog) // Mock shared count
+            Text(friend.userName, style = ShH2Style.copy(fontSize = 16.sp), color = MaterialTheme.colorScheme.onSurface)
+            val friendStreakText = if (friend.currentStreak > 0) "${friend.currentStreak} day streak" else friend.activityStatus
+            Text(friendStreakText, style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -166,7 +169,7 @@ private fun FriendListRow(
             Text(
                 text = friend.currentStreak.toString(), 
                 style = ShNumeralStyle.copy(fontSize = 16.sp), 
-                color = ShInk,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
         }

@@ -16,6 +16,7 @@ class PhoneAuthManager(private val auth: FirebaseAuth) {
         phone: String,
         activity: android.app.Activity,
         onCodeSent: (verificationId: String) -> Unit,
+        onAutoVerified: (userId: String) -> Unit = {},
         onError: (Exception) -> Unit
     ) {
         Log.d(TAG, "startPhoneAuth called for: $phone")
@@ -36,6 +37,13 @@ class PhoneAuthManager(private val auth: FirebaseAuth) {
         val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
             override fun onVerificationCompleted(credential: com.google.firebase.auth.PhoneAuthCredential) {
                 Log.d(TAG, "onVerificationCompleted: Auto-verification successful")
+                auth.signInWithCredential(credential)
+                    .addOnSuccessListener { authResult ->
+                        onAutoVerified(authResult.user?.uid ?: "")
+                    }
+                    .addOnFailureListener { e ->
+                        onError(e)
+                    }
             }
 
             override fun onCodeSent(id: String, token: PhoneAuthProvider.ForceResendingToken) {
@@ -75,11 +83,12 @@ class PhoneAuthManager(private val auth: FirebaseAuth) {
         phone: String,
         activity: android.app.Activity,
         onCodeSent: (verificationId: String) -> Unit,
+        onAutoVerified: (userId: String) -> Unit = {},
         onError: (Exception) -> Unit
     ) {
         Log.d(TAG, "resendOTP called. Has token: ${resendToken != null}")
         if (resendToken == null) {
-            startPhoneAuth(phone, activity, onCodeSent, onError)
+            startPhoneAuth(phone, activity, onCodeSent, onAutoVerified, onError)
             return
         }
 
@@ -87,7 +96,16 @@ class PhoneAuthManager(private val auth: FirebaseAuth) {
         val formattedPhone = if (cleanPhone.startsWith("+")) cleanPhone else "+91$cleanPhone"
 
         val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-            override fun onVerificationCompleted(credential: com.google.firebase.auth.PhoneAuthCredential) {}
+            override fun onVerificationCompleted(credential: com.google.firebase.auth.PhoneAuthCredential) {
+                Log.d(TAG, "onVerificationCompleted (resend): Auto-verification successful")
+                auth.signInWithCredential(credential)
+                    .addOnSuccessListener { authResult ->
+                        onAutoVerified(authResult.user?.uid ?: "")
+                    }
+                    .addOnFailureListener { e ->
+                        onError(e)
+                    }
+            }
             override fun onCodeSent(id: String, token: PhoneAuthProvider.ForceResendingToken) {
                 Log.d(TAG, "onCodeSent (resend) success: Verification ID = $id")
                 verificationId = id

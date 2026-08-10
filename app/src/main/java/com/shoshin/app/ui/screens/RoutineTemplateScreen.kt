@@ -66,98 +66,113 @@ fun RoutineTemplateScreen(goalKey: String, onContinue: (String) -> Unit) {
     val repo    = remember { ShoshinRepository(context) }
     val scope   = rememberCoroutineScope()
 
-    Column(modifier = Modifier.fillMaxSize().background(ShPaper)) {
-        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth().statusBarsPadding(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { /* Back logic */ }) {
-                    Icon(painterResource(R.drawable.ic_arrow_left), null, tint = ShInk)
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        val isDark = MaterialTheme.colorScheme.background == ShNight
+        
+        Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth().statusBarsPadding(), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { /* Back logic */ }) {
+                        Icon(painterResource(R.drawable.ic_arrow_left), null, tint = MaterialTheme.colorScheme.onBackground)
+                    }
+                    Text("Change goal", style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold))
                 }
-                Text("Change goal", style = ShLabelStyle.copy(color = ShFog, fontWeight = FontWeight.Bold))
-            }
-            
-            Spacer(Modifier.height(16.dp))
-            Kicker("A BEGINNING · 2 OF 2", color = ShFog2)
-            Spacer(Modifier.height(8.dp))
-            Text("Choose your path", style = ShTitleStyle.copy(fontSize = 36.sp), color = ShInk)
-            
-            Spacer(Modifier.height(32.dp))
-            
-            // Chips
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TEMPLATES.forEach { tpl ->
-                    val sel = selected == tpl.id
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(100.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(if (sel) Color.White else ShPaper2) // Per screenshot: White for selected in dark mode
-                            .clickable { selected = tpl.id }
-                            .padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = tpl.icon),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = if (sel) Color.Black else ShInk
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Text(tpl.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = if (sel) Color.Black else ShInk, textAlign = TextAlign.Center)
+                
+                Spacer(Modifier.height(16.dp))
+                Kicker("A BEGINNING · 2 OF 2", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                Spacer(Modifier.height(8.dp))
+                Text("Choose your path", style = ShTitleStyle.copy(fontSize = 36.sp), color = MaterialTheme.colorScheme.onBackground)
+                
+                Spacer(Modifier.height(32.dp))
+                
+                // Chips
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TEMPLATES.forEach { tpl ->
+                        val sel = selected == tpl.id
+                        val chipBg = if (sel) {
+                            if (isDark) Color.White else MaterialTheme.colorScheme.onBackground
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        }
+                        val chipContent = if (sel) {
+                            if (isDark) Color.Black else MaterialTheme.colorScheme.background
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(100.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(chipBg)
+                                .clickable { selected = tpl.id }
+                                .padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = tpl.icon),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = chipContent
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Text(tpl.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = chipContent, textAlign = TextAlign.Center)
+                        }
                     }
                 }
-            }
-            
-            Spacer(Modifier.height(32.dp))
+                
+                Spacer(Modifier.height(32.dp))
 
-            // Main Detail Card
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(ShNight2) // Dark card always
-                    .padding(24.dp)
-            ) {
-                Column {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PillTag(label = t.tag, color = ShVermillion.copy(alpha = 0.15f), textColor = ShVermillion)
-                        PillTag(label = "${t.steps.size} checkpoints", color = ShNight3, textColor = ShNightMuted)
-                        PillTag(label = "~${t.duration} min", color = ShNight3, textColor = ShNightMuted)
-                    }
-                    
-                    Spacer(Modifier.height(32.dp))
+                // Main Detail Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(24.dp)
+                ) {
+                    Column {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            PillTag(label = t.tag, color = ShVermillion.copy(alpha = 0.15f), textColor = ShVermillion)
+                            PillTag(label = "${t.steps.size} checkpoints", color = MaterialTheme.colorScheme.background.copy(alpha = 0.3f), textColor = MaterialTheme.colorScheme.onSurfaceVariant)
+                            PillTag(label = "~${t.duration} min", color = MaterialTheme.colorScheme.background.copy(alpha = 0.3f), textColor = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        
+                        Spacer(Modifier.height(32.dp))
 
-                    t.steps.forEachIndexed { i, (label, icon) ->
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 24.dp)) {
-                            Box(
-                                modifier = Modifier.size(32.dp).clip(CircleShape).background(ShNight3),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("${i+1}", style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ShNightMuted))
+                        t.steps.forEachIndexed { i, (label, icon) ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 24.dp)) {
+                                Box(
+                                    modifier = Modifier.size(32.dp).clip(CircleShape).background(MaterialTheme.colorScheme.background.copy(alpha = 0.3f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("${i+1}", style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                }
+                                Spacer(Modifier.width(16.dp))
+                                Icon(painterResource(icon), null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.width(16.dp))
+                                Text(label, style = ShBodyStyle.copy(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface))
                             }
-                            Spacer(Modifier.width(16.dp))
-                            Icon(painterResource(icon), null, modifier = Modifier.size(18.dp), tint = ShNightMuted)
-                            Spacer(Modifier.width(16.dp))
-                            Text(label, style = ShBodyStyle.copy(fontSize = 16.sp, color = ShNightText))
                         }
                     }
                 }
             }
-        }
-        
-        Column(modifier = Modifier.padding(24.dp).navigationBarsPadding()) {
-            ShoshinButton(
-                onClick = {
-                    scope.launch { 
-                        repo.saveTemplate(selected)
-                        onContinue(selected)
-                    }
-                },
-                variant = ShButtonVariant.Accent,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Set this path", fontWeight = FontWeight.Bold)
+            
+            Column(modifier = Modifier.padding(24.dp).navigationBarsPadding()) {
+                ShoshinButton(
+                    onClick = {
+                        scope.launch { 
+                            repo.saveTemplate(selected)
+                            onContinue(selected)
+                        }
+                    },
+                    variant = ShButtonVariant.Accent,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Set this path", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

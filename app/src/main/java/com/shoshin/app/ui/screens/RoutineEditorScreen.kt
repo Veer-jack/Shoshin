@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -13,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -21,21 +19,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.Shoshin.app.R
+import com.Shoshin.app.data.db.entities.RoutineCheckpointEntity
+import com.Shoshin.app.data.routine.RoutineDefinitions
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.RoutineEditorViewModel
 
 @Composable
-fun RoutineEditorScreen(navController: NavController) {
+fun RoutineEditorScreen(navController: NavController, viewModel: RoutineEditorViewModel) {
     val scrollState = rememberScrollState()
+    val checkpoints by viewModel.checkpoints.collectAsState()
+    val templateKey by viewModel.templateKey.collectAsState()
+    val saved by viewModel.saved.collectAsState()
+    val defs = RoutineDefinitions.forTemplate(templateKey)
+
+    var editingCheckpoint by remember { mutableStateOf<RoutineCheckpointEntity?>(null) }
+    var editingLabel by remember { mutableStateOf("") }
     var pathName by remember { mutableStateOf("Morning Walk") }
-    
-    val steps = listOf(
-        Pair(R.drawable.ic_brain, "Mind awake"),
-        Pair(R.drawable.ic_droplet, "Freshen up"),
-        Pair(R.drawable.ic_shirt, "Dressed"),
-        Pair(R.drawable.ic_sun, "Out the door"),
-        Pair(R.drawable.ic_walk, "Walk begun")
-    )
 
     Column(
         modifier = Modifier
@@ -60,7 +60,7 @@ fun RoutineEditorScreen(navController: NavController) {
                 shape = RoundedCornerShape(999.dp)
             ) {
                 Text(
-                    "Movement",
+                    if (templateKey == "walk") "Movement" else "Study",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ShVermillion)
                 )
@@ -74,7 +74,7 @@ fun RoutineEditorScreen(navController: NavController) {
                 .padding(horizontal = 24.dp)
         ) {
             Text("Edit path", style = ShTitleStyle.copy(fontSize = 32.sp, color = Color.White))
-            
+
             Spacer(Modifier.height(24.dp))
 
             Kicker("PATH NAME", color = ShNightMuted)
@@ -99,7 +99,8 @@ fun RoutineEditorScreen(navController: NavController) {
             Kicker("CHECKPOINTS · 5 MIN APART", color = ShNightMuted)
             Spacer(Modifier.height(14.dp))
 
-            steps.forEach { step ->
+            checkpoints.forEach { row ->
+                val icon = defs.getOrNull(row.slotIndex)?.icon ?: R.drawable.ic_check
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -109,12 +110,31 @@ fun RoutineEditorScreen(navController: NavController) {
                         .padding(18.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Drag Handle Mock
-                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Icon(painterResource(R.drawable.ic_arrow_left), null, modifier = Modifier.size(12.dp).rotate(90f), tint = ShNightLine)
-                            Icon(painterResource(R.drawable.ic_arrow_left), null, modifier = Modifier.size(12.dp).rotate(270f), tint = ShNightLine)
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            IconButton(
+                                onClick = { viewModel.moveUp(row.displayOrder) },
+                                enabled = row.displayOrder > 0,
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_arrow_up), null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = if (row.displayOrder > 0) ShNightMuted else ShNightLine
+                                )
+                            }
+                            IconButton(
+                                onClick = { viewModel.moveDown(row.displayOrder) },
+                                enabled = row.displayOrder < checkpoints.lastIndex,
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_arrow_down), null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = if (row.displayOrder < checkpoints.lastIndex) ShNightMuted else ShNightLine
+                                )
+                            }
                         }
-                        
+
                         Spacer(Modifier.width(16.dp))
 
                         Box(
@@ -124,50 +144,67 @@ fun RoutineEditorScreen(navController: NavController) {
                                 .background(ShNightText.copy(alpha = 0.05f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(painterResource(step.first), null, modifier = Modifier.size(20.dp), tint = Color.White)
+                            Icon(painterResource(icon), null, modifier = Modifier.size(20.dp), tint = Color.White)
                         }
 
                         Spacer(Modifier.width(16.dp))
-                        Text(step.second, style = ShH2Style.copy(fontSize = 16.sp, color = Color.White), modifier = Modifier.weight(1f))
-                        
-                        IconButton(onClick = { }) {
-                            Icon(painterResource(R.drawable.ic_trash), null, modifier = Modifier.size(18.dp), tint = ShNightMuted)
+                        Text(
+                            row.label,
+                            style = ShH2Style.copy(fontSize = 16.sp, color = Color.White),
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        IconButton(onClick = {
+                            editingCheckpoint = row
+                            editingLabel = row.label
+                        }) {
+                            Icon(painterResource(R.drawable.ic_edit), null, modifier = Modifier.size(18.dp), tint = ShNightMuted)
                         }
                     }
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .border(1.2.dp, ShNightLine, RoundedCornerShape(20.dp))
-                    .clickable { }
-                    .padding(horizontal = 18.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painterResource(R.drawable.ic_plus), null, modifier = Modifier.size(16.dp), tint = ShNightMuted)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Add checkpoint", style = ShLabelStyle.copy(color = ShNightMuted, fontWeight = FontWeight.Bold))
                 }
             }
 
             Spacer(Modifier.height(32.dp))
 
             ShoshinButton(
-                onClick = { /* navController.popBackStack() */ },
+                onClick = { viewModel.save() },
                 variant = ShButtonVariant.Accent,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = false
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save path (Coming soon)", fontWeight = FontWeight.Bold)
+                Text(if (saved) "Saved" else "Save path", fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(48.dp))
         }
+    }
+
+    val checkpointBeingEdited = editingCheckpoint
+    if (checkpointBeingEdited != null) {
+        AlertDialog(
+            onDismissRequest = { editingCheckpoint = null },
+            title = { Text("Rename checkpoint", style = ShTitleStyle.copy(fontSize = 20.sp)) },
+            text = {
+                OutlinedTextField(
+                    value = editingLabel,
+                    onValueChange = { editingLabel = it },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (editingLabel.isNotBlank()) {
+                        viewModel.updateLabel(checkpointBeingEdited.slotIndex, editingLabel.trim())
+                    }
+                    editingCheckpoint = null
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingCheckpoint = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

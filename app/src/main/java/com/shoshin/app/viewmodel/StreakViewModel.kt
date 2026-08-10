@@ -4,9 +4,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.Shoshin.app.data.BadgeRepository
+import com.Shoshin.app.data.groups.GroupRepository
 import com.Shoshin.app.data.user.UserRepository
+import com.Shoshin.app.data.db.dao.StreakDao
+import com.Shoshin.app.data.db.entities.StreakEntity
 import com.Shoshin.app.data.db.entities.UserEntity
-import com.Shoshin.app.ui.theme.ShMatcha
+import com.Shoshin.app.ui.theme.ShMatchaLightToken
 import com.Shoshin.app.utils.AnalyticsManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,7 +18,9 @@ import java.util.*
 
 class StreakViewModel(
     private val userRepository: UserRepository,
-    private val badgeRepository: BadgeRepository
+    private val badgeRepository: BadgeRepository,
+    private val streakDao: StreakDao? = null,
+    private val groupRepository: GroupRepository? = null
 ) : ViewModel() {
 
     private val _user = MutableStateFlow<UserEntity?>(null)
@@ -27,9 +32,67 @@ class StreakViewModel(
     private val _newBadgeUnlocked = MutableStateFlow<String?>(null)
     val newBadgeUnlocked: StateFlow<String?> = _newBadgeUnlocked.asStateFlow()
 
+    // This week, Monday-first: null = day hasn't happened yet, true = kept, false = missed.
+    private val _weekPattern = MutableStateFlow<List<Boolean?>>(List(7) { null })
+    val weekPattern: StateFlow<List<Boolean?>> = _weekPattern.asStateFlow()
+
+    // Last 4 calendar months' completion rate (0f-1f), oldest first.
+    private val _monthlyTrend = MutableStateFlow<List<Pair<String, Float>>>(emptyList())
+    val monthlyTrend: StateFlow<List<Pair<String, Float>>> = _monthlyTrend.asStateFlow()
+
+    // Full per-day completion log (date "yyyy-MM-dd" -> completed), for calendar/history views.
+    private val _historyByDate = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val historyByDate: StateFlow<Map<String, Boolean>> = _historyByDate.asStateFlow()
+
     init {
         loadUser()
         checkFreezeReset()
+        loadHistory()
+    }
+
+    private fun loadHistory() {
+        val uid = userRepository.userId ?: return
+        val dao = streakDao ?: return
+        viewModelScope.launch {
+            dao.getUserStreaksFlow(uid).collect { entries ->
+                _historyByDate.value = entries.associate { it.date to it.completed }
+                val completedDates = entries.filter { it.completed }.map { it.date }.toSet()
+                val dateFmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+                // Week pattern: Monday..Sunday of the current week.
+                val cal = Calendar.getInstance()
+                cal.firstDayOfWeek = Calendar.MONDAY
+                while (cal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) cal.add(Calendar.DAY_OF_YEAR, -1)
+                val todayStr = dateFmt.format(Date())
+                val week = (0 until 7).map { offset ->
+                    val dayCal = cal.clone() as Calendar
+                    dayCal.add(Calendar.DAY_OF_YEAR, offset)
+                    val dayStr = dateFmt.format(dayCal.time)
+                    when {
+                        dayStr > todayStr -> null // hasn't happened yet
+                        completedDates.contains(dayStr) -> true
+                        else -> false
+                    }
+                }
+                _weekPattern.value = week
+
+                // Monthly trend: last 4 calendar months, oldest first.
+                val monthFmt = SimpleDateFormat("yyyy-MM", Locale.getDefault())
+                val monthLabelFmt = SimpleDateFormat("MMM", Locale.getDefault())
+                val monthCal = Calendar.getInstance()
+                monthCal.add(Calendar.MONTH, -3)
+                val trend = (0 until 4).map {
+                    val key = monthFmt.format(monthCal.time)
+                    val label = monthLabelFmt.format(monthCal.time)
+                    val daysInMonth = monthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                    val keptThisMonth = completedDates.count { it.startsWith(key) }
+                    val rate = (keptThisMonth.toFloat() / daysInMonth.toFloat()).coerceIn(0f, 1f)
+                    monthCal.add(Calendar.MONTH, 1)
+                    label to rate
+                }
+                _monthlyTrend.value = trend
+            }
+        }
     }
 
     private fun loadUser() {
@@ -122,6 +185,27 @@ class StreakViewModel(
                 streakFreezes = newFreezes
             ))
         }
+
+        // Record today's completion for the per-day history (weekly/monthly charts, calendar).
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(now))
+        viewModelScope.launch {
+            streakDao?.insertStreak(
+                StreakEntity(
+                    streakId = "$uid-$today",
+                    userId = uid,
+                    date = today,
+                    completed = true,
+                    timestamp = now,
+                    syncStatus = "pending",
+                    lastUpdated = now
+                )
+            )
+        }
+
+        // Reflect the new streak on this user's row in every group they belong to.
+        viewModelScope.launch {
+            groupRepository?.syncMemberStatsToAllGroups(uid, newStreak, today)
+        }
     }
 
     private fun checkStreakBadges(userId: String, streak: Int) {
@@ -178,7 +262,7 @@ class StreakViewModel(
         return when {
             days >= 100 -> Color(0xFFE91E63) // Pink
             days >= 31 -> Color(0xFFFF9800)  // Orange
-            days >= 8 -> ShMatcha           // Green
+            days >= 8 -> ShMatchaLightToken // Green
             else -> Color(0xFFFFC107)        // Yellow
         }
     }

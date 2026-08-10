@@ -24,17 +24,31 @@ import androidx.navigation.NavController
 import com.Shoshin.app.R
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.SupportViewModel
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.delay
 
 @Composable
 fun SupportScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: SupportViewModel? = null
 ) {
     var expandedIndex by remember { mutableIntStateOf(-1) }
     val scrollState = rememberScrollState()
     val context = LocalContext.current
+
+    val feedbackText by viewModel?.feedbackText?.collectAsState() ?: remember { mutableStateOf("") }
+    val isSending by viewModel?.isSending?.collectAsState() ?: remember { mutableStateOf(false) }
+    val sentConfirmation by viewModel?.sentConfirmation?.collectAsState() ?: remember { mutableStateOf(false) }
+
+    LaunchedEffect(sentConfirmation) {
+        if (sentConfirmation) {
+            delay(2500)
+            viewModel?.clearConfirmation()
+        }
+    }
 
     val faqs = listOf(
         "What happens if I miss a morning?" to "Nothing punishing. Your streak resets, but your total mornings kept stays on record. A miss is not a failure — begin again tomorrow.",
@@ -150,6 +164,52 @@ fun SupportScreen(
                                 onToggle = { expandedIndex = if (expandedIndex == i) -1 else i }
                             )
                             if (i < faqs.lastIndex) HorizontalDivider(color = ShNightLine)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                Kicker("SEND US FEEDBACK", color = ShNightMuted)
+                Spacer(Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(ShNight2)
+                        .padding(20.dp)
+                ) {
+                    Column {
+                        androidx.compose.material3.OutlinedTextField(
+                            value = feedbackText,
+                            onValueChange = { viewModel?.updateFeedbackText(it) },
+                            placeholder = { Text("What's working, what isn't...", color = ShNightMuted) },
+                            enabled = !isSending,
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = ShVermillionLight,
+                                unfocusedBorderColor = ShNightLine
+                            )
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(
+                                if (sentConfirmation) "Thanks for the feedback!" else "",
+                                style = ShLabelStyle.copy(fontSize = 12.sp),
+                                color = ShMatchaDark
+                            )
+                            Text("${feedbackText.length}/500", style = ShLabelStyle.copy(fontSize = 12.sp), color = ShNightMuted)
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        ShoshinButton(
+                            onClick = { viewModel?.sendFeedback() },
+                            variant = ShButtonVariant.Accent,
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = feedbackText.isNotBlank() && !isSending
+                        ) {
+                            Text("Send feedback", fontWeight = FontWeight.Bold)
                         }
                     }
                 }

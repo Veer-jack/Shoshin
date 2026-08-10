@@ -34,11 +34,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavController
 import com.Shoshin.app.R
+import com.Shoshin.app.data.ShoshinRepository
 import com.Shoshin.app.data.db.AppDatabase
 import com.Shoshin.app.data.db.entities.PhotoEntity
+import com.Shoshin.app.data.routine.RoutineDefinitions
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.AnalyticsManager
+import com.Shoshin.app.utils.CheckpointNudge
 import com.Shoshin.app.utils.LocationHelper
 import com.Shoshin.app.utils.PhotoStorageManager
 import com.Shoshin.app.utils.VerificationResult
@@ -49,13 +54,15 @@ import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
 import java.util.UUID
 
+private const val MAX_ATTEMPTS = 4
+
 @Composable
 fun CameraVerificationScreen(
     checkpointIndex: Int,
     label: String,
     targetLabels: List<String> = emptyList(),
     onCapture: () -> Unit,
-    onSkip: () -> Unit,
+    navController: NavController,
     database: AppDatabase? = null
 ) {
     var showCamera by remember { mutableStateOf(true) }
@@ -63,10 +70,48 @@ fun CameraVerificationScreen(
     var isUploading by remember { mutableStateOf(false) }
     var isVerifying by remember { mutableStateOf(false) }
     var verificationResult by remember { mutableStateOf<VerificationResult?>(null) }
-    
+    var attemptCount by remember { mutableIntStateOf(0) }
+
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val photoStorageManager = remember(context) { PhotoStorageManager(context) }
+
+    // Randomized hint, sourced from the checkpoint's own hint pool
+    val repo = remember { ShoshinRepository(context) }
+    val templateKey by repo.template.collectAsState(initial = "walk")
+    val checkpointDef = remember(templateKey, checkpointIndex) {
+        RoutineDefinitions.forTemplate(templateKey).getOrNull(checkpointIndex)
+    }
+    var currentHint by remember { mutableStateOf("") }
+    LaunchedEffect(attemptCount, checkpointDef) {
+        val pool = checkpointDef?.hintPool ?: emptyList()
+        if (pool.isNotEmpty()) {
+            val candidates = pool.filterNot { it == currentHint }
+            currentHint = (if (candidates.isNotEmpty()) candidates else pool).random()
+        }
+    }
+
+    // Idle nudge: reminds, never blocks or advances
+    var showNudgeBanner by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        var secondsUntilNudge = CheckpointNudge.INTERVAL_SECONDS
+        while (isActive) {
+            delay(1000)
+            secondsUntilNudge -= 1
+            if (secondsUntilNudge <= 0) {
+                showNudgeBanner = true
+                AnalyticsManager.logCheckpointAlarmTriggered(checkpointIndex)
+                CheckpointNudge.ringAndVibrate(context)
+                secondsUntilNudge = CheckpointNudge.INTERVAL_SECONDS
+            }
+        }
+    }
+    LaunchedEffect(showNudgeBanner) {
+        if (showNudgeBanner) {
+            delay(4000)
+            showNudgeBanner = false
+        }
+    }
 
     if (isUploading) LoadingDialog(message = "Saving proof...")
     if (isVerifying) LoadingDialog(message = "Verifying...")
@@ -76,25 +121,44 @@ fun CameraVerificationScreen(
             if (showCamera) {
                 CameraViewDark(
                     label = label,
+                    hint = currentHint,
+                    attemptCount = attemptCount,
+                    showNudgeBanner = showNudgeBanner,
                     onPhotoCapture = { bitmap ->
                         capturedImage = bitmap
                         showCamera = false
-                        
+
                         if (targetLabels.isNotEmpty()) {
                             isVerifying = true
                             scope.launch {
-                                verificationResult = ImageVerificationManager.verifyImage(bitmap, targetLabels)
+                                attemptCount += 1
+                                var result = ImageVerificationManager.verifyImage(bitmap, targetLabels)
+                                when (result) {
+                                    is VerificationResult.Success -> {
+                                        AnalyticsManager.logPhotoVerificationPassed(result.confidence, attemptCount)
+                                    }
+                                    is VerificationResult.Failure -> {
+                                        if (attemptCount >= MAX_ATTEMPTS) {
+                                            AnalyticsManager.logPhotoAutoAccepted(attemptCount)
+                                            result = VerificationResult.AutoAccepted(attemptCount)
+                                        } else {
+                                            AnalyticsManager.logPhotoVerificationFailed(result.confidence, attemptCount)
+                                        }
+                                    }
+                                    else -> {}
+                                }
+                                verificationResult = result
                                 isVerifying = false
                             }
                         }
-                    },
-                    onSkip = onSkip
+                    }
                 )
             } else {
                 CameraConfirmUIDark(
                     bitmap = capturedImage,
                     label = label,
                     verificationResult = verificationResult,
+                    attemptCount = attemptCount,
                     onRetake = {
                         capturedImage = null
                         showCamera = true
@@ -112,11 +176,12 @@ fun CameraVerificationScreen(
                                     photoStorageManager = photoStorageManager,
                                     latitude = location?.latitude,
                                     longitude = location?.longitude,
-                                    onSuccess = { 
+                                    onSuccess = {
                                         isUploading = false
-                                        onCapture() 
+                                        navController.previousBackStackEntry?.savedStateHandle?.set("checkpoint_completed", true)
+                                        onCapture()
                                     },
-                                    onError = { 
+                                    onError = {
                                         isUploading = false
                                     }
                                 )
@@ -132,8 +197,10 @@ fun CameraVerificationScreen(
 @Composable
 private fun CameraViewDark(
     label: String,
-    onPhotoCapture: (Bitmap) -> Unit,
-    onSkip: () -> Unit
+    hint: String,
+    attemptCount: Int,
+    showNudgeBanner: Boolean,
+    onPhotoCapture: (Bitmap) -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -167,22 +234,44 @@ private fun CameraViewDark(
 
         Column(modifier = Modifier.fillMaxSize().padding(24.dp).statusBarsPadding()) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Surface(color = ShNight2, shape = RoundedCornerShape(999.dp), modifier = Modifier.clickable { }) {
+                Surface(color = ShNight2, shape = RoundedCornerShape(999.dp)) {
                     Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                          Icon(painterResource(R.drawable.ic_camera), null, modifier = Modifier.size(14.dp), tint = Color.White)
                          Spacer(Modifier.width(8.dp))
                          Text("VERIFY CHECKPOINT", style = ShLabelStyle.copy(fontSize = 11.sp, color = Color.White))
                     }
                 }
-                Text("Skip · -1 proof", style = ShLabelStyle.copy(color = ShNightMuted), modifier = Modifier.clickable { onSkip() })
+                if (attemptCount > 0) {
+                    Text("Attempt ${attemptCount + 1} of $MAX_ATTEMPTS", style = ShLabelStyle.copy(color = ShNightMuted))
+                }
             }
-            
+
+            if (showNudgeBanner) {
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(ShAmberNight.copy(alpha = 0.2f))
+                        .padding(14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Take your time. This checkpoint is still open.",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = ShAmberNight,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
             Spacer(Modifier.weight(1f))
-            
+
             Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color.Black.copy(alpha = 0.6f)).padding(24.dp)) {
                 Column {
-                    Kicker("TAKE A PHOTO OF: ${label.uppercase()}", color = ShVermillionLight)
-                    Text(label, style = ShTitleStyle.copy(fontSize = 24.sp, color = Color.White))
+                    Kicker(label.uppercase(), color = ShVermillionLight)
+                    Text(hint.ifEmpty { "Take a photo of: $label" }, style = ShTitleStyle.copy(fontSize = 22.sp, color = Color.White))
                 }
             }
 
@@ -192,7 +281,7 @@ private fun CameraViewDark(
                 IconButton(onClick = { }, modifier = Modifier.size(48.dp).clip(CircleShape).background(ShNight2)) {
                     Icon(painterResource(R.drawable.ic_moon), null, tint = Color.White)
                 }
-                
+
                 Box(
                     modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.White).padding(4.dp).clickable {
                         capturePhoto(context, imageCapture, onPhotoCapture)
@@ -215,6 +304,7 @@ private fun CameraConfirmUIDark(
     bitmap: Bitmap?,
     label: String,
     verificationResult: VerificationResult?,
+    attemptCount: Int,
     onRetake: () -> Unit,
     onConfirm: () -> Unit
 ) {
@@ -238,9 +328,15 @@ private fun CameraConfirmUIDark(
                 Kicker("VERIFICATION SUCCESSFUL", color = ShMatchaDark)
                 Text("Detected: ${verificationResult.label}", style = ShTitleStyle.copy(fontSize = 20.sp, color = Color.White))
             }
+            is VerificationResult.AutoAccepted -> {
+                Kicker("VERIFIED", color = ShMatchaDark)
+                Text("We trust you! 🎯 Moving on...", style = ShTitleStyle.copy(fontSize = 20.sp, color = Color.White))
+            }
             is VerificationResult.Failure -> {
                 Kicker("VERIFICATION FAILED", color = ShVermillionLight)
                 Text(verificationResult.message, style = ShBodyStyle.copy(color = ShNightMuted), textAlign = TextAlign.Center)
+                Spacer(Modifier.height(8.dp))
+                Text("Attempt $attemptCount of $MAX_ATTEMPTS", style = ShLabelStyle, color = ShNightMuted)
             }
             else -> {
                 Kicker("READY TO SAVE", color = ShNightMuted)
@@ -249,12 +345,14 @@ private fun CameraConfirmUIDark(
         }
 
         Spacer(Modifier.height(32.dp))
-        
-        val canConfirm = verificationResult is VerificationResult.Success || verificationResult == null
-        
+
+        val canConfirm = verificationResult is VerificationResult.Success ||
+            verificationResult is VerificationResult.AutoAccepted ||
+            verificationResult == null
+
         ShoshinButton(
-            onClick = onConfirm, 
-            variant = if (canConfirm) ShButtonVariant.Ghost else ShButtonVariant.Dark, 
+            onClick = onConfirm,
+            variant = if (canConfirm) ShButtonVariant.Ghost else ShButtonVariant.Dark,
             modifier = Modifier.fillMaxWidth(),
             enabled = canConfirm
         ) {

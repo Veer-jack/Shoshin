@@ -75,6 +75,7 @@ fun SplashScreen(navController: NavController) {
             contentAlignment = Alignment.Center
         ) {
             // Enso circle motif with animation
+            val ensoColor = ShVermillion
             Box(
                 modifier = Modifier
                     .size(320.dp)
@@ -83,7 +84,7 @@ fun SplashScreen(navController: NavController) {
             ) {
                 androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                     drawArc(
-                        color = ShVermillion.copy(alpha = 0.15f),
+                        color = ensoColor.copy(alpha = 0.15f),
                         startAngle = -90f,
                         sweepAngle = 310f,
                         useCenter = false,
@@ -115,7 +116,7 @@ fun SplashScreen(navController: NavController) {
                 Text(
                     text = "初心",
                     fontSize = 22.sp,
-                    fontFamily = CormorantGaramond,
+                    fontFamily = NotoSerifJP,
                     color = ShVermillion,
                     letterSpacing = 8.sp,
                     modifier = Modifier.padding(top = 8.dp)

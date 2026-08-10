@@ -1,20 +1,46 @@
 package com.Shoshin.app.data.groups
 
+import com.Shoshin.app.R
 import com.Shoshin.app.data.db.dao.GroupDao
 import com.Shoshin.app.data.db.dao.GroupMemberDao
+import com.Shoshin.app.data.db.dao.NotificationDao
 import com.Shoshin.app.data.db.entities.GroupEntity
 import com.Shoshin.app.data.db.entities.GroupMemberEntity
+import com.Shoshin.app.data.db.entities.NotificationEntity
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
 class GroupRepository(
     private val groupDao: GroupDao,
-    private val memberDao: GroupMemberDao
+    private val memberDao: GroupMemberDao,
+    private val notificationDao: NotificationDao? = null
 ) {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
+    /** Local-only echo of the current user's own group action — not seen by other members. */
+    private suspend fun notifyLocal(title: String, body: String) {
+        val uid = auth.currentUser?.uid ?: return
+        notificationDao?.insertNotification(
+            NotificationEntity(
+                notificationId = UUID.randomUUID().toString(),
+                userId = uid,
+                type = "social",
+                title = title,
+                body = body,
+                iconRes = R.drawable.ic_groups,
+                timestamp = System.currentTimeMillis(),
+                isRead = false,
+                syncStatus = "synced"
+            )
+        )
+    }
 
     suspend fun createGroup(name: String, description: String): Result<String> {
         return try {
@@ -65,6 +91,7 @@ class GroupRepository(
                 joinedAt = System.currentTimeMillis()
             ))
 
+            notifyLocal("You created $name", "Your circle is ready. Invite others to join.")
             Result.success(groupId)
         } catch (e: Exception) {
             android.util.Log.e("GroupRepo", "Failed to create group", e)
@@ -141,6 +168,7 @@ class GroupRepository(
                 joinedAt = System.currentTimeMillis()
             ))
 
+            notifyLocal("You joined ${group.name}", "Welcome to the circle.")
             Result.success(groupId)
         } catch (e: Exception) {
             Result.failure(e)
@@ -183,6 +211,17 @@ class GroupRepository(
         }
     }
 
+    suspend fun getGroupByInviteCode(code: String): Result<Group> {
+        return try {
+            val query = db.collection("groups").whereEqualTo("inviteCode", code).get().await()
+            if (query.documents.isEmpty()) return Result.failure(Exception("Invalid invite code"))
+            val group = query.documents.first().toObject(Group::class.java) ?: return Result.failure(Exception("Invalid group"))
+            Result.success(group)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getGroupDetails(groupId: String): Result<Group> {
         return try {
             val doc = db.collection("groups").document(groupId).get().await()
@@ -203,16 +242,37 @@ class GroupRepository(
         }
     }
 
-    suspend fun updateMemberStats(groupId: String, userId: String, streak: Int, activations: Int): Result<Unit> {
-        return try {
-            db.collection("groups").document(groupId).collection("members").document(userId).update(
-                "consistencyStreak", streak,
-                "activations", activations
-            ).await()
-            Result.success(Unit)
+    /** Pushes a user's latest streak/completion to every group they belong to. */
+    suspend fun syncMemberStatsToAllGroups(userId: String, streak: Int, completionDate: String) {
+        try {
+            val query = db.collection("groups").whereArrayContains("members", userId).get().await()
+            for (doc in query.documents) {
+                doc.reference.collection("members").document(userId).update(
+                    mapOf(
+                        "consistencyStreak" to streak,
+                        "lastCompletionDate" to completionDate,
+                        "checkpointsCompleted" to FieldValue.increment(1)
+                    )
+                ).await()
+            }
         } catch (e: Exception) {
-            Result.failure(e)
+            android.util.Log.e("GroupRepo", "Failed to sync member stats", e)
         }
+    }
+
+    /** Live leaderboard: emits an updated, streak-sorted member list on every Firestore change. */
+    fun getGroupMembersFlow(groupId: String): Flow<List<GroupMember>> = callbackFlow {
+        val registration = db.collection("groups").document(groupId).collection("members")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    android.util.Log.e("GroupRepo", "Leaderboard listener error", error)
+                    return@addSnapshotListener
+                }
+                val members = snapshot?.documents?.mapNotNull { it.toObject(GroupMember::class.java) }
+                    ?.sortedByDescending { it.consistencyStreak } ?: emptyList()
+                trySend(members)
+            }
+        awaitClose { registration.remove() }
     }
 
     suspend fun leaveGroup(groupId: String): Result<Unit> {
@@ -230,10 +290,10 @@ class GroupRepository(
             // Remove from group members collection in Firestore
             groupRef.collection("members").document(userId).delete().await()
 
-            // Remove from local DB - ideally we should have a deleteGroup or similar
-            // For now, we don't have a DAO method to delete a group by ID easily without the entity
-            // but we can just leave it there or add a method to DAO.
+            // Remove from local cache
+            groupDao.deleteGroup(groupId)
 
+            notifyLocal("You left ${group.name}", "You can rejoin anytime with the invite code.")
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -262,7 +322,88 @@ class GroupRepository(
             // Delete group in Firestore
             groupRef.delete().await()
 
+            // Remove from local cache
+            groupDao.deleteGroup(groupId)
+
+            notifyLocal("You deleted ${group.name}", "The circle and its members have been removed.")
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** Creator-only: removes a member from the group. */
+    suspend fun removeMember(groupId: String, targetUserId: String): Result<Unit> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not authenticated"))
+
+            val groupRef = db.collection("groups").document(groupId)
+            val groupDoc = groupRef.get().await()
+            val group = groupDoc.toObject(Group::class.java) ?: return Result.failure(Exception("Group not found"))
+
+            if (group.createdBy != userId) {
+                return Result.failure(Exception("Only the creator can remove members"))
+            }
+
+            val newMembers = group.members.filter { it != targetUserId }
+            groupRef.update("members", newMembers).await()
+            groupRef.collection("members").document(targetUserId).delete().await()
+
+            notifyLocal("You removed a member from ${group.name}", "They can rejoin later with a new invite code.")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** Creator-only: updates the group's name/description. */
+    suspend fun updateGroupDetails(groupId: String, name: String, description: String): Result<Unit> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not authenticated"))
+
+            val groupRef = db.collection("groups").document(groupId)
+            val groupDoc = groupRef.get().await()
+            val group = groupDoc.toObject(Group::class.java) ?: return Result.failure(Exception("Group not found"))
+
+            if (group.createdBy != userId) {
+                return Result.failure(Exception("Only the creator can edit the circle"))
+            }
+
+            groupRef.update(mapOf("name" to name, "description" to description)).await()
+
+            val existing = groupDao.getGroup(groupId)
+            if (existing != null) {
+                groupDao.updateGroup(existing.copy(groupName = name, description = description, updated_at = System.currentTimeMillis()))
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** Creator-only: invalidates the current invite code and generates a new one. */
+    suspend fun regenerateInviteCode(groupId: String): Result<String> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not authenticated"))
+
+            val groupRef = db.collection("groups").document(groupId)
+            val groupDoc = groupRef.get().await()
+            val group = groupDoc.toObject(Group::class.java) ?: return Result.failure(Exception("Group not found"))
+
+            if (group.createdBy != userId) {
+                return Result.failure(Exception("Only the creator can regenerate the invite code"))
+            }
+
+            val newCode = UUID.randomUUID().toString().take(6).uppercase()
+            groupRef.update("inviteCode", newCode).await()
+
+            val existing = groupDao.getGroup(groupId)
+            if (existing != null) {
+                groupDao.updateGroup(existing.copy(inviteLinkCode = newCode, updated_at = System.currentTimeMillis()))
+            }
+
+            Result.success(newCode)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -19,6 +19,7 @@ import com.Shoshin.app.data.AuthRepository
 import com.Shoshin.app.data.BadgeRepository
 import com.Shoshin.app.data.FriendRepository
 import com.Shoshin.app.data.ReferralRepository
+import com.Shoshin.app.data.RoutineRepository
 import com.Shoshin.app.data.UserLimitsRepository
 import com.Shoshin.app.data.user.UserRepository
 import com.Shoshin.app.GoogleAuthManager
@@ -58,8 +59,10 @@ fun ShoshinNavGraph(
     val referralRepository = remember { ReferralRepository(database.userLimitsDao(), firestore) }
     val limitsRepository = remember { UserLimitsRepository(database.userLimitsDao(), firestore) }
     val contactsRepository = remember { com.Shoshin.app.data.ContactsRepository(context) }
-    val groupRepository = remember { com.Shoshin.app.data.groups.GroupRepository(database.groupDao(), database.groupMemberDao()) }
-    
+    val groupRepository = remember { com.Shoshin.app.data.groups.GroupRepository(database.groupDao(), database.groupMemberDao(), database.notificationDao()) }
+    val routineRepository = remember { RoutineRepository(database.routineCheckpointDao(), firestore) }
+    val feedbackRepository = remember { com.Shoshin.app.data.FeedbackRepository(database.feedbackDao(), firestore) }
+
     val onboardingViewModel = viewModel<OnboardingViewModel>(factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -70,7 +73,7 @@ fun ShoshinNavGraph(
     val streakViewModel = viewModel<StreakViewModel>(factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return StreakViewModel(userRepository, badgeRepository) as T
+            return StreakViewModel(userRepository, badgeRepository, database.streakDao(), groupRepository) as T
         }
     })
 
@@ -91,7 +94,7 @@ fun ShoshinNavGraph(
     val groupStatsViewModel = viewModel<GroupStatsViewModel>(factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return GroupStatsViewModel(database.groupDao()) as T
+            return GroupStatsViewModel(groupRepository) as T
         }
     })
 
@@ -396,20 +399,29 @@ fun ShoshinNavGraph(
             val streak = backStackEntry.arguments?.getInt("streak") ?: 0
             val habitName = backStackEntry.arguments?.getString("habitName") ?: "Morning Routine"
             val startDate = backStackEntry.arguments?.getLong("startDate") ?: 0L
-            
+
             val shareViewModel = viewModel<ShareViewModel>(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return ShareViewModel(context.applicationContext as android.app.Application) as T
                 }
             })
-            
+
+            val shareUser = streakViewModel.user.value
+            val consistencyPercent = if (shareUser != null && shareUser.totalActivations > 0) {
+                val daysSinceCreation = ((System.currentTimeMillis() - shareUser.createdAt) / (1000 * 60 * 60 * 24)).coerceAtLeast(1)
+                ((shareUser.totalActivations.toFloat() / daysSinceCreation.toFloat()) * 100).toInt().coerceIn(0, 100)
+            } else {
+                0
+            }
+
             ShareScreen(
                 navController = navController,
                 viewModel = shareViewModel,
                 streak = streak,
                 habitName = habitName,
-                startDate = startDate
+                startDate = startDate,
+                consistencyPercent = consistencyPercent
             )
         }
 
@@ -523,7 +535,13 @@ fun ShoshinNavGraph(
             enterTransition  = { slideInHorizontally(tween(320)) { it } },
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) {
-            RoutineEditorScreen(navController = navController)
+            val routineEditorViewModel = viewModel<RoutineEditorViewModel>(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return RoutineEditorViewModel(routineRepository, shoshinRepository, userRepository.userId) as T
+                }
+            })
+            RoutineEditorScreen(navController = navController, viewModel = routineEditorViewModel)
         }
 
         // ── Sound Picker ──────────────────────────────────────
@@ -541,21 +559,12 @@ fun ShoshinNavGraph(
             enterTransition  = { slideInHorizontally(tween(320)) { it } },
             exitTransition   = { slideOutHorizontally(tween(320)) { -it } },
         ) {
-            HistoryScreen(navController = navController)
-        }
-
-        // ── Paywall ──────────────────────────────────────────
-        composable(
-            route = ShRoutes.PAYWALL,
-            enterTransition  = { slideInVertically(tween(400)) { it } },
-            exitTransition   = { slideOutVertically(tween(300)) { it } },
-        ) {
-            PaywallScreen(navController = navController)
+            HistoryScreen(navController = navController, streakViewModel = streakViewModel)
         }
 
         // ── Broken Streak ─────────────────────────────────────
         composable(ShRoutes.BROKEN_STREAK) {
-            BrokenStreakScreen(navController = navController)
+            BrokenStreakScreen(navController = navController, streakViewModel = streakViewModel)
         }
 
         // ── Returning User ────────────────────────────────────
@@ -594,16 +603,16 @@ fun ShoshinNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupInviteScreen(navController = navController, groupId = groupId)
+            GroupInviteScreen(navController = navController, groupId = groupId, viewModel = groupViewModel)
         }
 
         // ── Group Preview ────────────────────────────────────
         composable(
             route = ShRoutes.GROUP_PREVIEW,
-            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+            arguments = listOf(navArgument("inviteCode") { type = NavType.StringType })
         ) { back ->
-            val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupPreviewScreen(navController = navController, groupId = groupId)
+            val inviteCode = back.arguments?.getString("inviteCode") ?: ""
+            GroupPreviewScreen(navController = navController, inviteCode = inviteCode, viewModel = groupViewModel)
         }
 
         // ── Group Leaderboard ────────────────────────────────
@@ -612,22 +621,43 @@ fun ShoshinNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupLeaderboardScreen(navController = navController, groupId = groupId, viewModel = groupViewModel)
+            GroupLeaderboardScreen(navController = navController, groupId = groupId, viewModel = groupViewModel, networkMonitor = networkMonitor)
+        }
+
+        // ── Group Stats ──────────────────────────────────────
+        composable(
+            route = ShRoutes.GROUP_STATS,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { back ->
+            val groupId = back.arguments?.getString("groupId") ?: ""
+            GroupStatsScreen(navController = navController, groupId = groupId, viewModel = groupStatsViewModel)
         }
 
         // ── Support ──────────────────────────────────────────
         composable(ShRoutes.SUPPORT) {
-            SupportScreen(navController = navController)
+            val supportViewModel = viewModel<SupportViewModel>(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return SupportViewModel(feedbackRepository) as T
+                }
+            })
+            SupportScreen(navController = navController, viewModel = supportViewModel)
         }
 
         // ── Notifications ────────────────────────────────────
         composable(ShRoutes.NOTIFICATIONS) {
-            NotificationsScreen(navController = navController)
+            NotificationsScreen(navController = navController, networkMonitor = networkMonitor)
         }
 
         // ── Data Privacy ─────────────────────────────────────
         composable(ShRoutes.DATA_PRIVACY) {
-            DataPrivacyScreen(navController = navController)
+            val settingsViewModelForPrivacy = viewModel<SettingsViewModel>(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return SettingsViewModel(userRepository, shoshinRepository, firebaseAuth) as T
+                }
+            })
+            DataPrivacyScreen(navController = navController, viewModel = settingsViewModelForPrivacy)
         }
 
         // ── Badge Unlock ─────────────────────────────────────
@@ -681,7 +711,7 @@ fun ShoshinNavGraph(
                 label           = label,
                 targetLabels    = targets,
                 onCapture = { navController.popBackStack() }, // return to Checkpoint
-                onSkip    = { navController.popBackStack() },
+                navController = navController,
                 database = database
             )
         }
@@ -701,6 +731,13 @@ fun ShoshinNavGraph(
                         popUpTo(ShRoutes.CHECKPOINT) { inclusive = true }
                     }
                 },
+                onForfeit = {
+                    navController.navigate(ShRoutes.MAIN) {
+                        popUpTo(ShRoutes.CHECKPOINT) { inclusive = true }
+                    }
+                },
+                navController = navController,
+                database = database,
                 streakViewModel = streakViewModel
             )
         }

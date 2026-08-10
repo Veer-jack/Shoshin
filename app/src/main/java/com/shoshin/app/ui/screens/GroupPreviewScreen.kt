@@ -25,14 +25,15 @@ import com.Shoshin.app.viewmodel.GroupViewModel
 @Composable
 fun GroupPreviewScreen(
     navController: NavController,
-    groupId: String,
+    inviteCode: String,
     viewModel: GroupViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val group by viewModel.currentGroup.collectAsState()
+    val members by viewModel.groupMembers.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    
-    LaunchedEffect(groupId) {
-        viewModel.loadGroupMembers(groupId) // This also loads group details
+
+    LaunchedEffect(inviteCode) {
+        viewModel.loadGroupPreviewByCode(inviteCode)
     }
 
     Column(
@@ -105,13 +106,34 @@ fun GroupPreviewScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PreviewStat(value = "86%", label = "GROUP CONSISTENCY")
-                PreviewStat(value = "22", label = "AVG STREAK")
+            if (members.isNotEmpty()) {
+                Kicker("TOP OF THE CIRCLE", color = ShFog)
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(ShPaper2)
+                ) {
+                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                        members.take(3).forEachIndexed { index, m ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("#${index + 1}", style = ShLabelStyle, color = ShFog, modifier = Modifier.width(28.dp))
+                                Text(m.name, style = ShH2Style.copy(fontSize = 15.sp, color = ShInk), modifier = Modifier.weight(1f))
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(painterResource(R.drawable.ic_flame), null, modifier = Modifier.size(12.dp), tint = ShVermillion)
+                                    Text("${m.consistencyStreak}", style = ShNumeralStyle.copy(fontSize = 14.sp, color = ShInk))
+                                }
+                            }
+                            if (index < minOf(members.size, 3) - 1) {
+                                HorizontalDivider(color = ShLine, modifier = Modifier.padding(horizontal = 20.dp))
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.weight(1f))
@@ -139,13 +161,5 @@ fun GroupPreviewScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun PreviewStat(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = ShNumeralStyle.copy(fontSize = 36.sp, color = ShInk))
-        Text(label, style = ShKickerStyle.copy(fontSize = 9.sp, letterSpacing = 1.sp), color = ShFog)
     }
 }

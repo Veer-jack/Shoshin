@@ -115,14 +115,7 @@ fun SettingsScreen(
                             title = "Profile details",
                             subtitle = u.phone ?: u.email,
                             iconRes = R.drawable.ic_user,
-                            onClick = { /* Navigate to profile edit */ }
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingsRow(
-                            title = "Shoshin Pro",
-                            subtitle = "Renews 12 Jul",
-                            iconRes = R.drawable.ic_shield,
-                            onClick = { /* Navigate to pro */ }
+                            onClick = { navController.navigate(ShRoutes.EDIT_PROFILE) }
                         )
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
                         SettingsRow(
@@ -178,6 +171,21 @@ fun SettingsScreen(
                             checked = true,
                             onCheckedChange = { },
                             iconRes = R.drawable.ic_droplet
+                        )
+                    }
+
+                    // SUPPORT & PRIVACY
+                    SettingsSection(title = "SUPPORT & PRIVACY") {
+                        SettingsRow(
+                            title = "Help & Support",
+                            iconRes = R.drawable.ic_help,
+                            onClick = { navController.navigate(ShRoutes.SUPPORT) }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsRow(
+                            title = "Privacy & Data",
+                            iconRes = R.drawable.ic_shield,
+                            onClick = { navController.navigate(ShRoutes.DATA_PRIVACY) }
                         )
                     }
 

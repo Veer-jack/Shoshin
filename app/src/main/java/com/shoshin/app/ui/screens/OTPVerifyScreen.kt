@@ -68,6 +68,10 @@ fun OTPVerifyScreen(
                     isSending = false
                     resendCooldown = 60
                 },
+                onAutoVerified = { userId ->
+                    isSending = false
+                    onSuccess(userId, phone, referralCode)
+                },
                 onError = { e ->
                     errorMessage = ErrorHandler.mapFirebaseError(e)
                     isSending = false
@@ -91,9 +95,10 @@ fun OTPVerifyScreen(
         LoadingDialog(message = "Verifying...")
     }
 
+    val onBackgroundColor = MaterialTheme.colorScheme.onBackground
     val subtitleText = buildAnnotatedString {
         append("Sent to ")
-        withStyle(style = ShBodyStyle.toSpanStyle().copy(fontWeight = FontWeight.Bold, color = ShInk)) {
+        withStyle(style = ShBodyStyle.toSpanStyle().copy(fontWeight = FontWeight.Bold, color = onBackgroundColor)) {
             append("+91 $phone")
         }
     }
@@ -134,104 +139,112 @@ fun OTPVerifyScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            Box(modifier = Modifier.statusBarsPadding().padding(horizontal = 8.dp, vertical = 8.dp)) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
-                }
-            }
-        },
-        containerColor = ShPaper
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(Modifier.height(32.dp))
-
-            Text(
-                text = "Enter the code",
-                style = ShTitleStyle.copy(fontSize = 32.sp),
-                color = ShInk,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Start
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = subtitleText,
-                style = ShBodyStyle.copy(fontSize = 14.sp, color = ShFog),
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Start
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            ShoshinOtpBoxes(
-                value = code,
-                length = 6,
-                dark = true, // Dark boxes as per screenshot
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(text = "Didn’t receive it? ", style = ShLabelStyle.copy(color = ShFog))
-                Text(
-                    text = if (resendCooldown > 0) {
-                        "Resend in 0:${String.format(java.util.Locale.US, "%02d", resendCooldown)}"
-                    } else {
-                        "Resend"
-                    },
-                    style = ShLabelStyle.copy(color = ShVermillion, fontWeight = FontWeight.Bold),
-                    modifier = Modifier.clickable(enabled = resendCooldown == 0) {
-                        if (resendCooldown == 0 && !isSending && !isLoading) {
-                            errorMessage = ""
-                            successMessage = ""
-                            isSending = true
-                            phoneAuthManager.resendOTP(
-                                phone = phone,
-                                activity = activity!!,
-                                onCodeSent = {
-                                    isSending = false
-                                    resendCooldown = 60
-                                    successMessage = "New code sent!"
-                                },
-                                onError = { e ->
-                                    errorMessage = ErrorHandler.mapFirebaseError(e)
-                                    isSending = false
-                                }
-                            )
-                        }
+    ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
+        val isDark = MaterialTheme.colorScheme.background == ShNight
+        
+        Scaffold(
+            topBar = {
+                Box(modifier = Modifier.statusBarsPadding().padding(horizontal = 8.dp, vertical = 8.dp)) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
-                )
-            }
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(32.dp))
 
-            if (errorMessage.isNotEmpty()) {
                 Text(
-                    text = errorMessage,
-                    color = MaterialTheme.colorScheme.error,
-                    style = ShLabelStyle,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    text = "Enter the code",
+                    style = ShTitleStyle.copy(fontSize = 32.sp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = subtitleText,
+                    style = ShBodyStyle.copy(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start
+                )
+
+                Spacer(modifier = Modifier.height(48.dp))
+
+                ShoshinOtpBoxes(
+                    value = code,
+                    length = 6,
+                    dark = isDark, // Use isDark to determine styling
+                    isError = errorMessage.isNotEmpty(),
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(text = "Didn’t receive it? ", style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                    Text(
+                        text = if (resendCooldown > 0) {
+                            "Resend in 0:${String.format(java.util.Locale.US, "%02d", resendCooldown)}"
+                        } else {
+                            "Resend"
+                        },
+                        style = ShLabelStyle.copy(color = ShVermillion, fontWeight = FontWeight.Bold),
+                        modifier = Modifier.clickable(enabled = resendCooldown == 0) {
+                            if (resendCooldown == 0 && !isSending && !isLoading) {
+                                errorMessage = ""
+                                successMessage = ""
+                                isSending = true
+                                phoneAuthManager.resendOTP(
+                                    phone = phone,
+                                    activity = activity!!,
+                                    onCodeSent = {
+                                        isSending = false
+                                        resendCooldown = 60
+                                        successMessage = "New code sent!"
+                                    },
+                                    onAutoVerified = { userId ->
+                                        isSending = false
+                                        onSuccess(userId, phone, referralCode)
+                                    },
+                                    onError = { e ->
+                                        errorMessage = ErrorHandler.mapFirebaseError(e)
+                                        isSending = false
+                                    }
+                                )
+                            }
+                        }
+                    )
+                }
+
+                if (errorMessage.isNotEmpty()) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = ShLabelStyle,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                ShoshinKeypad(
+                    onDigit = { if (code.length < 6) code += it },
+                    onClear = { if (code.isNotEmpty()) code = code.dropLast(1) },
+                    onOk = { onVerify() },
+                    modifier = Modifier.padding(bottom = 24.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            ShoshinKeypad(
-                onDigit = { if (code.length < 6) code += it },
-                onClear = { if (code.isNotEmpty()) code = code.dropLast(1) },
-                onOk = { onVerify() },
-                dark = false,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
         }
     }
 }

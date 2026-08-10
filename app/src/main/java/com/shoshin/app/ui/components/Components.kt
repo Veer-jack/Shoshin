@@ -1,6 +1,8 @@
 package com.Shoshin.app.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,6 +27,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.painterResource
 import com.Shoshin.app.R
 import com.Shoshin.app.ui.theme.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 // ── ShoshinKeypad ─────────────────────────────────────────────
 @Composable
@@ -30,10 +36,13 @@ fun ShoshinKeypad(
     onDigit: (String) -> Unit,
     onClear: () -> Unit,
     onOk: () -> Unit,
-    modifier: Modifier = Modifier,
-    dark: Boolean = true
+    modifier: Modifier = Modifier
 ) {
     val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "ok")
+    val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    var okExecuting by remember { mutableStateOf(false) }
+
     Column(modifier = modifier) {
         keys.chunked(3).forEach { row ->
             Row(
@@ -46,22 +55,48 @@ fun ShoshinKeypad(
                     val isOk = k == "ok"
                     val isDel = k == "del"
                     
+                    val keyInteractionSource = remember { MutableInteractionSource() }
+                    val isKeyPressed by keyInteractionSource.collectIsPressedAsState()
+                    val keyScale by animateFloatAsState(
+                        targetValue = if (isKeyPressed || (isOk && okExecuting)) 0.96f else 1f,
+                        animationSpec = tween(100),
+                        label = "key_scale"
+                    )
+
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .height(64.dp)
+                            .scale(keyScale)
                             .clip(RoundedCornerShape(12.dp))
                             .background(
                                 when {
                                     isOk -> ShVermillion
-                                    dark -> ShPaper2 // Consistent dark gray box
-                                    else -> ShPaper2
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
                                 }
                             )
-                            .clickable {
+                            .then(
+                                if (isOk && (isKeyPressed || okExecuting)) 
+                                    Modifier.shShadow(ShShadowLevel.Small, RoundedCornerShape(12.dp))
+                                else Modifier
+                            )
+                            .clickable(
+                                interactionSource = keyInteractionSource,
+                                indication = LocalIndication.current
+                            ) {
                                 when (k) {
                                     "del" -> onClear()
-                                    "ok" -> onOk()
+                                    "ok" -> {
+                                        if (!okExecuting) {
+                                            scope.launch {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                okExecuting = true
+                                                delay(150)
+                                                onOk()
+                                                okExecuting = false
+                                            }
+                                        }
+                                    }
                                     else -> onDigit(k)
                                 }
                             },
@@ -71,7 +106,7 @@ fun ShoshinKeypad(
                             isDel -> Icon(
                                 painter = painterResource(id = R.drawable.ic_backspace),
                                 contentDescription = "Delete",
-                                tint = if (dark) Color.White else ShInk,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(24.dp)
                             )
                             isOk -> Icon(
@@ -85,7 +120,7 @@ fun ShoshinKeypad(
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = DmSansFamily,
-                                color = if (dark) Color.White else ShInk
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -101,15 +136,16 @@ fun ShoshinCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val shape = RoundedCornerShape(20.dp)
     Card(
-        modifier = modifier,
-        shape    = RoundedCornerShape(20.dp),
+        modifier = modifier.shShadow(ShShadowLevel.Medium, shape),
+        shape    = shape,
         colors   = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
         border   = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(content = content)
     }
@@ -265,13 +301,24 @@ fun RingProgress(
 ) {
     val finalColor = if (color == ShInk) MaterialTheme.colorScheme.onBackground else color
     val finalTrackColor = if (trackColor == ShSand) MaterialTheme.colorScheme.surfaceVariant else trackColor
-    
+
+    // Draws in from 0 on mount and eases to the new value on change, per motion spec (900ms, never re-animates on plain re-render)
+    val reducedMotion = rememberReducedMotion()
+    val animatedPercentage by animateFloatAsState(
+        targetValue = percentage.toFloat(),
+        animationSpec = androidx.compose.animation.core.tween(
+            if (reducedMotion) 0 else 900,
+            easing = androidx.compose.animation.core.FastOutSlowInEasing,
+        ),
+        label = "ring_progress"
+    )
+
     Box(
         modifier = Modifier.size(size.dp),
         contentAlignment = Alignment.Center
     ) {
         androidx.compose.foundation.Canvas(modifier = Modifier.size(size.dp)) {
-            val sweepAngle = (percentage / 100f) * 360f
+            val sweepAngle = (animatedPercentage / 100f) * 360f
             drawArc(
                 color = finalTrackColor,
                 startAngle = -90f,
@@ -410,40 +457,63 @@ fun ShoshinButton(
     content: @Composable RowScope.() -> Unit
 ) {
     val isPressed by interactionSource.collectIsPressedAsState()
+    val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    var isExecuting by remember { mutableStateOf(false) }
+
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.985f else 1f,
+        targetValue = if (isPressed || isExecuting) 0.985f else 1f,
         animationSpec = androidx.compose.animation.core.tween(120),
         label = "button_scale",
     )
 
+    val isDark = MaterialTheme.colorScheme.background == ShNight
+
     val defaultContainerColor = when (variant) {
-        ShButtonVariant.Primary -> MaterialTheme.colorScheme.onBackground
+        ShButtonVariant.Primary -> if (!isDark) Color.White else ShNightText
         ShButtonVariant.Accent -> ShVermillion
-        ShButtonVariant.Ghost -> Color.White
-        ShButtonVariant.Dark -> ShInk.copy(alpha = 0.5f)
+        ShButtonVariant.Ghost -> MaterialTheme.colorScheme.surface
+        ShButtonVariant.Dark -> ShNight2
         ShButtonVariant.Matcha -> ShMatcha
     }
     
-    val containerColor = if (isPressed && pressedColor != null) pressedColor else defaultContainerColor
+    val containerColor = if ((isPressed || isExecuting) && pressedColor != null) pressedColor else defaultContainerColor
 
     val contentColor = when (variant) {
-        ShButtonVariant.Primary -> MaterialTheme.colorScheme.background
+        ShButtonVariant.Primary -> if (!isDark) ShInk else ShNight
         ShButtonVariant.Accent -> Color.White
         ShButtonVariant.Ghost -> MaterialTheme.colorScheme.onBackground
-        ShButtonVariant.Dark -> MaterialTheme.colorScheme.onSurface
+        ShButtonVariant.Dark -> Color.White
         ShButtonVariant.Matcha -> Color.White
     }
-    val border = if (variant == ShButtonVariant.Ghost) {
+    val border = if (variant == ShButtonVariant.Ghost || (variant == ShButtonVariant.Primary && !isDark)) {
         androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
     } else if (variant == ShButtonVariant.Dark) {
         androidx.compose.foundation.BorderStroke(1.dp, ShNightBorder)
     } else null
 
+    val shadowLevel = when {
+        isPressed || isExecuting -> ShShadowLevel.Medium
+        variant == ShButtonVariant.Ghost || (variant == ShButtonVariant.Primary && !isDark) -> ShShadowLevel.Small
+        else -> null
+    }
+
     Button(
-        onClick = onClick,
+        onClick = {
+            if (!isExecuting && enabled) {
+                scope.launch {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    isExecuting = true
+                    delay(150)
+                    onClick()
+                    isExecuting = false
+                }
+            }
+        },
         modifier = modifier
             .height(56.dp)
-            .scale(scale),
+            .scale(scale)
+            .then(if (shadowLevel != null) Modifier.shShadow(shadowLevel, RoundedCornerShape(14.dp)) else Modifier),
         enabled = enabled,
         shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
@@ -533,6 +603,58 @@ fun EdgeLayout(
             ) {
                 Text(actionLabel)
             }
+        }
+    }
+}
+
+// ── ConfettiBurst (celebration moments, motion spec §3.3) ─────
+// 8-12 small vermillion/matcha dots, radiate + fade, 800ms, one-shot.
+// Respects reduced motion (skipped entirely — decorative only).
+@Composable
+fun ConfettiBurst(
+    trigger: Boolean,
+    modifier: Modifier = Modifier,
+    particleCount: Int = 10,
+) {
+    if (rememberReducedMotion()) return
+
+    val progress = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(trigger) {
+        if (trigger) {
+            progress.snapTo(0f)
+            progress.animateTo(
+                1f,
+                animationSpec = androidx.compose.animation.core.tween(
+                    800,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing,
+                ),
+            )
+        }
+    }
+
+    val particles = remember {
+        List(particleCount) {
+            val angle = kotlin.random.Random.nextFloat() * (2 * Math.PI).toFloat()
+            val distance = 70f + kotlin.random.Random.nextFloat() * 50f
+            Triple(angle, distance, it % 2 == 0)
+        }
+    }
+
+    androidx.compose.foundation.Canvas(modifier = modifier.fillMaxSize()) {
+        val progressValue = progress.value
+        if (progressValue <= 0f) return@Canvas
+        val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+        val alpha = (1f - progressValue).coerceIn(0f, 1f)
+        particles.forEach { (angle, distance, isVermillion) ->
+            val r = distance.dp.toPx() * progressValue
+            drawCircle(
+                color = (if (isVermillion) ShVermillionLight else ShMatchaLightToken).copy(alpha = alpha),
+                radius = 3.dp.toPx(),
+                center = androidx.compose.ui.geometry.Offset(
+                    center.x + kotlin.math.cos(angle) * r,
+                    center.y + kotlin.math.sin(angle) * r,
+                ),
+            )
         }
     }
 }

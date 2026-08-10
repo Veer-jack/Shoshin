@@ -1,5 +1,6 @@
 package com.Shoshin.app.navigation
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -7,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -92,14 +94,15 @@ fun ShoshinMainShell(
             }
 
             composable(ShRoutes.CONSISTENCY) {
-                ConsistencyScreen(navController = rootNavController, streakViewModel = streakViewModel)
+                ConsistencyScreen(navController = rootNavController, streakViewModel = streakViewModel, networkMonitor = networkMonitor)
             }
 
             composable(ShRoutes.GROUPS) {
                 GroupsScreen(
                     navController = rootNavController,
                     referralViewModel = referralViewModel,
-                    groupViewModel = groupViewModel
+                    groupViewModel = groupViewModel,
+                    networkMonitor = networkMonitor
                 )
             }
 
@@ -125,14 +128,16 @@ fun ShoshinBottomBar(
     onTabSelected: (ShTab) -> Unit,
     onFabClick: () -> Unit
 ) {
+    val isDark = MaterialTheme.colorScheme.background == ShNight
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
     ) {
-        // Custom Bar Surface - Design Spec: rgba(250,249,246,0.86)
+        // Custom Bar Surface - Design Spec: rgba(250,249,246,0.86) light / rgba(15,15,15,0.86) dark
         Surface(
-            color = ShPaper.copy(alpha = 0.86f),
+            color = (if (isDark) ShPaperDark else ShPaperLight).copy(alpha = 0.86f),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
@@ -140,19 +145,20 @@ fun ShoshinBottomBar(
             tonalElevation = 0.dp
         ) {
             Column {
-                HorizontalDivider(color = ShLine, thickness = 1.dp)
+                HorizontalDivider(color = if (isDark) ShLineDark else ShLineLight, thickness = 1.dp)
                 Row(
                     modifier = Modifier.fillMaxSize().navigationBarsPadding(),
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val tabs = ShTab.entries
-                    
+
                     // Left 2 tabs: Home, Progress
                     tabs.take(2).forEach { tab ->
                         BottomNavItem(
                             tab = tab,
                             isSelected = currentRoute == tab.route,
+                            isDark = isDark,
                             onClick = { onTabSelected(tab) }
                         )
                     }
@@ -165,6 +171,7 @@ fun ShoshinBottomBar(
                         BottomNavItem(
                             tab = tab,
                             isSelected = currentRoute == tab.route,
+                            isDark = isDark,
                             onClick = { onTabSelected(tab) }
                         )
                     }
@@ -173,6 +180,7 @@ fun ShoshinBottomBar(
         }
 
         // Floating FAB - Design Spec: 56dp circle, ShVermillion, margin-top: -26dp
+        // Dark override: border-color var(--sh-paper) to separate it from the dark bar
         FloatingActionButton(
             onClick = onFabClick,
             containerColor = ShVermillion,
@@ -181,10 +189,20 @@ fun ShoshinBottomBar(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .offset(y = (-26).dp)
-                .size(56.dp),
+                .size(56.dp)
+                .shadow(
+                    elevation = 8.dp,
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    ambientColor = ShFabShadow,
+                    spotColor = ShFabShadow
+                )
+                .then(
+                    if (isDark) Modifier.border(1.5.dp, ShPaperDark, androidx.compose.foundation.shape.CircleShape)
+                    else Modifier
+                ),
             elevation = FloatingActionButtonDefaults.elevation(
-                defaultElevation = 8.dp,
-                pressedElevation = 4.dp
+                defaultElevation = 0.dp, // shadow handled by the custom ShFabShadow modifier above
+                pressedElevation = 0.dp
             )
         ) {
             Icon(
@@ -200,8 +218,12 @@ fun ShoshinBottomBar(
 fun BottomNavItem(
     tab: ShTab,
     isSelected: Boolean,
+    isDark: Boolean = false,
     onClick: () -> Unit
 ) {
+    val activeColor = if (isDark) ShInkDark else ShInkLight
+    val inactiveColor = if (isDark) ShFog2Dark else ShFog2Light
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -215,7 +237,7 @@ fun BottomNavItem(
         Icon(
             painter = painterResource(if (isSelected) tab.activeIconRes else tab.iconRes),
             contentDescription = tab.label,
-            tint = if (isSelected) ShInk else ShFog2,
+            tint = if (isSelected) activeColor else inactiveColor,
             modifier = Modifier.size(24.dp)
         )
         Spacer(Modifier.height(4.dp))
@@ -225,7 +247,7 @@ fun BottomNavItem(
                 fontSize = 10.sp,
                 letterSpacing = 1.sp, // Reduced letter spacing for small labels
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) ShInk else ShFog2
+                color = if (isSelected) activeColor else inactiveColor
             )
         )
     }

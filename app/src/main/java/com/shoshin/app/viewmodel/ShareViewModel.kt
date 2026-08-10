@@ -46,7 +46,7 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun generatePreview(streak: Int, habitName: String, startDate: Long) {
+    fun generatePreview(streak: Int, habitName: String, startDate: Long, consistencyPercent: Int = 0) {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.Default) {
             val dateStr = if (startDate > 0) SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(startDate)) else "January 1, 2024"
             val bitmap = when (_selectedStyle.value) {
@@ -58,14 +58,14 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 "ring" -> cardGenerator.generateCard(
                     cardStyle = "ring",
-                    mainValue = "86%",
-                    subValue = "Top 8% of early risers this month.",
+                    mainValue = "$consistencyPercent%",
+                    subValue = "of mornings kept since I started.",
                     kicker = "CONSISTENCY"
                 )
                 "badge" -> cardGenerator.generateCard(
                     cardStyle = "badge",
-                    mainValue = "Early riser",
-                    subValue = "Five mornings before 6 AM, in a row.",
+                    mainValue = habitName,
+                    subValue = if (streak == 1) "Earned it." else "Earned after $streak days of practice.",
                     kicker = "EARNED"
                 )
                 else -> cardGenerator.generateStreakCard(
