@@ -186,45 +186,6 @@ fun ProfileScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(16.dp))
-
-                    // 71-Day Discipline Card
-                    ShoshinCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                            .clickable { navController.navigate(ShRoutes.DISCIPLINE_71) }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val disciplineProgress = (currentStreak.toFloat() / 71f * 100f).coerceIn(0f, 100f).toInt()
-                            
-                            Box(contentAlignment = Alignment.Center) {
-                                RingProgress(
-                                    percentage = disciplineProgress,
-                                    size = 64,
-                                    strokeWidth = 5f,
-                                    valueText = "",
-                                    color = ShVermillion,
-                                    trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                                )
-                            }
-                            
-                            Spacer(Modifier.width(20.dp))
-                            
-                            Column(modifier = Modifier.weight(1f)) {
-                                Kicker("IN PROGRESS", color = ShVermillion)
-                                Text("71-Day Discipline", style = ShH2Style.copy(fontSize = 18.sp), color = MaterialTheme.colorScheme.onSurface)
-                                val dayText = if (currentStreak <= 71) "Day $currentStreak · Practice phase" else "Goal Achieved"
-                                Text(dayText, style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            
-                            Icon(painterResource(R.drawable.ic_arrow_right), null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(24.dp))
-                        }
-                    }
-
                     Spacer(Modifier.height(32.dp))
 
                     // Marks of Practice Section

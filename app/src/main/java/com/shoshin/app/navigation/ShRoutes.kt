@@ -30,8 +30,6 @@ object ShRoutes {
     // Tab: Progress
     const val CONSISTENCY     = "progress/consistency"
     const val HISTORY         = "progress/history"
-    const val CHALLENGE_21    = "progress/21day"
-    const val DISCIPLINE_71   = "progress/71day"
 
     // Tab: Groups
     const val GROUPS          = "groups"
@@ -50,9 +48,8 @@ object ShRoutes {
     const val NOTIFICATIONS   = "notifications"
     const val DATA_PRIVACY    = "data_privacy"
     const val BROKEN_STREAK   = "broken_streak"
-    const val RETURNING_USER  = "returning_user"
+    const val RETURNING_USER  = "returning_user/{lastOpenDate}"
     const val STREAK_SHARE    = "streak_share/{streak}/{habitName}/{startDate}"
-    const val BADGE_UNLOCK    = "badge_unlock/{badgeId}"
     const val BADGES          = "badges"
     const val BADGE_DETAIL    = "badge_detail/{badgeId}"
     const val ALL_FRIENDS     = "friends/all"
@@ -76,7 +73,6 @@ object ShRoutes {
     fun cameraVerify(idx: Int, label: String, targets: List<String> = emptyList()) = 
         "morning/camera/$idx/${java.net.URLEncoder.encode(label, "UTF-8")}?targets=${targets.joinToString(",")}"
     fun streakShare(streak: Int, habit: String, start: Long) = "streak_share/$streak/${java.net.URLEncoder.encode(habit, "UTF-8")}/$start"
-    fun badgeUnlock(badgeId: String) = "badge_unlock/$badgeId"
     fun badgeDetail(badgeId: String) = "badge_detail/$badgeId"
     fun friendProfile(userId: String) = "friend_profile/$userId"
     fun groupInvite(groupId: String) = "group_invite/$groupId"
@@ -84,4 +80,5 @@ object ShRoutes {
     fun groupLeaderboard(groupId: String) = "group_leaderboard/$groupId"
     fun groupDetail(groupId: String) = "group_detail/$groupId"
     fun groupStats(groupId: String) = "group_stats/$groupId"
+    fun returningUser(lastOpenDate: Long) = "returning_user/$lastOpenDate"
 }

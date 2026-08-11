@@ -95,13 +95,6 @@ object AnalyticsManager {
         logEvent("streak_milestone_reached", bundle)
     }
 
-    fun logStreakFreezeUsed(streakPreserved: Int) {
-        val bundle = Bundle().apply {
-            putInt("streak_preserved", streakPreserved)
-        }
-        logEvent("streak_freeze_used", bundle)
-    }
-
     // --- Group Events ---
     fun logGroupJoined(userType: String, groupSize: Int, joinedCount: Int) {
         val bundle = Bundle().apply {
@@ -179,9 +172,17 @@ object AnalyticsManager {
         logEvent("photo_auto_accepted", bundle)
     }
 
-    fun logStreakReset(reason: String) {
-        val bundle = Bundle().apply { putString("reason", reason) }
+    fun logStreakReset(reason: String, previousStreak: Int = 0) {
+        val bundle = Bundle().apply {
+            putString("reason", reason)
+            putInt("previous_streak", previousStreak)
+        }
         logEvent("streak_reset", bundle)
+    }
+
+    fun logReturningUserShown(daysSinceLastLogin: Int) {
+        val bundle = Bundle().apply { putInt("days_since_last_login", daysSinceLastLogin) }
+        logEvent("returning_user_shown", bundle)
     }
 
     // --- Badge Events ---

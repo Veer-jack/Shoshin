@@ -25,11 +25,16 @@ enum class BadgeRarity {
 
 object BadgeDefinitions {
     val ALL_BADGES = listOf(
-        // Streak Badges
-        Badge("streak_7", "Starter", "Built a 7-day streak", "streak_7", BadgeCategory.STREAK, BadgeRarity.COMMON, "#C0C0C0", "Reach a 7-day streak", 7),
-        Badge("streak_30", "Committed", "Maintained consistency for a month", "streak_30", BadgeCategory.STREAK, BadgeRarity.UNCOMMON, "#FFD700", "Reach a 30-day streak", 30),
-        Badge("streak_100", "Legend", "Achieved 100 days of consistency", "streak_100", BadgeCategory.STREAK, BadgeRarity.RARE, "#E91E63", "Reach a 100-day streak", 100),
-        Badge("streak_365", "Immortal", "One year of unstoppable commitment", "streak_365", BadgeCategory.STREAK, BadgeRarity.LEGENDARY, "#FFC107", "Reach a 365-day streak", 365),
+        // Streak Badges — every 15 days (day 7 is the one-time exception)
+        Badge("streak_7", "Starter", "You're on your way!", "streak_7", BadgeCategory.STREAK, BadgeRarity.COMMON, "#C0C0C0", "Reach a 7-day streak", 7),
+        Badge("streak_15", "Rising", "Momentum building", "streak_15", BadgeCategory.STREAK, BadgeRarity.COMMON, "#B0BEC5", "Reach a 15-day streak", 15),
+        Badge("streak_30", "Committed", "One month strong", "streak_30", BadgeCategory.STREAK, BadgeRarity.UNCOMMON, "#FFD700", "Reach a 30-day streak", 30),
+        Badge("streak_45", "Focused", "Six weeks in!", "streak_45", BadgeCategory.STREAK, BadgeRarity.UNCOMMON, "#FF9800", "Reach a 45-day streak", 45),
+        Badge("streak_60", "Legend", "Two months of brilliance", "streak_60", BadgeCategory.STREAK, BadgeRarity.RARE, "#E91E63", "Reach a 60-day streak", 60),
+        Badge("streak_75", "Elite", "75 days unstoppable", "streak_75", BadgeCategory.STREAK, BadgeRarity.RARE, "#9C27B0", "Reach a 75-day streak", 75),
+        Badge("streak_90", "Immortal", "Three months legend", "streak_90", BadgeCategory.STREAK, BadgeRarity.LEGENDARY, "#FFC107", "Reach a 90-day streak", 90),
+        Badge("streak_105", "Infinite", "Limitless potential", "streak_105", BadgeCategory.STREAK, BadgeRarity.LEGENDARY, "#00BCD4", "Reach a 105-day streak", 105),
+        Badge("streak_120", "Transcendent", "4 months of excellence", "streak_120", BadgeCategory.STREAK, BadgeRarity.LEGENDARY, "#3F51B5", "Reach a 120-day streak", 120),
         
         // Milestone Badges
         Badge("milestone_first", "Beginner", "Completed first checkpoint", "milestone", BadgeCategory.MILESTONE, BadgeRarity.COMMON, "#4A7C59", "Complete your first checkpoint", 1),

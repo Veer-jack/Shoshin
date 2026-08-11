@@ -128,6 +128,7 @@ fun ShoshinNavGraph(
     
     var isGoogleLoading by remember { mutableStateOf(false) }
     var googleAuthError by remember { mutableStateOf<String?>(null) }
+    var returningUserLastOpenDate by remember { mutableStateOf<Long?>(null) }
 
     // Dynamic Navigation based on Auth/Onboarding state
     LaunchedEffect(isLoggedIn, hasCompletedOnboarding) {
@@ -146,32 +147,18 @@ fun ShoshinNavGraph(
             if (navController.currentDestination?.route == ShRoutes.SPLASH ||
                 navController.currentDestination?.route == ShRoutes.AUTH ||
                 navController.currentDestination?.route == ShRoutes.ONBOARDING) {
-                navController.navigate(ShRoutes.MAIN) {
-                    popUpTo(0) { inclusive = true }
+                val pendingReturn = returningUserLastOpenDate
+                if (pendingReturn != null) {
+                    returningUserLastOpenDate = null
+                    navController.navigate(ShRoutes.returningUser(pendingReturn)) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                } else {
+                    navController.navigate(ShRoutes.MAIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             }
-        }
-    }
-
-    // Milestone Auto-Trigger
-    val lastMilestone by streakViewModel.lastMilestoneReached.collectAsState()
-    LaunchedEffect(lastMilestone) {
-        lastMilestone?.let { milestone ->
-            val templateKey = shoshinRepository.template.first()
-            val habitName = when(templateKey) {
-                "study" -> "Deep Study"
-                "gym" -> "Strength"
-                else -> "Morning Walk"
-            }
-            val user = streakViewModel.user.value
-            navController.navigate(
-                ShRoutes.streakShare(
-                    streak = milestone,
-                    habit = habitName,
-                    start = user?.streakStartDate ?: 0L
-                )
-            )
-            streakViewModel.clearMilestone()
         }
     }
 
@@ -195,7 +182,8 @@ fun ShoshinNavGraph(
                         userRepository = userRepository,
                         shoshinRepository = shoshinRepository,
                         database = database,
-                        navController = navController
+                        navController = navController,
+                        onExistingUser = { returningUserLastOpenDate = it }
                     )
                     isGoogleLoading = false
                 }
@@ -283,7 +271,11 @@ fun ShoshinNavGraph(
                 referralCode = referralCode,
                 onSuccess = { userId, contact, code ->
                     scope.launch {
-                        handleNewUser(userId, "User", contact, null, code, referralRepository, userRepository, shoshinRepository, database, navController)
+                        handleNewUser(
+                            userId, "User", contact, null, code,
+                            referralRepository, userRepository, shoshinRepository, database, navController,
+                            onExistingUser = { returningUserLastOpenDate = it }
+                        )
                     }
                 }
             )
@@ -568,8 +560,12 @@ fun ShoshinNavGraph(
         }
 
         // ── Returning User ────────────────────────────────────
-        composable(ShRoutes.RETURNING_USER) {
-            ReturningUserScreen(navController = navController)
+        composable(
+            route = ShRoutes.RETURNING_USER,
+            arguments = listOf(navArgument("lastOpenDate") { type = NavType.LongType })
+        ) { back ->
+            val lastOpenDate = back.arguments?.getLong("lastOpenDate") ?: 0L
+            ReturningUserScreen(navController = navController, streakViewModel = streakViewModel, lastOpenDate = lastOpenDate)
         }
 
         // ── Create Group ─────────────────────────────────────
@@ -658,15 +654,6 @@ fun ShoshinNavGraph(
                 }
             })
             DataPrivacyScreen(navController = navController, viewModel = settingsViewModelForPrivacy)
-        }
-
-        // ── Badge Unlock ─────────────────────────────────────
-        composable(
-            route = ShRoutes.BADGE_UNLOCK,
-            arguments = listOf(navArgument("badgeId") { type = NavType.StringType })
-        ) { back ->
-            val badgeId = back.arguments?.getString("badgeId") ?: ""
-            BadgeUnlockScreen(navController = navController, viewModel = badgeViewModel, badgeId = badgeId)
         }
 
         // ── Legal Screens ─────────────────────────────────────
@@ -788,19 +775,23 @@ private suspend fun handleNewUser(
     userRepository: UserRepository,
     shoshinRepository: ShoshinRepository,
     database: AppDatabase,
-    navController: NavHostController
+    navController: NavHostController,
+    onExistingUser: (Long) -> Unit = {}
 ) {
     try {
         android.util.Log.d("Auth", "handleNewUser STARTED: userId=$userId, name=$displayName")
-        
+
         // 1. Basic user save to DataStore
         shoshinRepository.saveUser(name = displayName, email = email ?: "", phone = phone ?: "")
         android.util.Log.d("Auth", "handleNewUser: DataStore saved")
-        
+
         // 2. Create or Update UserEntity in local DB and Firestore
         val existingUser = userRepository.getUser(userId)
         android.util.Log.d("Auth", "handleNewUser: Fetched existing user: ${existingUser != null}")
-        
+        if (existingUser != null) {
+            onExistingUser(existingUser.lastOpenDate)
+        }
+
         val newUser = if (existingUser == null) {
             com.Shoshin.app.data.db.entities.UserEntity(
                 userId = userId,

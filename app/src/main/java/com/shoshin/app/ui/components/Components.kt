@@ -661,8 +661,8 @@ fun ConfettiBurst(
 
 // ── Badge Helpers ─────────────────────────────────────────────
 fun getBadgeIconRes(iconName: String): Int {
+    if (iconName.startsWith("streak_") || iconName == "flame") return R.drawable.ic_flame
     return when (iconName) {
-        "streak_7", "streak_30", "streak_100", "streak_365", "flame" -> R.drawable.ic_flame
         "milestone", "check" -> R.drawable.ic_check
         "groups", "community" -> R.drawable.ic_groups
         "plus" -> R.drawable.ic_plus

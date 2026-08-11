@@ -15,11 +15,40 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.Shoshin.app.navigation.ShRoutes
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.AnalyticsManager
+import com.Shoshin.app.viewmodel.StreakViewModel
+import kotlinx.coroutines.delay
+import java.util.concurrent.TimeUnit
 
 @Composable
-fun ReturningUserScreen(navController: NavController) {
+fun ReturningUserScreen(
+    navController: NavController,
+    streakViewModel: StreakViewModel? = null,
+    lastOpenDate: Long = 0L
+) {
+    val user by streakViewModel?.user?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
+    val displayName = user?.displayName?.takeIf { it.isNotBlank() && it != "New User" && it != "User" } ?: "there"
+    val currentStreak = user?.currentStreak ?: 0
+    val bestStreak = user?.bestStreak ?: 0
+    val daysSinceLastOpen = if (lastOpenDate > 0) {
+        TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastOpenDate).toInt().coerceAtLeast(0)
+    } else 0
+
+    fun resume() {
+        navController.navigate(ShRoutes.MAIN) {
+            popUpTo(0) { inclusive = true }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        AnalyticsManager.logReturningUserShown(daysSinceLastOpen)
+        delay(5000)
+        resume()
+    }
+
     ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
         Column(
             modifier = Modifier
@@ -39,7 +68,7 @@ fun ReturningUserScreen(navController: NavController) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "A",
+                    displayName.take(1).uppercase(),
                     style = ShTitleStyle.copy(fontSize = 36.sp, color = Color.White.copy(alpha = 0.6f))
                 )
             }
@@ -47,11 +76,11 @@ fun ReturningUserScreen(navController: NavController) {
             Spacer(Modifier.height(32.dp))
 
             Kicker("WELCOME BACK", color = ShVermillionLight)
-            
+
             Spacer(Modifier.height(12.dp))
 
             Text(
-                "Good to see you,\nArjun",
+                "Good to see you,\n$displayName",
                 style = ShTitleStyle.copy(fontSize = 36.sp, color = Color.White),
                 textAlign = TextAlign.Center,
                 lineHeight = 42.sp
@@ -60,7 +89,7 @@ fun ReturningUserScreen(navController: NavController) {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                "It's been 3 days. Your 71-day practice paused at day 38 — and it's waiting exactly where you left it.",
+                if (currentStreak == 0) "Ready to start fresh? 💪" else "Keep it going! $currentStreak days strong 🔥",
                 style = ShBodyStyle,
                 color = ShNightMuted,
                 textAlign = TextAlign.Center,
@@ -70,7 +99,7 @@ fun ReturningUserScreen(navController: NavController) {
 
             Spacer(Modifier.height(48.dp))
 
-            // Hold Card
+            // Streak Summary Card
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -78,35 +107,19 @@ fun ReturningUserScreen(navController: NavController) {
                     .background(ShNight2)
                     .padding(20.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(contentAlignment = Alignment.Center) {
-                        RingProgress(
-                            percentage = 53,
-                            size = 64,
-                            strokeWidth = 5f,
-                            valueText = "",
-                            color = ShVermillion,
-                            trackColor = ShNight3
-                        )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("$currentStreak", style = ShNumeralStyle.copy(fontSize = 28.sp, color = Color.White))
+                        Text("CURRENT STREAK", style = ShKickerStyle.copy(fontSize = 9.sp, color = ShNightMuted))
                     }
-                    
-                    Spacer(Modifier.width(20.dp))
-                    
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("71-Day Discipline", style = ShH2Style.copy(fontSize = 17.sp, color = Color.White))
-                        Text("Resume at day 38", style = ShLabelStyle, color = ShNightMuted)
-                    }
-                    
-                    Surface(
-                        color = ShMatchaDark.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            "Held",
-                            color = ShMatchaDark,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = ShLabelStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        )
+                    Box(Modifier.width(1.dp).height(32.dp).background(ShNightLine))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("$bestStreak", style = ShNumeralStyle.copy(fontSize = 28.sp, color = Color.White))
+                        Text("BEST STREAK", style = ShKickerStyle.copy(fontSize = 9.sp, color = ShNightMuted))
                     }
                 }
             }
@@ -114,7 +127,7 @@ fun ReturningUserScreen(navController: NavController) {
             Spacer(Modifier.weight(1f))
 
             ShoshinButton(
-                onClick = { navController.navigate("main") },
+                onClick = { resume() },
                 variant = ShButtonVariant.Accent,
                 modifier = Modifier.fillMaxWidth()
             ) {

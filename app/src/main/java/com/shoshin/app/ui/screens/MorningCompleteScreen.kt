@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,8 +24,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.Shoshin.app.R
+import com.Shoshin.app.data.models.BadgeDefinitions
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.viewmodel.StreakViewModel
 import kotlinx.coroutines.delay
 
 @Composable
@@ -35,6 +38,7 @@ fun MorningCompleteScreen(
 ) {
     val user by streakViewModel?.user?.collectAsState(initial = null) ?: remember { mutableStateOf(null) }
     val streakCount = user?.currentStreak ?: 0
+    val newBadgeId by streakViewModel?.newBadgeUnlocked?.collectAsState() ?: remember { mutableStateOf(null) }
 
     val reducedMotion = rememberReducedMotion()
 
@@ -62,6 +66,7 @@ fun MorningCompleteScreen(
     }
 
     ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -180,6 +185,18 @@ fun MorningCompleteScreen(
                 Text("Carry it into the day", color = Color.Black, fontWeight = FontWeight.Bold)
             }
 
+            Spacer(Modifier.height(12.dp))
+
+            ShoshinButton(
+                onClick = onShare,
+                variant = ShButtonVariant.Dark,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(painterResource(R.drawable.ic_share), null, modifier = Modifier.size(18.dp), tint = Color.White)
+                Spacer(Modifier.width(8.dp))
+                Text("Share streak", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+
             Spacer(Modifier.height(24.dp))
 
             Text(
@@ -190,6 +207,84 @@ fun MorningCompleteScreen(
             )
 
             Spacer(Modifier.height(16.dp))
+        }
+
+        if (newBadgeId != null) {
+            BadgeCelebrationOverlay(
+                badgeId = newBadgeId!!,
+                onDismiss = { streakViewModel?.clearBadgeUnlock() }
+            )
+        }
+        }
+    }
+}
+
+private data class BadgeDisplay(val name: String, val icon: String, val day: Int)
+
+private fun resolveBadgeDisplay(badgeId: String): BadgeDisplay {
+    val def = BadgeDefinitions.ALL_BADGES.find { it.id == badgeId }
+    if (def != null) return BadgeDisplay(def.name, def.icon, def.threshold)
+    val day = badgeId.removePrefix("streak_").toIntOrNull() ?: 0
+    val name = StreakViewModel.STREAK_BADGE_NAMES[day] ?: "Day $day"
+    return BadgeDisplay(name, "streak_$day", day)
+}
+
+@Composable
+private fun BadgeCelebrationOverlay(badgeId: String, onDismiss: () -> Unit) {
+    val display = remember(badgeId) { resolveBadgeDisplay(badgeId) }
+    val reducedMotion = rememberReducedMotion()
+    var visible by remember(badgeId) { mutableStateOf(false) }
+
+    val scale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(if (reducedMotion) 0 else 400, easing = if (reducedMotion) FastOutSlowInEasing else ShCelebrationEasing),
+        label = "badge_scale_in"
+    )
+
+    LaunchedEffect(badgeId) {
+        visible = true
+        delay(8000)
+        onDismiss()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.75f))
+            .clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(modifier = Modifier.size(160.dp), contentAlignment = Alignment.Center) {
+                ConfettiBurst(trigger = visible)
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .scale(scale)
+                        .clip(CircleShape)
+                        .background(ShVermillionLight),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(getBadgeIconRes(display.icon)),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(52.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            Text("🎉 Badge Earned!", style = ShTitleStyle.copy(fontSize = 22.sp, color = Color.White), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
+            Text(display.name, style = ShTitleStyle.copy(fontSize = 30.sp, color = Color.White), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(4.dp))
+            Text("Day ${display.day}", style = ShLabelStyle, color = Color.White.copy(alpha = 0.7f))
+
+            Spacer(Modifier.height(24.dp))
+
+            Text("Tap to close", style = ShLabelStyle.copy(fontSize = 12.sp), color = Color.White.copy(alpha = 0.5f))
         }
     }
 }

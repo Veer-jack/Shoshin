@@ -26,9 +26,8 @@ class StreakViewModel(
     private val _user = MutableStateFlow<UserEntity?>(null)
     val user: StateFlow<UserEntity?> = _user.asStateFlow()
 
-    private val _lastMilestoneReached = MutableStateFlow<Int?>(null)
-    val lastMilestoneReached: StateFlow<Int?> = _lastMilestoneReached.asStateFlow()
-
+    // Holds the unlocked badge's id (e.g. "streak_15"), looked up against BadgeDefinitions.ALL_BADGES
+    // by whoever consumes it (MorningCompleteScreen's celebration overlay).
     private val _newBadgeUnlocked = MutableStateFlow<String?>(null)
     val newBadgeUnlocked: StateFlow<String?> = _newBadgeUnlocked.asStateFlow()
 
@@ -46,7 +45,6 @@ class StreakViewModel(
 
     init {
         loadUser()
-        checkFreezeReset()
         loadHistory()
     }
 
@@ -98,27 +96,30 @@ class StreakViewModel(
     private fun loadUser() {
         val uid = userRepository.userId ?: return
         viewModelScope.launch {
-            userRepository.getUserFlow(uid).collect {
-                _user.value = it
+            userRepository.getUserFlow(uid).collect { loadedUser ->
+                _user.value = loadedUser
+                // Recompute honestly on load too — otherwise a stale non-zero streak keeps
+                // showing until the user's next full completion happens to recalculate it.
+                if (loadedUser != null && loadedUser.currentStreak > 0 && hasMissedDay(loadedUser, System.currentTimeMillis())) {
+                    AnalyticsManager.logStreakReset("missed_day", loadedUser.currentStreak)
+                    userRepository.updateUser(loadedUser.copy(currentStreak = 0, streakStartDate = 0))
+                }
             }
         }
     }
 
-    private fun checkFreezeReset() {
-        viewModelScope.launch {
-            val uid = userRepository.userId ?: return@launch
-            val currentUser = userRepository.getUser(uid) ?: return@launch
-            val now = System.currentTimeMillis()
-            
-            // Reset freezes every 30 days
-            if (now - currentUser.lastFreezeResetDate > 30L * 24 * 60 * 60 * 1000) {
-                userRepository.updateUser(currentUser.copy(
-                    freezesUsedThisMonth = 0,
-                    lastFreezeResetDate = now
-                ))
-            }
-        }
+    /** True when more than one full day has passed since the user's last kept checkpoint. */
+    private fun hasMissedDay(user: UserEntity, now: Long): Boolean {
+        if (user.lastCheckpointDate <= 0) return false // never completed anything yet — not a miss
+        if (isSameDay(user.lastCheckpointDate, now)) return false
+        val yesterday = Calendar.getInstance().apply {
+            timeInMillis = now
+            add(Calendar.DAY_OF_YEAR, -1)
+        }.timeInMillis
+        return !isSameDay(user.lastCheckpointDate, yesterday)
     }
+
+    private fun isMilestone(streak: Int): Boolean = streak == 7 || (streak > 0 && streak % 15 == 0)
 
     fun saveRoutineProgress(stepIndex: Int) {
         val currentUser = _user.value ?: return
@@ -145,22 +146,25 @@ class StreakViewModel(
         val currentUser = _user.value ?: return
         val now = System.currentTimeMillis()
         val uid = currentUser.userId
-        
+
         // Basic check: only increment once per day
         if (isSameDay(currentUser.lastCheckpointDate, now)) return
 
-        val newStreak = currentUser.currentStreak + 1
+        // GitHub-style: missing a full day breaks the streak. Today's completion becomes
+        // day 1 of a new streak rather than being silently dropped.
+        val missedDay = hasMissedDay(currentUser, now)
+        val baseStreak = if (missedDay) {
+            AnalyticsManager.logStreakReset("missed_day", currentUser.currentStreak)
+            0
+        } else {
+            currentUser.currentStreak
+        }
+
+        val newStreak = baseStreak + 1
         val newBest = if (newStreak > currentUser.bestStreak) newStreak else currentUser.bestStreak
-        val startDate = if (currentUser.currentStreak == 0) now else currentUser.streakStartDate
+        val startDate = if (baseStreak == 0) now else currentUser.streakStartDate
 
-        // Check for milestones
-        var newFreezes = currentUser.streakFreezes
-        if (newStreak == 30) newFreezes += 1
-        if (newStreak == 60) newFreezes += 1
-        if (newStreak == 100) newFreezes += 1
-
-        if (newStreak in listOf(7, 30, 100, 365)) {
-            _lastMilestoneReached.value = newStreak
+        if (isMilestone(newStreak)) {
             checkStreakBadges(uid, newStreak)
             AnalyticsManager.logMilestoneReached(newStreak, "professional")
         }
@@ -171,7 +175,7 @@ class StreakViewModel(
         if (currentUser.totalActivations == 0) {
             viewModelScope.launch {
                 badgeRepository.unlockBadge(uid, "milestone_first")
-                _newBadgeUnlocked.value = "Beginner"
+                _newBadgeUnlocked.value = "milestone_first"
             }
         }
 
@@ -181,8 +185,7 @@ class StreakViewModel(
                 bestStreak = newBest,
                 streakStartDate = startDate,
                 lastCheckpointDate = now,
-                totalActivations = currentUser.totalActivations + 1,
-                streakFreezes = newFreezes
+                totalActivations = currentUser.totalActivations + 1
             ))
         }
 
@@ -208,40 +211,16 @@ class StreakViewModel(
         }
     }
 
+    // Every 15 days past 120 keeps celebrating (the spec's "continue every 15 days"), even
+    // though BadgeDefinitions.ALL_BADGES only lists concrete entries through day 120.
     private fun checkStreakBadges(userId: String, streak: Int) {
-        val badgeId = when (streak) {
-            7 -> "streak_7"
-            30 -> "streak_30"
-            100 -> "streak_100"
-            365 -> "streak_365"
-            else -> null
+        val badgeId = "streak_$streak"
+        val name = STREAK_BADGE_NAMES[streak] ?: "Day $streak"
+        viewModelScope.launch {
+            badgeRepository.unlockBadge(userId, badgeId)
+            _newBadgeUnlocked.value = badgeId
+            AnalyticsManager.logBadgeUnlocked(badgeId, name, "streak", "professional")
         }
-        
-        badgeId?.let { id ->
-            val name = if (streak == 7) "Starter" else if (streak == 30) "Committed" else if (streak == 100) "Legend" else "Immortal"
-            viewModelScope.launch {
-                badgeRepository.unlockBadge(userId, id)
-                _newBadgeUnlocked.value = name
-                AnalyticsManager.logBadgeUnlocked(id, name, "streak", "professional")
-            }
-        }
-    }
-
-    fun useStreakFreeze() {
-        val currentUser = _user.value ?: return
-        if (currentUser.freezesUsedThisMonth < currentUser.streakFreezes) {
-            AnalyticsManager.logStreakFreezeUsed(currentUser.currentStreak)
-            viewModelScope.launch {
-                userRepository.updateUser(currentUser.copy(
-                    freezesUsedThisMonth = currentUser.freezesUsedThisMonth + 1,
-                    lastCheckpointDate = System.currentTimeMillis() // Mark as done for today
-                ))
-            }
-        }
-    }
-
-    fun clearMilestone() {
-        _lastMilestoneReached.value = null
     }
 
     fun clearBadgeUnlock() {
@@ -250,6 +229,7 @@ class StreakViewModel(
 
     fun resetStreak() {
         val currentUser = _user.value ?: return
+        AnalyticsManager.logStreakReset("manual_skip", currentUser.currentStreak)
         viewModelScope.launch {
             userRepository.updateUser(currentUser.copy(
                 currentStreak = 0,
@@ -267,19 +247,17 @@ class StreakViewModel(
         }
     }
 
-    fun getMilestoneBadges(days: Int): List<String> {
-        val badges = mutableListOf<String>()
-        if (days >= 7) badges.add("🥈")
-        if (days >= 30) badges.add("🥇")
-        if (days >= 100) badges.add("👑")
-        if (days >= 365) badges.add("⭐")
-        return badges
-    }
-
     private fun isSameDay(t1: Long, t2: Long): Boolean {
         val cal1 = Calendar.getInstance().apply { timeInMillis = t1 }
         val cal2 = Calendar.getInstance().apply { timeInMillis = t2 }
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+    }
+
+    companion object {
+        val STREAK_BADGE_NAMES = mapOf(
+            7 to "Starter", 15 to "Rising", 30 to "Committed", 45 to "Focused",
+            60 to "Legend", 75 to "Elite", 90 to "Immortal", 105 to "Infinite", 120 to "Transcendent"
+        )
     }
 }
