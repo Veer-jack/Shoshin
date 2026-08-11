@@ -26,7 +26,7 @@ import com.Shoshin.app.data.db.entities.*
         RoutineCheckpointEntity::class,
         FeedbackEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

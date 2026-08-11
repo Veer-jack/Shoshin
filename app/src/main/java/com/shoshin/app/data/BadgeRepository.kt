@@ -2,14 +2,20 @@ package com.Shoshin.app.data
 
 import com.Shoshin.app.data.db.dao.BadgeDao
 import com.Shoshin.app.data.db.entities.BadgeEntity
+import com.Shoshin.app.data.db.entities.toBadgeIdList
+import com.Shoshin.app.data.db.entities.toBadgeIdString
 import com.Shoshin.app.data.models.Badge
 import com.Shoshin.app.data.models.BadgeCategory
 import com.Shoshin.app.data.models.BadgeDefinitions
 import com.Shoshin.app.data.models.BadgeRarity
+import com.Shoshin.app.data.user.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class BadgeRepository(private val badgeDao: BadgeDao) {
+class BadgeRepository(
+    private val badgeDao: BadgeDao,
+    private val userRepository: UserRepository
+) {
 
     fun getBadgesForUser(userId: String): Flow<List<Badge>> {
         return badgeDao.getBadgesForUser(userId).map { entities ->
@@ -48,6 +54,12 @@ class BadgeRepository(private val badgeDao: BadgeDao) {
             badgeDao.insertOrUpdateBadge(BadgeEntity(userId, badgeId, unlockedDate = now, isLocked = false))
         } else {
             badgeDao.unlockBadge(userId, badgeId, now)
+        }
+
+        val user = userRepository.getUser(userId) ?: return
+        val currentIds = user.unlockedBadgeIds.toBadgeIdList()
+        if (badgeId !in currentIds) {
+            userRepository.updateUser(user.copy(unlockedBadgeIds = (currentIds + badgeId).toBadgeIdString()))
         }
     }
 }

@@ -54,7 +54,7 @@ fun ShoshinNavGraph(
     
     val userRepository = remember { UserRepository(database.userDao(), firestore, storage, firebaseAuth) }
     val authRepository = remember { AuthRepository(firebaseAuth) }
-    val badgeRepository = remember { BadgeRepository(database.badgeDao()) }
+    val badgeRepository = remember { BadgeRepository(database.badgeDao(), userRepository) }
     val friendRepository = remember { FriendRepository(database.friendDao(), firestore) }
     val referralRepository = remember { ReferralRepository(database.userLimitsDao(), firestore) }
     val limitsRepository = remember { UserLimitsRepository(database.userLimitsDao(), firestore) }
@@ -101,7 +101,7 @@ fun ShoshinNavGraph(
     val groupViewModel = viewModel<GroupViewModel>(factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return GroupViewModel(groupRepository) as T
+            return GroupViewModel(groupRepository, userRepository) as T
         }
     })
 

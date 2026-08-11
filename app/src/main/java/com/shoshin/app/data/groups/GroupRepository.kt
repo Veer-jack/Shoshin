@@ -176,38 +176,88 @@ class GroupRepository(
     }
 
     suspend fun getGroups(): Result<List<Group>> {
+        val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not authenticated"))
+        return getGroupsForUser(userId, syncLocal = true)
+    }
+
+    /** Same query as [getGroups] but for any user, not just the current one (e.g. "groups in common" lookups). */
+    suspend fun getGroupsForUser(userId: String, syncLocal: Boolean = false): Result<List<Group>> {
         return try {
-            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not authenticated"))
-            
-            // Fetch from Firestore
             val query = db.collection("groups").whereArrayContains("members", userId).get().await()
             val groups = query.documents.mapNotNull { it.toObject(Group::class.java) }
-            
-            // Sync with local DB
-            groups.forEach { g ->
-                val entity = GroupEntity(
-                    groupId = g.id,
-                    userId = g.createdBy,
-                    groupName = g.name,
-                    description = g.description,
-                    memberCount = g.members.size,
-                    photo = null,
-                    inviteLinkCode = g.inviteCode,
-                    created_at = System.currentTimeMillis(),
-                    updated_at = System.currentTimeMillis(),
-                    syncStatus = "synced"
-                )
-                val existing = groupDao.getGroup(g.id)
-                if (existing == null) groupDao.insertGroup(entity) else groupDao.updateGroup(entity)
+
+            if (syncLocal) {
+                groups.forEach { g ->
+                    val entity = GroupEntity(
+                        groupId = g.id,
+                        userId = g.createdBy,
+                        groupName = g.name,
+                        description = g.description,
+                        memberCount = g.members.size,
+                        photo = null,
+                        inviteLinkCode = g.inviteCode,
+                        created_at = System.currentTimeMillis(),
+                        updated_at = System.currentTimeMillis(),
+                        syncStatus = "synced"
+                    )
+                    val existing = groupDao.getGroup(g.id)
+                    if (existing == null) groupDao.insertGroup(entity) else groupDao.updateGroup(entity)
+                }
             }
-            
+
             Result.success(groups)
         } catch (e: Exception) {
+            if (!syncLocal) return Result.failure(e)
             // If error (e.g. offline), return local groups
             val localGroups = groupDao.getAllGroups().map { entity ->
                 Group(id = entity.groupId, name = entity.groupName, description = entity.description, createdBy = entity.userId, inviteCode = entity.inviteLinkCode, members = emptyList())
             }
             if (localGroups.isNotEmpty()) Result.success(localGroups) else Result.failure(e)
+        }
+    }
+
+    /**
+     * Adds [targetUserId] directly to [groupId] (no invite/accept step exists in this app).
+     * Mirrors [joinGroup]'s limit checks: the target's own join cap and the group's member cap.
+     */
+    suspend fun addMemberToGroup(groupId: String, targetUserId: String, targetName: String): Result<Unit> {
+        return try {
+            val targetLimitsSnapshot = db.collection("users").document(targetUserId).collection("limits").document("current").get().await()
+            val groupsJoinLimit = targetLimitsSnapshot.getLong("groupsJoinLimit")?.toInt() ?: 5
+            val targetGroupsQuery = db.collection("groups").whereArrayContains("members", targetUserId).get().await()
+            if (targetGroupsQuery.size() >= groupsJoinLimit) {
+                return Result.failure(Exception("LIMIT_REACHED:This member has reached their limit of $groupsJoinLimit groups."))
+            }
+
+            val groupRef = db.collection("groups").document(groupId)
+            val groupDoc = groupRef.get().await()
+            val group = groupDoc.toObject(Group::class.java) ?: return Result.failure(Exception("Group not found"))
+
+            if (group.members.contains(targetUserId)) {
+                return Result.failure(Exception("Already a member of this group"))
+            }
+
+            val creatorLimitsSnapshot = db.collection("users").document(group.createdBy).collection("limits").document("current").get().await()
+            val groupMemberLimit = creatorLimitsSnapshot.getLong("groupMemberLimit")?.toInt() ?: 5
+            if (group.members.size >= groupMemberLimit) {
+                return Result.failure(Exception("GROUP_FULL:This group has reached its maximum of $groupMemberLimit members."))
+            }
+
+            val newMembers = group.members + targetUserId
+            groupRef.update("members", newMembers).await()
+            groupRef.collection("members").document(targetUserId).set(
+                GroupMember(userId = targetUserId, name = targetName)
+            ).await()
+
+            val entity = groupDao.getGroup(groupId)
+            if (entity != null) {
+                groupDao.updateGroup(entity.copy(memberCount = newMembers.size, updated_at = System.currentTimeMillis()))
+            }
+
+            notifyLocal("You added $targetName to ${group.name}", "They can now see it in their groups list.")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

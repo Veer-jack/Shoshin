@@ -40,6 +40,10 @@ data class UserEntity(
     val lastRoutineDate: String = "", // e.g. "2024-05-20"
     val totalSessionCount: Int = 0,
     val totalSessionMinutes: Int = 0,
+    val unlockedBadgeIds: String = "", // comma-separated badge ids
     val createdAt: Long = System.currentTimeMillis(),
     val lastUpdated: Long = System.currentTimeMillis()
 )
+
+fun String.toBadgeIdList(): List<String> = split(",").filter { it.isNotBlank() }
+fun List<String>.toBadgeIdString(): String = joinToString(",")

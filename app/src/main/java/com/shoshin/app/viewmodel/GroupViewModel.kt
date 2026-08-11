@@ -2,16 +2,22 @@ package com.Shoshin.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.Shoshin.app.data.db.entities.UserEntity
 import com.Shoshin.app.data.groups.Group
 import com.Shoshin.app.data.groups.GroupMember
 import com.Shoshin.app.data.groups.GroupRepository
+import com.Shoshin.app.data.user.UserRepository
+import com.Shoshin.app.utils.AnalyticsManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
+class GroupViewModel(
+    private val repository: GroupRepository,
+    private val userRepository: UserRepository
+) : ViewModel() {
 
     private val _groups = MutableStateFlow<List<Group>>(emptyList())
     val groups: StateFlow<List<Group>> = _groups.asStateFlow()
@@ -39,6 +45,18 @@ class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
 
     private val _creationSuccess = MutableStateFlow(false)
     val creationSuccess: StateFlow<Boolean> = _creationSuccess.asStateFlow()
+
+    private val _selectedMemberProfile = MutableStateFlow<UserEntity?>(null)
+    val selectedMemberProfile: StateFlow<UserEntity?> = _selectedMemberProfile.asStateFlow()
+
+    private val _selectedMemberGroupsInCommon = MutableStateFlow<List<Group>>(emptyList())
+    val selectedMemberGroupsInCommon: StateFlow<List<Group>> = _selectedMemberGroupsInCommon.asStateFlow()
+
+    private val _memberProfileLoading = MutableStateFlow(false)
+    val memberProfileLoading: StateFlow<Boolean> = _memberProfileLoading.asStateFlow()
+
+    private val _memberActionResult = MutableStateFlow<String?>(null)
+    val memberActionResult: StateFlow<String?> = _memberActionResult.asStateFlow()
 
     fun loadGroups() {
         viewModelScope.launch {
@@ -214,5 +232,52 @@ class GroupViewModel(private val repository: GroupRepository) : ViewModel() {
 
     fun clearError() {
         _error.value = null
+    }
+
+    /** Loads a tapped leaderboard member's full profile plus the groups they share with the current user. */
+    fun loadMemberProfile(userId: String) {
+        viewModelScope.launch {
+            _memberProfileLoading.value = true
+            _selectedMemberProfile.value = userRepository.getUser(userId)
+
+            val currentUserId = userRepository.userId
+            if (currentUserId != null) {
+                val myGroups = repository.getGroupsForUser(currentUserId).getOrNull().orEmpty()
+                val theirGroups = repository.getGroupsForUser(userId).getOrNull().orEmpty()
+                val theirGroupIds = theirGroups.map { it.id }.toSet()
+                _selectedMemberGroupsInCommon.value = myGroups.filter { it.id in theirGroupIds }
+            }
+            _memberProfileLoading.value = false
+        }
+    }
+
+    fun clearSelectedMember() {
+        _selectedMemberProfile.value = null
+        _selectedMemberGroupsInCommon.value = emptyList()
+    }
+
+    fun clearMemberActionResult() {
+        _memberActionResult.value = null
+    }
+
+    /** Adds a member directly to the group (no invite/accept flow exists in this app). */
+    fun addMemberToCurrentGroup(groupId: String, groupName: String, userId: String, displayName: String) {
+        viewModelScope.launch {
+            val result = repository.addMemberToGroup(groupId, userId, displayName)
+            result.onSuccess {
+                _memberActionResult.value = "$displayName added to $groupName"
+                AnalyticsManager.logMemberAddedToGroup(groupId, userId)
+                loadGroupMembers(groupId)
+            }
+            result.onFailure {
+                val msg = it.message ?: "Couldn't add $displayName"
+                _memberActionResult.value = when {
+                    msg.startsWith("LIMIT_REACHED:") -> msg.substringAfter(":")
+                    msg.startsWith("GROUP_FULL:") -> msg.substringAfter(":")
+                    msg == "Already a member of this group" -> "$displayName is already a member"
+                    else -> msg
+                }
+            }
+        }
     }
 }

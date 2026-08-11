@@ -105,6 +105,14 @@ object AnalyticsManager {
         logEvent("group_joined", bundle)
     }
 
+    fun logMemberAddedToGroup(groupId: String, addedUserId: String) {
+        val bundle = Bundle().apply {
+            putString("group_id", groupId)
+            putString("added_user_id", addedUserId)
+        }
+        logEvent("member_added_to_group", bundle)
+    }
+
     // --- Referral Events ---
     fun logReferralShared(platform: String) {
         val bundle = Bundle().apply { putString("platform", platform) }
