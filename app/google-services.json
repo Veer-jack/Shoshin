@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "91496310161-5g22p7lgegttlj6jm35loqc9tp7l441b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Shoshin.app",
+            "certificate_hash": "4efad0cb88064643125783dac27f7c97006cc826"
+          }
+        },
+        {
           "client_id": "91496310161-938ct5vo756a11u3ivhmec74dtmojnqa.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
