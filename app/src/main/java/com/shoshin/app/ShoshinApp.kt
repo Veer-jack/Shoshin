@@ -32,6 +32,8 @@ class ShoshinApp : Application() {
             Log.d("ShoshinApp", "App Check Token update: ${if (tokenResult.token != null) "Success" else "Failure"}")
         }
 
+        Log.d("ShoshinApp", "Firebase & App Check Initialization Complete. Application Ready.")
+
         // Initialize Analytics
         AnalyticsManager.initialize(this)
         FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(true)
