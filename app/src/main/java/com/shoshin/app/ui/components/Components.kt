@@ -24,7 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import coil.compose.AsyncImage
 import com.Shoshin.app.R
 import com.Shoshin.app.ui.theme.*
 import kotlinx.coroutines.delay
@@ -719,5 +722,43 @@ fun ShoshinStat(
             letterSpacing = 1.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+// ── ShoshinAvatar ─────────────────────────────────────────────
+@Composable
+fun ShoshinAvatar(
+    imageUrl: String?,
+    name: String,
+    size: Dp = 56.dp,
+    onClick: (() -> Unit)? = null
+) {
+    val modifier = Modifier
+        .size(size)
+        .clip(CircleShape)
+        .background(MaterialTheme.colorScheme.surfaceVariant)
+        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        if (!imageUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            val initial = name.takeIf { it.isNotBlank() }?.firstOrNull()?.uppercase() ?: "?"
+            Text(
+                text = initial,
+                style = ShTitleStyle.copy(
+                    fontSize = (size.value * 0.4).sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
     }
 }
