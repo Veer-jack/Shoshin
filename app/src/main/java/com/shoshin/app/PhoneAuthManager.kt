@@ -54,7 +54,10 @@ class PhoneAuthManager(private val auth: FirebaseAuth) {
             }
 
             override fun onVerificationFailed(e: com.google.firebase.FirebaseException) {
-                Log.e(TAG, "onVerificationFailed: ${e.message}", e)
+                Log.e(TAG, "onVerificationFailed: [${e.message}]", e)
+                if (e.message?.contains("app identifier") == true) {
+                    Log.e(TAG, "CRITICAL: This is likely an App Check / Play Integrity configuration error.")
+                }
                 onError(e)
             }
         }
