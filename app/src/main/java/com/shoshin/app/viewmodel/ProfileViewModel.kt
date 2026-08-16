@@ -44,24 +44,14 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    fun updateProfile(
-        name: String,
-        bio: String?,
-        height: Float? = null,
-        heightUnit: String = "cm",
-        weight: Float? = null,
-        weightUnit: String = "kg"
-    ) {
+    fun updateProfile(name: String, phone: String, email: String) {
         val currentUser = _user.value ?: return
         viewModelScope.launch {
             _isLoading.value = true
             val updatedUser = currentUser.copy(
                 displayName = name,
-                bio = bio,
-                height = height,
-                heightUnit = heightUnit,
-                weight = weight,
-                weightUnit = weightUnit,
+                phone = phone,
+                email = email.ifBlank { null },
                 lastUpdated = System.currentTimeMillis()
             )
             repository.updateUser(updatedUser)

@@ -18,6 +18,9 @@ interface StreakDao {
     @Query("SELECT * FROM streaks WHERE userId = :userId AND date = :date")
     suspend fun getStreakByDate(userId: String, date: String): StreakEntity?
 
+    @Query("SELECT * FROM streaks WHERE userId = :userId AND date LIKE :yearMonth || '%' ORDER BY date ASC")
+    fun getStreaksForMonth(userId: String, yearMonth: String): Flow<List<StreakEntity>>
+
     @Query("SELECT * FROM streaks WHERE streakId = :streakId")
     suspend fun getStreak(streakId: String): StreakEntity?
 

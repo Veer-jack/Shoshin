@@ -36,7 +36,8 @@ fun ShoshinMainShell(
     streakViewModel: com.Shoshin.app.viewmodel.StreakViewModel,
     friendViewModel: com.Shoshin.app.viewmodel.FriendStreaksViewModel? = null,
     referralViewModel: com.Shoshin.app.viewmodel.ReferralViewModel? = null,
-    groupViewModel: com.Shoshin.app.viewmodel.GroupViewModel? = null
+    groupViewModel: com.Shoshin.app.viewmodel.GroupViewModel? = null,
+    badgeViewModel: com.Shoshin.app.viewmodel.BadgeViewModel? = null
 ) {
     val innerNav = rememberNavController()
     val currentBackStack by innerNav.currentBackStackEntryAsState()
@@ -48,15 +49,10 @@ fun ShoshinMainShell(
             ShoshinBottomBar(
                 currentRoute = currentRoute,
                 onTabSelected = { tab ->
-                    if (tab.route == ShRoutes.ACTIVATION) {
-                        // Practice sessions are full-screen, so use rootNavController
-                        rootNavController.navigate(ShRoutes.ACTIVATION)
-                    } else {
-                        innerNav.navigate(tab.route) {
-                            popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                    innerNav.navigate(tab.route) {
+                        popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
                     }
                 },
                 onFabClick = {
@@ -95,6 +91,22 @@ fun ShoshinMainShell(
 
             composable(ShRoutes.CONSISTENCY) {
                 ConsistencyScreen(navController = rootNavController, streakViewModel = streakViewModel, networkMonitor = networkMonitor)
+            }
+
+            composable(ShRoutes.CHALLENGES) {
+                ChallengesScreen(
+                    navController = rootNavController,
+                    streakViewModel = streakViewModel,
+                    badgeViewModel = badgeViewModel,
+                    referralViewModel = referralViewModel,
+                    onNavigateToTab = { route ->
+                        innerNav.navigate(route) {
+                            popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
             }
 
             composable(ShRoutes.GROUPS) {
@@ -153,7 +165,7 @@ fun ShoshinBottomBar(
                 ) {
                     val tabs = ShTab.entries
 
-                    // Left 2 tabs: Home, Progress
+                    // Left 2 tabs: Progress, Challenges
                     tabs.take(2).forEach { tab ->
                         BottomNavItem(
                             tab = tab,
@@ -166,7 +178,7 @@ fun ShoshinBottomBar(
                     // Space for FAB
                     Spacer(modifier = Modifier.width(72.dp))
 
-                    // Right 2 tabs: Groups, You
+                    // Right 2 tabs: Circles, Profile
                     tabs.drop(2).forEach { tab ->
                         BottomNavItem(
                             tab = tab,
@@ -254,8 +266,8 @@ fun BottomNavItem(
 }
 
 enum class ShTab(val route: String, val iconRes: Int, val activeIconRes: Int, val label: String) {
-    Practice(ShRoutes.ACTIVATION, R.drawable.ic_bolt, R.drawable.ic_bolt_heavy, "Activate"),
     Progress(ShRoutes.CONSISTENCY, R.drawable.ic_pulse, R.drawable.ic_pulse_heavy, "Progress"),
-    Groups(ShRoutes.GROUPS, R.drawable.ic_groups, R.drawable.ic_groups_heavy, "Groups"),
-    You(ShRoutes.PROFILE, R.drawable.ic_user, R.drawable.ic_user_heavy, "You")
+    Challenges(ShRoutes.CHALLENGES, R.drawable.ic_trophy, R.drawable.ic_trophy_heavy, "Challenges"),
+    Groups(ShRoutes.GROUPS, R.drawable.ic_groups, R.drawable.ic_groups_heavy, "Circles"),
+    You(ShRoutes.PROFILE, R.drawable.ic_user, R.drawable.ic_user_heavy, "Profile")
 }

@@ -82,12 +82,12 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun isMilestone(streak: Int) = streak in listOf(7, 30, 100, 365)
 
-    fun shareToPlatform(platform: String, streak: Int) {
+    fun shareToPlatform(platform: String, streak: Int, referralCode: String) {
         val bitmap = _shareBitmap.value ?: return
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val filename = "shoshin_share_${System.currentTimeMillis()}"
             val file = cardGenerator.saveBitmapToFile(bitmap, filename) ?: return@launch
-            
+
             val uri = try {
                 FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
             } catch (e: Exception) {
@@ -95,7 +95,7 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
-            val caption = getCaption(platform, streak)
+            val caption = getCaption(platform, streak, referralCode)
             
             val baseIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
@@ -147,7 +147,7 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                     val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "image/png"
                         putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(Intent.EXTRA_TEXT, getCaption("More", streak))
+                        putExtra(Intent.EXTRA_TEXT, getCaption("More", streak, referralCode))
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
                     val chooser = Intent.createChooser(fallbackIntent, "Share with")
@@ -179,10 +179,17 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun getCaption(platform: String, streak: Int): String {
+    private fun getCaption(platform: String, streak: Int, referralCode: String): String {
+        val deepLink = "shoshin://invite?code=$referralCode"
         return when (platform) {
-            "Twitter" -> "Day $streak of my morning routine! Consistency is key. #ShoshinApp #MorningHabits"
-            else -> "Day $streak of my morning routine! I'm building consistency with Shoshin App. #MorningHabits"
+            "Twitter" -> {
+                val join = if (referralCode.isNotBlank()) " Join me: $deepLink" else ""
+                "Day $streak of my morning routine! Consistency is key.$join #ShoshinApp #MorningHabits"
+            }
+            else -> {
+                val join = if (referralCode.isNotBlank()) "\n\nJoin me: $deepLink\nCode: $referralCode" else ""
+                "Day $streak of my morning routine! I'm building consistency with Shoshin App.$join #MorningHabits"
+            }
         }
     }
 

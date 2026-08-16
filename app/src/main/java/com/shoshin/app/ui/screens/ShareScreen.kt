@@ -34,7 +34,8 @@ fun ShareScreen(
     streak: Int,
     habitName: String,
     startDate: Long,
-    consistencyPercent: Int = 0
+    consistencyPercent: Int = 0,
+    referralCode: String = ""
 ) {
     val bitmap by viewModel.shareBitmap.collectAsState()
     val selectedStyle by viewModel.selectedStyle.collectAsState()
@@ -140,7 +141,7 @@ fun ShareScreen(
                 Spacer(Modifier.height(40.dp))
 
                 ShoshinButton(
-                    onClick = { viewModel.shareToPlatform("Generic", streak) },
+                    onClick = { viewModel.shareToPlatform("Generic", streak, referralCode) },
                     variant = ShButtonVariant.Accent,
                     modifier = Modifier.fillMaxWidth()
                 ) {

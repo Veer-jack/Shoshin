@@ -5,6 +5,8 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Patterns
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -14,6 +16,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,10 +25,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -33,6 +40,36 @@ import com.Shoshin.app.R
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
 import com.Shoshin.app.viewmodel.ProfileViewModel
+
+private data class DialCode(val country: String, val dial: String, val countryName: String)
+
+private val SH_COUNTRIES = listOf(
+    DialCode("IN", "+91", "India"),
+    DialCode("US", "+1", "United States"),
+    DialCode("GB", "+44", "United Kingdom"),
+    DialCode("CA", "+1", "Canada"),
+    DialCode("AU", "+61", "Australia"),
+    DialCode("AE", "+971", "UAE"),
+    DialCode("SG", "+65", "Singapore"),
+    DialCode("DE", "+49", "Germany"),
+    DialCode("FR", "+33", "France"),
+    DialCode("JP", "+81", "Japan"),
+    DialCode("BR", "+55", "Brazil"),
+    DialCode("ZA", "+27", "South Africa")
+)
+
+private fun detectDialCode(phone: String): DialCode =
+    SH_COUNTRIES.filter { phone.startsWith(it.dial) }.maxByOrNull { it.dial.length } ?: SH_COUNTRIES.first()
+
+private fun isValidName(name: String): Boolean {
+    val trimmed = name.trim()
+    return trimmed.isNotEmpty() && trimmed.length <= 50
+}
+
+private fun isValidPhone(digits: String): Boolean = digits.length in 6..14
+
+private fun isValidEmail(email: String): Boolean =
+    email.isBlank() || Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
 
 @Composable
 fun EditProfileScreen(
@@ -44,20 +81,22 @@ fun EditProfileScreen(
     val context = LocalContext.current
 
     var name by remember { mutableStateOf("") }
-    var bio by remember { mutableStateOf("") }
-    var height by remember { mutableStateOf("") }
-    var heightUnit by remember { mutableStateOf("cm") }
-    var weight by remember { mutableStateOf("") }
-    var weightUnit by remember { mutableStateOf("kg") }
+    var dialCode by remember { mutableStateOf(SH_COUNTRIES.first()) }
+    var phoneDigits by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var phoneError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(user) {
         user?.let {
             name = it.displayName
-            bio = it.bio ?: ""
-            height = it.height?.toString() ?: ""
-            heightUnit = it.heightUnit
-            weight = it.weight?.toString() ?: ""
-            weightUnit = it.weightUnit
+            val phone = it.phone.orEmpty()
+            val detected = detectDialCode(phone)
+            dialCode = detected
+            phoneDigits = phone.removePrefix(detected.dial).filter { c -> c.isDigit() }
+            email = it.email.orEmpty()
         }
     }
 
@@ -82,6 +121,22 @@ fun EditProfileScreen(
         }
     }
 
+    fun save() {
+        nameError = if (isValidName(name)) null else "Enter a name under 50 characters"
+        phoneError = if (isValidPhone(phoneDigits)) null else "Enter a valid mobile number"
+        emailError = if (isValidEmail(email)) null else "Enter a valid email address"
+
+        if (nameError != null || phoneError != null || emailError != null) return
+
+        viewModel.updateProfile(
+            name = name.trim(),
+            phone = "${dialCode.dial}$phoneDigits",
+            email = email.trim()
+        )
+        Toast.makeText(context, "Profile updated", Toast.LENGTH_SHORT).show()
+        navController.popBackStack()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -99,30 +154,13 @@ fun EditProfileScreen(
                 Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = ShInk)
             }
             Text("Edit Profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            TextButton(
-                onClick = {
-                    viewModel.updateProfile(
-                        name = name,
-                        bio = bio,
-                        height = height.toFloatOrNull(),
-                        heightUnit = heightUnit,
-                        weight = weight.toFloatOrNull(),
-                        weightUnit = weightUnit
-                    )
-                    navController.popBackStack()
-                },
-                enabled = !isLoading && name.isNotEmpty()
-            ) {
-                Text("Save", color = ShVermillion, fontWeight = FontWeight.Bold)
-            }
+            Spacer(Modifier.size(48.dp))
         }
 
         Spacer(Modifier.height(32.dp))
 
         // Profile Picture Edit
-        Box(
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
+        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
             Box(
                 modifier = Modifier
                     .size(140.dp)
@@ -142,133 +180,200 @@ fun EditProfileScreen(
                 } else {
                     Icon(painterResource(R.drawable.ic_camera), contentDescription = null, tint = ShFog, modifier = Modifier.size(40.dp))
                 }
-                
+
                 if (isLoading) {
                     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(32.dp))
                     }
                 }
             }
-            
+
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .offset(x = (-4).dp, y = (-4).dp)
-                    .size(40.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
                     .clickable { launcher.launch("image/*") },
-                color = ShVermillion,
+                color = ShInk,
                 tonalElevation = 4.dp
             ) {
-                Icon(painterResource(R.drawable.ic_plus), contentDescription = null, tint = Color.White, modifier = Modifier.padding(8.dp))
+                Icon(painterResource(R.drawable.ic_camera), contentDescription = "Change photo", tint = Color.White, modifier = Modifier.padding(9.dp))
             }
-        }
-
-        Spacer(Modifier.height(48.dp))
-
-        // Fields
-        ShoshinTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = "Display Name",
-            placeholder = "Your name",
-            enabled = !isLoading
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        ShoshinTextField(
-            value = bio,
-            onValueChange = { bio = it },
-            label = "Bio",
-            placeholder = "A bit about you...",
-            enabled = !isLoading,
-            modifier = Modifier.height(120.dp)
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(modifier = Modifier.weight(1f)) {
-                ShoshinTextField(
-                    value = height,
-                    onValueChange = { new -> height = new.filter { it.isDigit() || it == '.' } },
-                    label = "Height",
-                    placeholder = "Optional",
-                    enabled = !isLoading
-                )
-                Spacer(Modifier.height(8.dp))
-                UnitToggle(options = listOf("cm", "in"), selected = heightUnit, onSelect = { heightUnit = it }, enabled = !isLoading)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                ShoshinTextField(
-                    value = weight,
-                    onValueChange = { new -> weight = new.filter { it.isDigit() || it == '.' } },
-                    label = "Weight",
-                    placeholder = "Optional",
-                    enabled = !isLoading
-                )
-                Spacer(Modifier.height(8.dp))
-                UnitToggle(options = listOf("kg", "lbs"), selected = weightUnit, onSelect = { weightUnit = it }, enabled = !isLoading)
-            }
-        }
-
-        Spacer(Modifier.height(32.dp))
-
-        Text("Your sign-in identity", style = ShLabelStyle, color = ShFog)
-        Spacer(Modifier.height(8.dp))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(ShSand)
-                .padding(16.dp)
-        ) {
-            if (!user?.email.isNullOrBlank()) {
-                Text(user?.email.orEmpty(), style = ShH2Style.copy(fontSize = 15.sp, color = ShInk))
-            }
-            if (!user?.phone.isNullOrBlank()) {
-                Text(user?.phone.orEmpty(), style = ShH2Style.copy(fontSize = 15.sp, color = ShInk))
-            }
-            Spacer(Modifier.height(4.dp))
-            Text("Contact support to change this", style = ShLabelStyle.copy(fontSize = 12.sp), color = ShFog)
         }
 
         Spacer(Modifier.height(40.dp))
 
-        if (user?.profilePictureUrl != null) {
-            TextButton(
-                onClick = { /* Delete picture logic */ },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.textButtonColors(contentColor = ShError)
-            ) {
-                Text("Remove Profile Picture")
+        // Fields
+        ShoshinTextField(
+            value = name,
+            onValueChange = { name = it; nameError = null },
+            label = "Full name",
+            placeholder = "Your name",
+            enabled = !isLoading
+        )
+        if (nameError != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(nameError!!, style = ShLabelStyle.copy(fontSize = 12.sp), color = ShError)
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        ShoshinPhoneField(
+            dialCode = dialCode,
+            onDialCodeChange = { dialCode = it },
+            digits = phoneDigits,
+            onDigitsChange = { new -> phoneDigits = new.filter { it.isDigit() }.take(14); phoneError = null },
+            enabled = !isLoading
+        )
+        if (phoneError != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(phoneError!!, style = ShLabelStyle.copy(fontSize = 12.sp), color = ShError)
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        ShoshinTextField(
+            value = email,
+            onValueChange = { email = it; emailError = null },
+            label = "Email address (optional)",
+            placeholder = "you@example.com",
+            leadingIcon = R.drawable.ic_mail,
+            enabled = !isLoading
+        )
+        if (emailError != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(emailError!!, style = ShLabelStyle.copy(fontSize = 12.sp), color = ShError)
+        }
+
+        Spacer(Modifier.height(40.dp))
+
+        ShoshinButton(
+            onClick = { save() },
+            variant = ShButtonVariant.Accent,
+            enabled = !isLoading,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                Text("Save changes", fontWeight = FontWeight.Bold)
             }
         }
+
+        Spacer(Modifier.height(24.dp))
     }
 }
 
 @Composable
-private fun UnitToggle(
-    options: List<String>,
-    selected: String,
-    onSelect: (String) -> Unit,
-    enabled: Boolean
+private fun ShoshinPhoneField(
+    dialCode: DialCode,
+    onDialCodeChange: (DialCode) -> Unit,
+    digits: String,
+    onDigitsChange: (String) -> Unit,
+    enabled: Boolean = true
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        options.forEach { option ->
-            val isSelected = option == selected
-            Surface(
-                onClick = { if (enabled) onSelect(option) },
-                shape = RoundedCornerShape(999.dp),
-                color = if (isSelected) ShInk else ShSand,
-                contentColor = if (isSelected) ShPaper else ShFog
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Mobile number",
+            style = ShLabelStyle,
+            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        )
+        Spacer(Modifier.height(8.dp))
+        Box {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .background(
+                        if (enabled) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    option,
-                    style = ShLabelStyle.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                )
+                Row(
+                    modifier = Modifier.clickable(enabled = enabled) { expanded = true },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = dialCode.dial,
+                        style = TextStyle(
+                            fontFamily = DmSansFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.ic_arrow_down),
+                        contentDescription = "Choose country code",
+                        tint = ShFog,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+
+                Spacer(Modifier.width(10.dp))
+                Box(modifier = Modifier.width(1.dp).height(22.dp).background(ShLine))
+                Spacer(Modifier.width(10.dp))
+
+                Box(modifier = Modifier.weight(1f)) {
+                    if (digits.isEmpty()) {
+                        Text(
+                            text = "98765 43210",
+                            style = TextStyle(
+                                fontFamily = DmSansFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        )
+                    }
+                    BasicTextField(
+                        value = digits,
+                        onValueChange = onDigitsChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = enabled,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        textStyle = TextStyle(
+                            fontFamily = DmSansFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        ),
+                        cursorBrush = SolidColor(ShVermillion)
+                    )
+                }
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+            ) {
+                SH_COUNTRIES.forEach { country ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(country.countryName, color = MaterialTheme.colorScheme.onSurface, style = ShLabelStyle.copy(fontSize = 14.sp))
+                                Spacer(Modifier.width(16.dp))
+                                Text(country.dial, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, style = ShLabelStyle.copy(fontSize = 14.sp))
+                            }
+                        },
+                        onClick = {
+                            onDialCodeChange(country)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }

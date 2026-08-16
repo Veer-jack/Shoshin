@@ -9,6 +9,7 @@ import com.Shoshin.app.data.user.UserRepository
 import com.Shoshin.app.data.db.dao.StreakDao
 import com.Shoshin.app.data.db.entities.StreakEntity
 import com.Shoshin.app.data.db.entities.UserEntity
+import com.Shoshin.app.data.models.MonthlyStats
 import com.Shoshin.app.ui.theme.ShMatchaLightToken
 import com.Shoshin.app.utils.AnalyticsManager
 import kotlinx.coroutines.flow.*
@@ -43,9 +44,14 @@ class StreakViewModel(
     private val _historyByDate = MutableStateFlow<Map<String, Boolean>>(emptyMap())
     val historyByDate: StateFlow<Map<String, Boolean>> = _historyByDate.asStateFlow()
 
+    // Current calendar month's days-completed / completion rate + streak snapshot, for the Challenges screen.
+    private val _monthlyStats = MutableStateFlow<MonthlyStats?>(null)
+    val monthlyStats: StateFlow<MonthlyStats?> = _monthlyStats.asStateFlow()
+
     init {
         loadUser()
         loadHistory()
+        loadMonthlyStats()
     }
 
     private fun loadHistory() {
@@ -90,6 +96,31 @@ class StreakViewModel(
                 }
                 _monthlyTrend.value = trend
             }
+        }
+    }
+
+    /** Current calendar month's completion stats, combined live from StreakDao + the loaded user. */
+    fun getMonthlyStats(): Flow<MonthlyStats> {
+        val uid = userRepository.userId ?: return flowOf(MonthlyStats(0, 0f, 0, 0))
+        val dao = streakDao ?: return flowOf(MonthlyStats(0, 0f, 0, 0))
+        val yearMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())
+        val daysInMonth = Calendar.getInstance().getActualMaximum(Calendar.DAY_OF_MONTH)
+
+        return combine(dao.getStreaksForMonth(uid, yearMonth), _user) { entries, user ->
+            val daysCompleted = entries.count { it.completed }
+            val completionRate = (daysCompleted.toFloat() / daysInMonth) * 100f
+            MonthlyStats(
+                daysCompleted = daysCompleted,
+                completionRate = completionRate,
+                currentStreak = user?.currentStreak ?: 0,
+                bestStreak = user?.bestStreak ?: 0
+            )
+        }
+    }
+
+    private fun loadMonthlyStats() {
+        viewModelScope.launch {
+            getMonthlyStats().collect { _monthlyStats.value = it }
         }
     }
 

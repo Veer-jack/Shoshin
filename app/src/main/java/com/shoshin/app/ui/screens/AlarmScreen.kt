@@ -66,7 +66,7 @@ fun AlarmScreen(navController: NavController, template: String = "walk") {
         onDayToggle = { day ->
             if (days.contains(day)) days.remove(day) else days.add(day)
         },
-        onRoutineClick = { navController.navigate(ShRoutes.GOAL_SELECTION) },
+        onRoutineClick = { navController.navigate(ShRoutes.ROUTINE_EDITOR) },
         onSoundPickerClick = { navController.navigate(ShRoutes.SOUND_PICKER) },
         onSetAlarmClick = {
             scope.launch {

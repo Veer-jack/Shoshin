@@ -31,6 +31,9 @@ object ShRoutes {
     const val CONSISTENCY     = "progress/consistency"
     const val HISTORY         = "progress/history"
 
+    // Tab: Challenges
+    const val CHALLENGES      = "challenges"
+
     // Tab: Groups
     const val GROUPS          = "groups"
     const val GROUP_DETAIL    = "group_detail/{groupId}"

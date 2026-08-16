@@ -100,7 +100,11 @@ class MainActivity : ComponentActivity() {
                     conflictResolver = conflictResolver,
                     isLoggedIn = isLoggedIn,
                     hasCompletedOnboarding = onboardingDone,
-                    deepLinkCode = intent.data?.lastPathSegment.takeIf { intent.data?.path?.contains("join") == true }
+                    deepLinkCode = when {
+                        intent.data?.scheme == "shoshin" && intent.data?.host == "invite" -> intent.data?.getQueryParameter("code")
+                        intent.data?.path?.contains("join") == true -> intent.data?.lastPathSegment
+                        else -> null
+                    }
                 )
             }
         }
@@ -151,6 +155,11 @@ class MainActivity : ComponentActivity() {
             if (!inviteCode.isNullOrBlank()) {
                 navController?.navigate(com.Shoshin.app.navigation.ShRoutes.groupPreview(inviteCode))
             }
+        } else if (data?.scheme == "shoshin" && data.host == "invite") {
+            // Referral code pre-fill only happens via the cold-start path (onCreate's deepLinkCode ->
+            // ShoshinNavGraph -> AuthScreen.initialReferralCode). AUTH isn't a param-carrying route, so
+            // if the app is already running when this link is tapped, we can open Auth but not prefill it.
+            navController?.navigate(com.Shoshin.app.navigation.ShRoutes.AUTH)
         }
     }
 

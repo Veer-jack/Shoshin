@@ -370,7 +370,8 @@ fun ShoshinNavGraph(
                 streakViewModel = streakViewModel,
                 friendViewModel = friendViewModel,
                 referralViewModel = referralViewModel,
-                groupViewModel = groupViewModel
+                groupViewModel = groupViewModel,
+                badgeViewModel = badgeViewModel
             )
         }
 
@@ -407,13 +408,16 @@ fun ShoshinNavGraph(
                 0
             }
 
+            val referralLimits by referralViewModel.limits.collectAsState()
+
             ShareScreen(
                 navController = navController,
                 viewModel = shareViewModel,
                 streak = streak,
                 habitName = habitName,
                 startDate = startDate,
-                consistencyPercent = consistencyPercent
+                consistencyPercent = consistencyPercent,
+                referralCode = referralLimits?.referralCode ?: ""
             )
         }
 
