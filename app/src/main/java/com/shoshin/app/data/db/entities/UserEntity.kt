@@ -47,3 +47,12 @@ data class UserEntity(
 
 fun String.toBadgeIdList(): List<String> = split(",").filter { it.isNotBlank() }
 fun List<String>.toBadgeIdString(): String = joinToString(",")
+
+/**
+ * The image to show for this user, resolved in one place so every avatar in the app
+ * agrees. An uploaded picture wins; otherwise fall back to the provider photo captured
+ * at sign-in (Google), which was previously stored but never displayed anywhere.
+ */
+val UserEntity.avatarUrl: String?
+    get() = profilePictureUrl?.takeIf { it.isNotBlank() }
+        ?: photoUrl?.takeIf { it.isNotBlank() }

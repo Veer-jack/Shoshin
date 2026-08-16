@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -20,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.Shoshin.app.R
+import com.Shoshin.app.data.db.entities.avatarUrl
 import com.Shoshin.app.navigation.ShRoutes
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
@@ -75,18 +75,12 @@ fun SettingsScreen(
                             .padding(vertical = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(96.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = userName.firstOrNull()?.toString()?.uppercase() ?: "U",
-                                style = ShTitleStyle.copy(fontSize = 36.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                            )
-                        }
+                        ShoshinAvatar(
+                            imageUrl = u.avatarUrl,
+                            name = userName,
+                            size = 96.dp,
+                            onClick = { navController.navigate(ShRoutes.EDIT_PROFILE) }
+                        )
                         Spacer(Modifier.height(16.dp))
                         Text(u.email ?: "", style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("Joined July 2026", style = ShLabelStyle.copy(fontSize = 11.sp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))

@@ -15,15 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.Shoshin.app.R
+import com.Shoshin.app.data.db.entities.avatarUrl
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
 import com.Shoshin.app.viewmodel.ProfileViewModel
@@ -106,27 +105,12 @@ fun ProfileScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // Avatar
-                            Box(
-                                modifier = Modifier
-                                    .size(100.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (u.profilePictureUrl != null) {
-                                    AsyncImage(
-                                        model = u.profilePictureUrl,
-                                        contentDescription = "Profile Picture",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    Text(
-                                        text = displayName.firstOrNull()?.toString()?.uppercase() ?: "A",
-                                        style = ShTitleStyle.copy(fontSize = 36.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                                    )
-                                }
-                            }
+                            ShoshinAvatar(
+                                imageUrl = u.avatarUrl,
+                                name = displayName,
+                                size = 100.dp,
+                                onClick = { navController.navigate(ShRoutes.EDIT_PROFILE) }
+                            )
 
                             Spacer(Modifier.height(16.dp))
 

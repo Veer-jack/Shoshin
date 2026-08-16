@@ -68,8 +68,13 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
                 android.util.Log.d("Profile", "Upload success: $url")
                 val currentUser = _user.value
                 if (currentUser != null) {
+                    // Every picture goes to the same storage path, so a re-upload can come
+                    // back with a byte-identical URL — Coil would then serve the previous
+                    // image from cache on every screen. A version param keeps the URL unique.
+                    val separator = if (url.contains('?')) "&" else "?"
+                    val versionedUrl = "$url${separator}v=${System.currentTimeMillis()}"
                     val updatedUser = currentUser.copy(
-                        profilePictureUrl = url,
+                        profilePictureUrl = versionedUrl,
                         lastUpdated = System.currentTimeMillis()
                     )
                     repository.updateUser(updatedUser)

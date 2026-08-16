@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.Shoshin.app.R
+import com.Shoshin.app.data.db.entities.avatarUrl
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
 import com.Shoshin.app.viewmodel.ProfileViewModel
@@ -170,9 +171,10 @@ fun EditProfileScreen(
                     .clickable { launcher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                if (user?.profilePictureUrl != null) {
+                val currentAvatar = user?.avatarUrl
+                if (currentAvatar != null) {
                     AsyncImage(
-                        model = user?.profilePictureUrl,
+                        model = currentAvatar,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop

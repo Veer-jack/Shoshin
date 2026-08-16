@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.Shoshin.app.R
 import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.data.db.entities.avatarUrl
 import com.Shoshin.app.navigation.ShRoutes
 import com.Shoshin.app.sync.*
 import com.Shoshin.app.ui.components.*
@@ -125,19 +126,12 @@ fun DashboardTab(
                     Spacer(Modifier.width(16.dp))
 
                     // Avatar
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { navController.navigate(ShRoutes.PROFILE) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = userName.firstOrNull()?.toString()?.uppercase() ?: "F",
-                            style = ShTitleStyle.copy(fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                        )
-                    }
+                    ShoshinAvatar(
+                        imageUrl = user?.avatarUrl,
+                        name = userName,
+                        size = 56.dp,
+                        onClick = { navController.navigate(ShRoutes.PROFILE) }
+                    )
                 }
 
                 Spacer(Modifier.height(32.dp))
