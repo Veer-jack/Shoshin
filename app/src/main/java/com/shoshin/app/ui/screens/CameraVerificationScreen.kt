@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -76,6 +78,44 @@ fun CameraVerificationScreen(
     val context = LocalContext.current
     val photoStorageManager = remember(context) { PhotoStorageManager(context) }
 
+    // Onboarding's permission step is skippable ("Maybe later"), so this screen can be
+    // reached with CAMERA still ungranted — ask here rather than showing a dead preview.
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var permissionRefused by remember { mutableStateOf(false) }
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasCameraPermission = granted
+        permissionRefused = !granted
+    }
+    LaunchedEffect(Unit) {
+        if (!hasCameraPermission) cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+    }
+
+    // Re-check on resume so granting from the system Settings page lands back on a
+    // working camera rather than the same permission wall.
+    val permissionLifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(permissionLifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                val granted = ContextCompat.checkSelfPermission(
+                    context, android.Manifest.permission.CAMERA
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                if (granted) {
+                    hasCameraPermission = true
+                    permissionRefused = false
+                }
+            }
+        }
+        permissionLifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { permissionLifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // Randomized hint, sourced from the checkpoint's own hint pool
     val repo = remember { ShoshinRepository(context) }
     val templateKey by repo.template.collectAsState(initial = "walk")
@@ -118,7 +158,22 @@ fun CameraVerificationScreen(
 
     ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
         Box(modifier = Modifier.fillMaxSize().background(ShNight)) {
-            if (showCamera) {
+            if (!hasCameraPermission) {
+                CameraPermissionGateDark(
+                    label = label,
+                    refused = permissionRefused,
+                    onGrant = { cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA) },
+                    onOpenSettings = {
+                        context.startActivity(
+                            android.content.Intent(
+                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                android.net.Uri.fromParts("package", context.packageName, null)
+                            )
+                        )
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            } else if (showCamera) {
                 CameraViewDark(
                     label = label,
                     hint = currentHint,
@@ -191,6 +246,70 @@ fun CameraVerificationScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CameraPermissionGateDark(
+    label: String,
+    refused: Boolean,
+    onGrant: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp).statusBarsPadding(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier.size(80.dp).clip(CircleShape).background(ShNight2),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(painterResource(R.drawable.ic_camera), null, tint = ShVermillionLight, modifier = Modifier.size(32.dp))
+        }
+
+        Spacer(Modifier.height(32.dp))
+        Kicker("CAMERA NEEDED", color = ShVermillionLight)
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "Proof needs the camera",
+            style = ShTitleStyle.copy(fontSize = 28.sp, color = Color.White),
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            if (refused)
+                "Camera access is off. Turn it on in Settings to photograph \"$label\" and finish this checkpoint."
+            else
+                "Shoshin uses the camera only to capture \"$label\". The photo stays on your phone.",
+            style = ShBodyStyle,
+            color = ShNightMuted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(Modifier.height(40.dp))
+
+        ShoshinButton(
+            onClick = if (refused) onOpenSettings else onGrant,
+            variant = ShButtonVariant.Accent,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                if (refused) "Open settings" else "Allow camera",
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "Go back",
+            style = ShLabelStyle.copy(fontWeight = FontWeight.Bold),
+            color = ShNightMuted,
+            modifier = Modifier.clickable { onBack() }
+        )
     }
 }
 
@@ -370,20 +489,29 @@ private fun capturePhoto(context: Context, imageCapture: ImageCapture?, onPhotoC
         ContextCompat.getMainExecutor(context),
         object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(image: ImageProxy) {
-                val bitmap = imageProxyToBitmap(image)
+                val rotation = image.imageInfo.rotationDegrees
+                val bitmap = imageProxyToBitmap(image, rotation)
                 image.close()
                 onPhotoCapture(bitmap)
             }
-            override fun onError(exception: ImageCaptureException) { }
+            override fun onError(exception: ImageCaptureException) {
+                Log.e("CameraVerify", "Capture failed", exception)
+            }
         }
     )
 }
 
-private fun imageProxyToBitmap(image: ImageProxy): Bitmap {
+private fun imageProxyToBitmap(image: ImageProxy, rotationDegrees: Int): Bitmap {
     val buffer = image.planes[0].buffer
     val bytes = ByteArray(buffer.remaining())
     buffer.get(bytes)
-    return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    // The sensor buffer is landscape regardless of how the phone is held. Left unrotated,
+    // every checkpoint photo lands sideways — both in the confirm preview and in the
+    // labels ML Kit returns, which is why verification misses on all routines.
+    if (rotationDegrees == 0) return decoded
+    val matrix = android.graphics.Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+    return Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
 }
 
 suspend fun uploadPhotoToFirebase(

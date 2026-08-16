@@ -40,8 +40,16 @@ class MainActivity : ComponentActivity() {
     private var navController: NavHostController? = null
     private val currentIntent = mutableStateOf<Intent?>(null)
 
+    /**
+     * Login/onboarding state lives in DataStore, which reads asynchronously. Until that
+     * first read lands we cannot pick a start destination, so the system splash is held
+     * on screen — otherwise the app briefly shows the Welcome screen to a signed-in user
+     * and only then corrects itself.
+     */
+    private var authStateResolved = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        installSplashScreen().setKeepOnScreenCondition { !authStateResolved }
         super.onCreate(savedInstanceState)
         
         currentIntent.value = intent
@@ -84,28 +92,42 @@ class MainActivity : ComponentActivity() {
                 navController = controller
                 
                 val intentState by currentIntent
-                LaunchedEffect(intentState) {
-                    intentState?.let { handleIntent(it) }
+
+                // null = DataStore hasn't answered yet. Build the NavHost only once it has,
+                // so startDestination is right on the first composition.
+                val authState by remember {
+                    kotlinx.coroutines.flow.combine(
+                        shoshinRepository.isLoggedIn,
+                        shoshinRepository.onboardingDone
+                    ) { loggedIn, onboardingDone -> loggedIn to onboardingDone }
+                }.collectAsState(initial = null)
+
+                LaunchedEffect(authState) {
+                    if (authState != null) authStateResolved = true
                 }
 
-                val isLoggedIn by shoshinRepository.isLoggedIn.collectAsState(initial = false)
-                val onboardingDone by shoshinRepository.onboardingDone.collectAsState(initial = false)
+                // Deep links must wait for the graph to exist, or navigate() throws.
+                LaunchedEffect(intentState, authState) {
+                    if (authState != null) intentState?.let { handleIntent(it) }
+                }
 
-                ShoshinNavGraph(
-                    navController = controller,
-                    database = database,
-                    shoshinRepository = shoshinRepository,
-                    syncManager = syncManager,
-                    networkMonitor = networkMonitor,
-                    conflictResolver = conflictResolver,
-                    isLoggedIn = isLoggedIn,
-                    hasCompletedOnboarding = onboardingDone,
-                    deepLinkCode = when {
-                        intent.data?.scheme == "shoshin" && intent.data?.host == "invite" -> intent.data?.getQueryParameter("code")
-                        intent.data?.path?.contains("join") == true -> intent.data?.lastPathSegment
-                        else -> null
-                    }
-                )
+                authState?.let { (isLoggedIn, onboardingDone) ->
+                    ShoshinNavGraph(
+                        navController = controller,
+                        database = database,
+                        shoshinRepository = shoshinRepository,
+                        syncManager = syncManager,
+                        networkMonitor = networkMonitor,
+                        conflictResolver = conflictResolver,
+                        isLoggedIn = isLoggedIn,
+                        hasCompletedOnboarding = onboardingDone,
+                        deepLinkCode = when {
+                            intent.data?.scheme == "shoshin" && intent.data?.host == "invite" -> intent.data?.getQueryParameter("code")
+                            intent.data?.path?.contains("join") == true -> intent.data?.lastPathSegment
+                            else -> null
+                        }
+                    )
+                }
             }
         }
 

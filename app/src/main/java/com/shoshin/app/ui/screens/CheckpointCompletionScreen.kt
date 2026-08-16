@@ -128,6 +128,19 @@ fun CheckpointCompletionScreen(
                 onAction = {
                     if (current.type == "photo") {
                         onPhotoRequired(currentIndex, current.label, current.targets)
+                    } else {
+                        // Non-photo checkpoints have no camera round-trip to set the
+                        // "checkpoint_completed" flag, so they advance here instead —
+                        // otherwise the button is inert and the routine dead-ends.
+                        if (currentIndex < checkpoints.lastIndex) {
+                            val nextIndex = currentIndex + 1
+                            currentIndex = nextIndex
+                            streakViewModel?.saveRoutineProgress(nextIndex)
+                        } else {
+                            streakViewModel?.incrementStreak()
+                            streakViewModel?.resetRoutineProgress()
+                            onComplete()
+                        }
                     }
                 },
                 onForfeitClick = { showForfeitDialog = true }
@@ -234,10 +247,16 @@ private fun InProgressUIDark(
                 Spacer(Modifier.height(12.dp))
                 Text(current.description, style = ShBodyStyle, color = ShNightMuted, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(32.dp))
+                val needsPhoto = current.type == "photo"
                 ShoshinButton(onClick = onAction, variant = ShButtonVariant.Ghost, modifier = Modifier.fillMaxWidth()) {
-                    Icon(painterResource(R.drawable.ic_camera), null, modifier = Modifier.size(20.dp), tint = Color.Black)
+                    Icon(
+                        painterResource(if (needsPhoto) R.drawable.ic_camera else R.drawable.ic_check),
+                        null,
+                        modifier = Modifier.size(20.dp),
+                        tint = Color.Black
+                    )
                     Spacer(Modifier.width(10.dp))
-                    Text(if (current.type == "photo") "Take verification photo" else "Complete Checkpoint", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(if (needsPhoto) "Take verification photo" else "Complete checkpoint", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
         }

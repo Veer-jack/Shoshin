@@ -93,18 +93,21 @@ fun DashboardTab(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
+                    // Inset the status bar on the container, not on the header row —
+                    // inside the scroller the inset scrolled away with the content.
+                    .statusBarsPadding()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp)
             ) {
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(24.dp))
 
                 // ── Header Section ──────────────────────────────────
                 Row(
-                    modifier = Modifier.fillMaxWidth().statusBarsPadding(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         val dateStr = SimpleDateFormat("EEEE · d MMM", Locale.getDefault()).format(Date()).uppercase()
                         Kicker(dateStr, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
@@ -119,6 +122,8 @@ fun DashboardTab(
                         )
                     }
                     
+                    Spacer(Modifier.width(16.dp))
+
                     // Avatar
                     Box(
                         modifier = Modifier
@@ -281,25 +286,27 @@ fun DashboardTab(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // Tomorrow's path is a preview, not live progress — no step is
+                                // active yet, so every row reads at the same weight.
                                 Box(
                                     modifier = Modifier.size(32.dp).border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text((i + 1).toString(), style = ShLabelStyle, color = if (i == 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text((i + 1).toString(), style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Spacer(Modifier.width(16.dp))
                                 Icon(
-                                    painter = painterResource(step.icon), 
-                                    null, 
-                                    modifier = Modifier.size(18.dp), 
-                                    tint = if (i == 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                    painter = painterResource(step.icon),
+                                    null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                                 Spacer(Modifier.width(16.dp))
                                 Text(
-                                    step.label, 
-                                    style = ShBodyStyle, 
-                                    color = if (i == 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant, 
-                                    fontWeight = if (i == 0) FontWeight.Bold else FontWeight.Normal,
+                                    step.label,
+                                    style = ShBodyStyle,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Normal,
                                     modifier = Modifier.weight(1f)
                                 )
                             }

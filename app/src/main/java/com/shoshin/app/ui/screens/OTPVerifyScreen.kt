@@ -87,14 +87,6 @@ fun OTPVerifyScreen(
         }
     }
 
-    if (isSending) {
-        LoadingDialog(message = "Sending code...")
-    }
-
-    if (isLoading) {
-        LoadingDialog(message = "Verifying...")
-    }
-
     val onBackgroundColor = MaterialTheme.colorScheme.onBackground
     val subtitleText = buildAnnotatedString {
         append("Sent to ")
@@ -103,40 +95,40 @@ fun OTPVerifyScreen(
         }
     }
 
-    val resendText = buildAnnotatedString {
-        append("Didn't receive it? ")
-        val resendPart = if (resendCooldown > 0) {
-            val mins = resendCooldown / 60
-            val secs = resendCooldown % 60
-            "Resend in $mins:${String.format(java.util.Locale.US, "%02d", secs)}"
-        } else {
-            "Resend"
-        }
-        withStyle(style = ShLabelStyle.toSpanStyle().copy(fontWeight = FontWeight.Bold, color = ShVermillion)) {
-            append(resendPart)
-        }
-    }
-
     fun onVerify() {
+        // Guard re-entry: the keypad's OK key and the auto-submit below can both fire.
+        if (isLoading) return
         if (code.length != 6) {
             errorMessage = "OTP must be 6 digits"
+            return
+        }
+        if (phoneAuthManager.verificationId == null) {
+            errorMessage = "Still sending the code — try again in a moment"
             return
         }
         isLoading = true
         errorMessage = ""
         successMessage = ""
-        
+
         phoneAuthManager.verifyOTP(
             code,
             onSuccess = {
                 val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                isLoading = false
                 onSuccess(userId, phone, referralCode)
             },
             onError = {
                 errorMessage = ErrorHandler.mapFirebaseError(it)
+                // Clear the boxes so the next attempt starts clean.
+                code = ""
                 isLoading = false
             }
         )
+    }
+
+    // Submit as soon as the sixth digit lands — no extra tap needed.
+    LaunchedEffect(code) {
+        if (code.length == 6 && !isLoading) onVerify()
     }
 
     ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
@@ -201,13 +193,14 @@ fun OTPVerifyScreen(
                         },
                         style = ShLabelStyle.copy(color = ShVermillion, fontWeight = FontWeight.Bold),
                         modifier = Modifier.clickable(enabled = resendCooldown == 0) {
-                            if (resendCooldown == 0 && !isSending && !isLoading) {
+                            if (resendCooldown == 0 && !isSending && !isLoading && activity != null) {
                                 errorMessage = ""
                                 successMessage = ""
+                                code = ""
                                 isSending = true
                                 phoneAuthManager.resendOTP(
                                     phone = phone,
-                                    activity = activity!!,
+                                    activity = activity,
                                     onCodeSent = {
                                         isSending = false
                                         resendCooldown = 60
@@ -227,20 +220,44 @@ fun OTPVerifyScreen(
                     )
                 }
 
-                if (errorMessage.isNotEmpty()) {
+                // Inline status line — replaces the blocking progress dialogs so the
+                // keypad stays visible and usable while a code is in flight.
+                val statusText = when {
+                    errorMessage.isNotEmpty() -> errorMessage
+                    isLoading -> "Verifying…"
+                    isSending -> "Sending code…"
+                    successMessage.isNotEmpty() -> successMessage
+                    else -> ""
+                }
+                if (statusText.isNotEmpty()) {
                     Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
+                        text = statusText,
+                        color = if (errorMessage.isNotEmpty()) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                         style = ShLabelStyle,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                     )
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
 
                 ShoshinKeypad(
-                    onDigit = { if (code.length < 6) code += it },
-                    onClear = { if (code.isNotEmpty()) code = code.dropLast(1) },
+                    onDigit = {
+                        if (code.length < 6 && !isLoading) {
+                            // Typing again dismisses the previous failure, so the boxes
+                            // stop rendering their error state.
+                            errorMessage = ""
+                            successMessage = ""
+                            code += it
+                        }
+                    },
+                    onClear = {
+                        if (code.isNotEmpty() && !isLoading) {
+                            errorMessage = ""
+                            code = code.dropLast(1)
+                        }
+                    },
                     onOk = { onVerify() },
                     modifier = Modifier.padding(bottom = 24.dp)
                 )

@@ -100,7 +100,9 @@ fun SplashScreen(navController: NavController) {
                 modifier = Modifier.fillMaxSize().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.weight(1.2f))
+                // Equal weights above and below park the wordmark on the screen's
+                // vertical centre line, where the enso is already drawn.
+                Spacer(Modifier.weight(1f))
 
                 // Logo mark — using the updated component with enclosure
                 ShoshinLogoMark(on = "night", modifier = Modifier.padding(bottom = 24.dp))
@@ -121,9 +123,10 @@ fun SplashScreen(navController: NavController) {
                     letterSpacing = 8.sp,
                     modifier = Modifier.padding(top = 8.dp)
                 )
-                
-                Spacer(Modifier.height(100.dp))
 
+                Spacer(Modifier.weight(1f))
+
+                // Tagline sits with the CTA, not with the wordmark
                 Text(
                     text = "Beginner's mind.\nEvery morning.",
                     style = ShBodyStyle.copy(
@@ -132,10 +135,8 @@ fun SplashScreen(navController: NavController) {
                         textAlign = TextAlign.Center,
                         color = Color.White.copy(alpha = 0.8f)
                     ),
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier.padding(bottom = 24.dp)
                 )
-
-                Spacer(Modifier.weight(1f))
 
                 val interactionSource = remember { MutableInteractionSource() }
 

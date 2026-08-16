@@ -97,8 +97,12 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
         }
     }
 
-    val calendar = Calendar.getInstance()
-    val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(calendar.time)
+    // Show the alarm the user set, not the wall clock — this screen answers
+    // "what did I get up for", and the wake time is the thing being honoured.
+    val repo = remember(context) { com.Shoshin.app.data.ShoshinRepository(context) }
+    val alarmHour by repo.alarmHour.collectAsState(initial = 5)
+    val alarmMinute by repo.alarmMinute.collectAsState(initial = 30)
+    val timeStr = String.format(Locale.getDefault(), "%02d:%02d", alarmHour, alarmMinute)
 
     fun press(k: String) {
         val targetLen = prob.answer.toString().length
@@ -154,6 +158,8 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
                         Spacer(Modifier.height(12.dp))
                     }
                     Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Kicker("WAKE SET FOR", color = ShNightMuted)
+                        Spacer(Modifier.height(6.dp))
                         Text(timeStr, fontSize = 48.sp, fontWeight = FontWeight.Bold, fontFamily = DmSansFamily, color = Color.White)
                     }
 
@@ -234,7 +240,7 @@ private fun WrongAnswerUI(
             variant = ShButtonVariant.Accent,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Try again", fontWeight = FontWeight.Bold)
+            Text("Try again", color = Color.White, fontWeight = FontWeight.Bold)
         }
 
         Spacer(Modifier.height(24.dp))

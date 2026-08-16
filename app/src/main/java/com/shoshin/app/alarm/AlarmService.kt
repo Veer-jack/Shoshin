@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import com.Shoshin.app.MainActivity
 import com.Shoshin.app.R
 import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.ui.screens.ShAlarmTones
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -63,24 +64,44 @@ class AlarmService : Service() {
             val intensity = repo.alarmIntensity.first()
             val volume = intensity / 10f
 
-            val alarmUri = when (tone) {
-                "Forest" -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                "Rising Sun" -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                else -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            }
+            // Resolve through the same mapping the sound picker previews with, so the
+            // tone the user auditioned is the tone that actually wakes them.
+            val alarmUri = ShAlarmTones.uriFor(applicationContext, tone)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
 
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                setDataSource(applicationContext, alarmUri)
-                setVolume(volume, volume)
-                isLooping = true
-                prepare()
-                start()
+            try {
+                mediaPlayer = MediaPlayer().apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
+                    setDataSource(applicationContext, alarmUri)
+                    setVolume(volume, volume)
+                    isLooping = true
+                    prepare()
+                    start()
+                }
+            } catch (e: Exception) {
+                // A missing/unreadable tone must never mean a silent alarm.
+                android.util.Log.e("AlarmService", "Falling back to default alarm tone", e)
+                mediaPlayer = MediaPlayer().apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
+                    setDataSource(
+                        applicationContext,
+                        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    )
+                    setVolume(volume, volume)
+                    isLooping = true
+                    prepare()
+                    start()
+                }
             }
         }
 

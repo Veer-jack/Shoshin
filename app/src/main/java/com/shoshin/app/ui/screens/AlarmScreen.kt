@@ -323,9 +323,16 @@ fun AlarmScreenContent(
                         Box(
                             modifier = Modifier.fillMaxWidth().height(48.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surface).padding(4.dp)
+                                // surfaceVariant, not surface: the card behind this is already
+                                // surface, so the track was invisible and the segments looked
+                                // like loose text.
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(4.dp)
                         ) {
-                            Row(modifier = Modifier.fillMaxSize()) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
                                 listOf("Gentle", "Standard", "Shoshin").forEach { type ->
                                     val isSelected =
                                         alarmType == type || (alarmType == "Normal" && type == "Standard")
@@ -337,10 +344,14 @@ fun AlarmScreenContent(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = type, style = ShLabelStyle.copy(
+                                            text = type,
+                                            style = ShLabelStyle.copy(
                                                 fontSize = 14.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant
+                                                // Selected pill is onSurface (ink), so its label
+                                                // must be the background colour to stay legible.
+                                                color = if (isSelected) MaterialTheme.colorScheme.background
+                                                        else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         )
                                     }
@@ -350,14 +361,34 @@ fun AlarmScreenContent(
 
                         Spacer(Modifier.height(16.dp))
 
-                        val description = when (alarmType) {
-                            "Gentle" -> "Slowly fades in volume over 2 minutes."
-                            "Shoshin" -> "One resonant chime. If not awake, repeats every 30s."
-                            else -> "Standard repeating alarm with snooze options."
+                        // NOTE: alarmType is persisted but AlarmService does not yet vary
+                        // playback by it, and the activation challenge is always three
+                        // problems. Copy stays deliberately non-specific until that lands.
+                        val (challengeTitle, challengeDescription) = when (alarmType) {
+                            "Gentle" -> "Gentle" to "An easier start to the morning."
+                            "Shoshin" -> "Shoshin" to "The full practice — least forgiving, most effective."
+                            else -> "Standard" to "The balanced default."
                         }
 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painterResource(R.drawable.ic_brain),
+                                null,
+                                tint = ShVermillion,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = challengeTitle,
+                                style = ShLabelStyle.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Spacer(Modifier.height(6.dp))
+
                         Text(
-                            text = description,
+                            text = challengeDescription,
                             style = ShLabelStyle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 18.sp
@@ -419,6 +450,10 @@ fun AlarmScreenContent(
 private fun TimeDigit(
     value: Int, range: IntRange, onValueChange: (Int) -> Unit, textColor: Color = Color.Black
 ) {
+    // `outline` is the hairline token (near-white on Paper) — these arrows are controls,
+    // so they take the ink colour and read as tappable.
+    val arrowTint = MaterialTheme.colorScheme.onSurface
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconButton(onClick = {
             if (value < range.last) onValueChange(value + 1) else onValueChange(
@@ -427,9 +462,9 @@ private fun TimeDigit(
         }) {
             Icon(
                 painterResource(R.drawable.ic_arrow_left),
-                null,
-                modifier = Modifier.size(20.dp).rotate(90f),
-                tint = MaterialTheme.colorScheme.outline
+                contentDescription = "Increase",
+                modifier = Modifier.size(24.dp).rotate(90f),
+                tint = arrowTint
             )
         }
         Text(
@@ -444,9 +479,9 @@ private fun TimeDigit(
         }) {
             Icon(
                 painterResource(R.drawable.ic_arrow_left),
-                null,
-                modifier = Modifier.size(20.dp).rotate(270f),
-                tint = MaterialTheme.colorScheme.outline
+                contentDescription = "Decrease",
+                modifier = Modifier.size(24.dp).rotate(270f),
+                tint = arrowTint
             )
         }
     }

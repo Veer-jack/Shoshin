@@ -43,10 +43,7 @@ fun OnboardingScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Shoshin",
-                        style = ShTitleStyle.copy(fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground)
-                    )
+                    ShoshinLogoMark(modifier = Modifier.size(40.dp))
                     Text(
                         text = "Skip",
                         style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold),
@@ -88,12 +85,21 @@ fun OnboardingScreen(
                                 onComplete()
                             }
                         },
-                        variant = if (currentStep == 3) ShButtonVariant.Accent else ShButtonVariant.Ghost, 
+                        // Black pill across every step, with white label and arrow.
+                        variant = ShButtonVariant.Dark,
                         modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = { Icon(painterResource(R.drawable.ic_arrow_right), null, modifier = Modifier.size(18.dp)) }
+                        trailingIcon = {
+                            Icon(
+                                painterResource(R.drawable.ic_arrow_right),
+                                null,
+                                modifier = Modifier.size(18.dp),
+                                tint = Color.White
+                            )
+                        }
                     ) {
                         Text(
                             text = if (currentStep == 3) "Choose your path" else "Continue",
+                            color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
                     }

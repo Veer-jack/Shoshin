@@ -1,5 +1,6 @@
 package com.Shoshin.app.ui.screens
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
@@ -39,6 +40,63 @@ val SH_SOUNDS_LIST = listOf(
     ShSound("gong", "Distant gong", "Deep, for heavy sleepers")
 )
 
+/**
+ * Shoshin ships no audio of its own, so each slot in [SH_SOUNDS_LIST] is bound to a
+ * distinct tone already installed on the device. Slots are assigned by list position
+ * so a given id always resolves to the same tone, and the resolution is shared by the
+ * picker preview and [com.Shoshin.app.alarm.AlarmService] — otherwise the tone a user
+ * auditions would not be the one that actually wakes them.
+ */
+object ShAlarmTones {
+
+    @Volatile private var cachedTones: List<Pair<Uri, String>>? = null
+
+    /** Alarm tones first (they're built to wake people), topped up with ringtones. */
+    private fun deviceTones(context: Context): List<Pair<Uri, String>> {
+        cachedTones?.let { return it }
+        val collected = linkedMapOf<String, Pair<Uri, String>>()
+        listOf(RingtoneManager.TYPE_ALARM, RingtoneManager.TYPE_RINGTONE).forEach { type ->
+            try {
+                val manager = RingtoneManager(context).apply { setType(type) }
+                val cursor = manager.cursor
+                for (i in 0 until cursor.count) {
+                    val uri = manager.getRingtoneUri(i) ?: continue
+                    val title = cursor.let {
+                        it.moveToPosition(i)
+                        it.getString(RingtoneManager.TITLE_COLUMN_INDEX)
+                    } ?: continue
+                    collected.putIfAbsent(uri.toString(), uri to title)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ShAlarmTones", "Could not enumerate tones of type $type", e)
+            }
+        }
+        val result = collected.values.toList()
+        // Only cache a real answer — caching an empty list would pin the alarm to the
+        // system default forever if the first query happened to fail.
+        if (result.isNotEmpty()) cachedTones = result
+        return result
+    }
+
+    private fun slotFor(soundId: String): Int =
+        SH_SOUNDS_LIST.indexOfFirst { it.id == soundId }.takeIf { it >= 0 } ?: 0
+
+    /** The tone that plays for [soundId]; falls back to the system alarm default. */
+    fun uriFor(context: Context, soundId: String): Uri? {
+        val tones = deviceTones(context)
+        if (tones.isEmpty()) return RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        // Wraps when the device exposes fewer tones than we have slots.
+        return tones[slotFor(soundId) % tones.size].first
+    }
+
+    /** The device's own name for that tone, so the picker isn't claiming a sound it can't play. */
+    fun titleFor(context: Context, soundId: String): String? {
+        val tones = deviceTones(context)
+        if (tones.isEmpty()) return null
+        return tones[slotFor(soundId) % tones.size].second
+    }
+}
+
 @Composable
 fun SoundPickerScreen(navController: NavController) {
     val context = LocalContext.current
@@ -65,7 +123,9 @@ fun SoundPickerScreen(navController: NavController) {
     fun playPreview(sound: ShSound) {
         mediaPlayer?.stop()
         mediaPlayer?.release()
-        val uri = sound.previewUri ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        val uri = sound.previewUri
+            ?: ShAlarmTones.uriFor(context, sound.id)
+            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
         try {
             mediaPlayer = MediaPlayer.create(context, uri).apply {
                 if (this != null) {
@@ -171,8 +231,10 @@ fun SoundPickerScreen(navController: NavController) {
                 Column {
                     SH_SOUNDS_LIST.forEachIndexed { index, sound ->
                         val isSelected = selectedSoundId == sound.id
+                        val deviceToneName = remember(sound.id) { ShAlarmTones.titleFor(context, sound.id) }
                         SoundRowDark(
                             sound = sound,
+                            deviceToneName = deviceToneName,
                             isSelected = isSelected,
                             onClick = { 
                                 selectedSoundId = sound.id
@@ -195,6 +257,7 @@ fun SoundPickerScreen(navController: NavController) {
 @Composable
 private fun SoundRowDark(
     sound: ShSound,
+    deviceToneName: String?,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -223,7 +286,14 @@ private fun SoundRowDark(
         
         Column(modifier = Modifier.weight(1f)) {
             Text(sound.name, style = ShH2Style.copy(fontSize = 16.sp, color = Color.White))
-            Text(sound.note, style = ShLabelStyle.copy(fontSize = 13.sp, color = ShNightMuted))
+            Text(
+                // Name the actual device tone when we resolved one, so the label matches
+                // what will play at wake time.
+                text = deviceToneName?.let { "${sound.note} · $it" } ?: sound.note,
+                style = ShLabelStyle.copy(fontSize = 13.sp, color = ShNightMuted),
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
         }
 
         if (isSelected) {
