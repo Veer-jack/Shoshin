@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -115,21 +116,36 @@ fun ReferralScreen(
                             text = limits?.referralCode?.takeIf { it.isNotBlank() } ?: "···",
                             style = ShNumeralStyle.copy(fontSize = 24.sp, color = Color.White, letterSpacing = 1.sp)
                         )
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(ShNight3)
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
-                                .clickable {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ReferralActionPill(
+                                icon = R.drawable.ic_check,
+                                iconTint = ShMatchaDark,
+                                label = "Copy",
+                                onClick = {
                                     val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                     val clip = android.content.ClipData.newPlainText("Invite Code", limits?.referralCode ?: "")
                                     clipboard.setPrimaryClip(clip)
-                                },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(painterResource(R.drawable.ic_check), null, tint = ShMatchaDark, modifier = Modifier.size(14.dp))
-                            Text("Copy", style = ShLabelStyle.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White))
+                                }
+                            )
+                            val referralCode = limits?.referralCode
+                            ReferralActionPill(
+                                icon = R.drawable.ic_share,
+                                iconTint = Color.White,
+                                label = "Share",
+                                dimmed = referralCode.isNullOrBlank(),
+                                onClick = {
+                                    if (referralCode.isNullOrBlank()) {
+                                        android.widget.Toast.makeText(context, "No invite code", android.widget.Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        val message = "🤝 Join my circle on Shoshin!\nCode: $referralCode\n\nshoshin://invite?code=$referralCode"
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(android.content.Intent.EXTRA_TEXT, message)
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(intent, "Share invite code"))
+                                    }
+                                }
+                            )
                         }
                     }
                 }
@@ -216,5 +232,28 @@ fun ReferralScreen(
                 Spacer(Modifier.height(48.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun ReferralActionPill(
+    icon: Int,
+    iconTint: Color,
+    label: String,
+    dimmed: Boolean = false,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .alpha(if (dimmed) 0.4f else 1f)
+            .background(ShNight3)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(painterResource(icon), null, tint = iconTint, modifier = Modifier.size(14.dp))
+        Text(label, style = ShLabelStyle.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White))
     }
 }

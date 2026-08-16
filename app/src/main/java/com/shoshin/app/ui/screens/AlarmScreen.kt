@@ -226,7 +226,7 @@ fun AlarmScreen(navController: NavController, template: String = "walk") {
                 ShoshinCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { navController.navigate(ShRoutes.GOAL_SELECTION) }
+                        .clickable { navController.navigate(ShRoutes.ROUTINE_EDITOR) }
                 ) {
                     Row(
                         modifier = Modifier.padding(20.dp),
