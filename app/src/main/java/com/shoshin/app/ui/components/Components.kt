@@ -480,7 +480,8 @@ fun ShoshinButton(
     val containerColor = if ((isPressed || isExecuting) && pressedColor != null) pressedColor else defaultContainerColor
 
     val contentColor = when (variant) {
-        ShButtonVariant.Primary -> if (!isDark) ShInk else ShNight
+        // True black on the light pill in both themes — matches the Google OAuth button
+        ShButtonVariant.Primary -> Color.Black
         ShButtonVariant.Accent -> Color.White
         ShButtonVariant.Ghost -> MaterialTheme.colorScheme.onBackground
         ShButtonVariant.Dark -> Color.White

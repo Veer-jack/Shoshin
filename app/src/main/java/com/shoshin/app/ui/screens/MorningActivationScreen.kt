@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.util.*
 import java.text.SimpleDateFormat
+import kotlin.random.Random
 
 private data class Problem(val question: String, val answer: Int)
 
@@ -49,20 +51,29 @@ private val multiplicationPool = listOf(
     Problem("13 × 3", 39), Problem("15 × 2", 30)
 )
 
-private fun generateProblems(): List<Problem> {
-    return listOf(
-        additionPool.random(),
-        subtractionPool.random(),
-        multiplicationPool.random()
-    )
+// One pool per step, so a step can be re-rolled with a problem of the same kind.
+private val problemPools = listOf(additionPool, subtractionPool, multiplicationPool)
+
+private const val MAX_ATTEMPTS = 3
+
+// Seeded so the same three problems come back after an activity recreation.
+private fun generateProblems(random: Random): List<Problem> = problemPools.map { it.random(random) }
+
+/** A different problem from the same pool as [current] — never repeats the one just failed. */
+private fun rerollProblem(step: Int, current: Problem): Problem {
+    val pool = problemPools[step]
+    return pool.filter { it != current }.randomOrNull() ?: current
 }
 
 @Composable
 fun MorningActivationScreen(onBegin: () -> Unit) {
-    val problems = remember { generateProblems() }
-    var step  by remember { mutableIntStateOf(0) }
-    var entry by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf(false) }
+    // Survives activity recreation, so a rotation mid-challenge doesn't reset progress.
+    val seed  = rememberSaveable { System.currentTimeMillis() }
+    val problems = remember(seed) { generateProblems(Random(seed)).toMutableStateList() }
+    var step  by rememberSaveable { mutableIntStateOf(0) }
+    var entry by rememberSaveable { mutableStateOf("") }
+    var error by rememberSaveable { mutableStateOf(false) }
+    var attempts by rememberSaveable { mutableIntStateOf(0) }
     val prob  = problems[step]
 
     val context = LocalContext.current
@@ -95,9 +106,9 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
             "del" -> { entry = entry.dropLast(1); error = false }
             "ok"  -> {
                 if (entry.toIntOrNull() == prob.answer) {
-                    if (step < problems.lastIndex) { step++; entry = ""; error = false }
+                    if (step < problems.lastIndex) { step++; entry = ""; error = false; attempts = 0 }
                     else onBegin()
-                } else { error = true; entry = "" }
+                } else { attempts++; error = true; entry = "" }
             }
             else  -> if (entry.length < targetLen) { entry += k; error = false }
         }
@@ -106,7 +117,20 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
     ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
         Box(modifier = Modifier.fillMaxSize().background(ShNight)) {
             if (error) {
-                WrongAnswerUI(onRetry = { error = false }, time = timeStr)
+                WrongAnswerUI(
+                    onRetry = {
+                        error = false
+                        // Never dead-end an alarm: after the third miss, swap in a fresh
+                        // problem of the same kind and start the attempt count over.
+                        if (attempts >= MAX_ATTEMPTS) {
+                            problems[step] = rerollProblem(step, prob)
+                            attempts = 0
+                        }
+                    },
+                    time = timeStr,
+                    attempts = attempts,
+                    maxAttempts = MAX_ATTEMPTS
+                )
             } else {
                 Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
                     if (showNudgeBanner) {
@@ -155,7 +179,12 @@ fun MorningActivationScreen(onBegin: () -> Unit) {
 }
 
 @Composable
-private fun WrongAnswerUI(onRetry: () -> Unit, time: String) {
+private fun WrongAnswerUI(
+    onRetry: () -> Unit,
+    time: String,
+    attempts: Int,
+    maxAttempts: Int
+) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -186,12 +215,17 @@ private fun WrongAnswerUI(onRetry: () -> Unit, time: String) {
 
         Spacer(Modifier.height(32.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ShVermillion))
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ShNight3))
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ShNight3))
+            repeat(maxAttempts) { index ->
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(if (index < attempts) ShVermillion else ShNight3)
+                )
+            }
         }
         Spacer(Modifier.height(8.dp))
-        Text("1 of 3 attempts used", style = ShLabelStyle, color = ShNightMuted)
+        Text("$attempts of $maxAttempts attempts used", style = ShLabelStyle, color = ShNightMuted)
 
         Spacer(Modifier.weight(1f))
 

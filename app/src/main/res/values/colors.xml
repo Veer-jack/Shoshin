@@ -4,8 +4,8 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- ── Core Palette ── -->
-    <color name="sh_ink">#FF1C1C1E</color>
-    <color name="sh_ink_2">#FF2C2C2E</color>
+    <color name="sh_ink">#FF0D0D0F</color>
+    <color name="sh_ink_2">#FF161618</color>
     <color name="sh_paper">#FFFAF9F6</color>
     <color name="sh_paper_2">#FFF3F1EB</color>
     <color name="sh_surface">#FFFFFFFF</color>
@@ -16,7 +16,7 @@
 
     <!-- ── Success ── -->
     <color name="sh_matcha">#FF4A7C59</color>
-    <color name="sh_matcha_light">#1F4A7C59</color>
+    <color name="sh_matcha_light">#3D4A7C59</color>
 
     <!-- ── Neutrals ── -->
     <color name="sh_sand">#FFE8E4DC</color>
@@ -27,8 +27,8 @@
 
     <!-- ── Dark / Night screens ── -->
     <color name="sh_night">#FF0F0F0F</color>
-    <color name="sh_night_2">#FF1A1A1A</color>
-    <color name="sh_night_3">#FF242424</color>
+    <color name="sh_night_2">#FF080808</color>
+    <color name="sh_night_3">#FF121212</color>
     <color name="sh_night_text">#FFF2F1EC</color>
     <color name="sh_night_muted">#FF8C8A85</color>
 

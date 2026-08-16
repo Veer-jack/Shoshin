@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -120,15 +121,22 @@ fun ShoshinTheme(
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
-    val themeViewModel: ThemeViewModel = viewModel(
-        key = "ShoshinThemeViewModel",
-        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return ThemeViewModel(context.applicationContext as Application) as T
+    val isPreview = LocalInspectionMode.current
+    
+    val mode = if (isPreview) {
+        ShThemeMode.SYSTEM
+    } else {
+        val themeViewModel: ThemeViewModel = viewModel(
+            key = "ShoshinThemeViewModel",
+            factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                    return ThemeViewModel(context.applicationContext as Application) as T
+                }
             }
-        }
-    )
-    val mode by themeViewModel.mode.collectAsState()
+        )
+        themeViewModel.mode.collectAsState().value
+    }
+
     val systemIsDark = isSystemInDarkTheme()
     
     val colorScheme = when (type) {

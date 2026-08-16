@@ -9,10 +9,10 @@ import androidx.compose.ui.graphics.Color
 // ============================================================
 
 // ── Core Tokens (Theme Responsive) ──
-val ShInkLight        = Color(0xFF1C1C1E)
+val ShInkLight        = Color(0xFF0D0D0F)
 val ShInkDark         = Color(0xFFF2F1EC)
 
-val ShInk2Light      = Color(0xFF2C2C2E)
+val ShInk2Light      = Color(0xFF161618)
 val ShInk2Dark       = Color(0xFFDAD8D2)
 
 val ShPaperLight      = Color(0xFFFAF9F6)
@@ -54,8 +54,8 @@ val ShLine2Dark        = Color(0x29FFFFFF) // rgba(255,255,255,0.16)
 // ── Night / Fixed-Dark Tokens (Same both themes) ──
 // Used on: Splash, Activation, Camera, 71-Day, Paywall, Wrong Answer
 val ShNight            = Color(0xFF0F0F0F)
-val ShNight2           = Color(0xFF1A1A1A)
-val ShNight3           = Color(0xFF242424)
+val ShNight2           = Color(0xFF080808)
+val ShNight3           = Color(0xFF121212)
 val ShNightText        = Color(0xFFF2F1EC)
 val ShNightMuted       = Color(0xFF8C8A85)
 val ShNightLine        = Color(0x1AFFFFFF) // rgba(255,255,255,0.10)
@@ -67,7 +67,7 @@ val ShScrim            = Color(0x80000000)
 val ShFabShadow        = Color(0x52C84B31) // rgba(200,75,49,0.32)
 
 // Common Opacity
-val ShMatchaLightAlpha = Color(0x1F4A7C59) // 12% opacity (Light only)
+val ShMatchaLightAlpha = Color(0x3D4A7C59) // 24% opacity (Light only)
 
 // ── Theme Mapping Helpers ──
 val ShMatchaLight = ShMatchaLightAlpha
