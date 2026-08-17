@@ -1,6 +1,7 @@
 package com.Shoshin.app.alarm
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
@@ -11,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import com.Shoshin.app.MainActivity
 import com.Shoshin.app.R
 import com.Shoshin.app.data.ShoshinRepository
+import com.Shoshin.app.navigation.ShRoutes
 import com.Shoshin.app.ui.screens.ShAlarmTones
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +25,17 @@ class AlarmService : Service() {
     private val CHANNEL_ID = "shoshin_alarm_channel"
     private val NOTIF_ID   = 1001
 
+    companion object {
+        /**
+         * Silences the alarm. The tone loops forever and the notification is ongoing, so
+         * something has to call this — the mind-awake challenge is what earns the silence.
+         * Stopping the service also clears its foreground notification.
+         */
+        fun stop(context: Context) {
+            context.stopService(Intent(context, AlarmService::class.java))
+        }
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -34,10 +47,12 @@ class AlarmService : Service() {
         val routineName = intent?.getStringExtra("routine_name") ?: "Morning Walk"
         val repo = ShoshinRepository(applicationContext)
 
-        // Start foreground with notification
+        // Start foreground with notification.
+        // The extra must be "navigate_to" — that is the key MainActivity.handleIntent reads.
+        // An unrecognised key means the tap opens the app and then sits there.
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("open_screen", "activation")
+            putExtra("navigate_to", ShRoutes.ACTIVATION)
         }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, launchIntent,

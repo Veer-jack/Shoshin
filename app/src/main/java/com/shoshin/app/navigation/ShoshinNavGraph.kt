@@ -196,13 +196,23 @@ fun ShoshinNavGraph(
         )
     }
 
-    NavHost(
-        navController  = navController,
-        startDestination = when {
+    // Remembered deliberately. NavHost builds its graph with remember(startDestination), and
+    // assigning a new graph resets the back stack onto the new start destination — so leaving
+    // this reactive means every mid-session flag change yanks the user to a different screen.
+    // MainActivity withholds composition until DataStore has answered, so the first value is
+    // already the correct cold-start route; every later transition is an explicit navigate()
+    // or the LaunchedEffect above.
+    val startDestination = remember {
+        when {
             !isLoggedIn               -> ShRoutes.SPLASH
             !hasCompletedOnboarding   -> ShRoutes.ONBOARDING
             else                      -> ShRoutes.MAIN
-        },
+        }
+    }
+
+    NavHost(
+        navController  = navController,
+        startDestination = startDestination,
     ) {
 
         // ── Splash ──────────────────────────────────────────
@@ -676,6 +686,8 @@ fun ShoshinNavGraph(
         ) {
             MorningActivationScreen(
                 onBegin = {
+                    // "Solve to silence" — the challenge is passed, so stop the looping tone.
+                    com.Shoshin.app.alarm.AlarmService.stop(context)
                     navController.navigate(ShRoutes.CHECKPOINT) {
                         popUpTo(ShRoutes.ACTIVATION) { inclusive = true }
                     }
@@ -785,16 +797,26 @@ private suspend fun handleNewUser(
     try {
         android.util.Log.d("Auth", "handleNewUser STARTED: userId=$userId, name=$displayName")
 
-        // 1. Basic user save to DataStore
-        shoshinRepository.saveUser(name = displayName, email = email ?: "", phone = phone ?: "")
-        android.util.Log.d("Auth", "handleNewUser: DataStore saved")
-
-        // 2. Create or Update UserEntity in local DB and Firestore
+        // 1. Resolve who this is *before* touching DataStore. Onboarding is a first-registration
+        // flow, and UserEntity.onboardingCompleted is the durable per-user answer (local Room,
+        // backed by Firestore); the DataStore flag is only a device-local cache that logout()
+        // wipes, so it has to be re-derived here on every login.
         val existingUser = userRepository.getUser(userId)
         android.util.Log.d("Auth", "handleNewUser: Fetched existing user: ${existingUser != null}")
         if (existingUser != null) {
             onExistingUser(existingUser.lastOpenDate)
         }
+        val onboardedUser = existingUser?.takeIf { it.onboardingCompleted }
+
+        // 2. Save to DataStore. Both flags go in one write so the nav graph never observes a
+        // logged-in-but-not-onboarded returning user and swing through the onboarding screen.
+        shoshinRepository.saveUser(
+            name = displayName,
+            email = email ?: "",
+            phone = phone ?: "",
+            onboardingDone = onboardedUser != null
+        )
+        android.util.Log.d("Auth", "handleNewUser: DataStore saved (onboarded=${onboardedUser != null})")
 
         val newUser = if (existingUser == null) {
             com.Shoshin.app.data.db.entities.UserEntity(
@@ -871,14 +893,26 @@ private suspend fun handleNewUser(
         AnalyticsManager.setUserProperties(userType = "professional", signupMethod = if (email != null) "email" else "phone", hasReferral = referralCode != null)
         
         // 6. Navigate (Safety: check if already navigating)
-        with(kotlinx.coroutines.Dispatchers.Main) {
-            android.util.Log.d("Auth", "handleNewUser: Navigating to ONBOARDING")
-            if (navController.currentDestination?.route != ShRoutes.ONBOARDING) {
-                navController.navigate(ShRoutes.ONBOARDING) {
-                    popUpTo(ShRoutes.AUTH) { inclusive = true }
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+            if (onboardedUser != null) {
+                android.util.Log.d("Auth", "handleNewUser: Returning user, skipping ONBOARDING")
+                // The LaunchedEffect above may already have routed here off the DataStore write;
+                // compare against the route *pattern*, which is what currentDestination holds.
+                if (navController.currentDestination?.route != ShRoutes.RETURNING_USER) {
+                    navController.navigate(ShRoutes.returningUser(onboardedUser.lastOpenDate)) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            } else {
+                android.util.Log.d("Auth", "handleNewUser: Navigating to ONBOARDING")
+                if (navController.currentDestination?.route != ShRoutes.ONBOARDING) {
+                    navController.navigate(ShRoutes.ONBOARDING) {
+                        popUpTo(ShRoutes.AUTH) { inclusive = true }
+                    }
                 }
             }
         }
+
     } catch (e: Exception) {
         android.util.Log.e("Auth", "Critical error in handleNewUser: ${e.message}", e)
     }

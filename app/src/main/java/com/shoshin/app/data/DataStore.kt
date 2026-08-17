@@ -61,12 +61,19 @@ class ShoshinRepository(private val context: Context) {
     val onboardingDone: Flow<Boolean> = context.dataStore.data
         .map { it[PrefsKeys.ONBOARDING] ?: false }
 
-    suspend fun saveUser(name: String, email: String = "", phone: String = "") {
+    /**
+     * Writes the login flags in one edit. [onboardingDone] must be set here rather than in a
+     * follow-up write: a returning user who is briefly logged-in-but-not-onboarded makes the
+     * nav graph swing through the onboarding start destination. Only ever sets the flag, so a
+     * caller that doesn't know the answer can't clear it.
+     */
+    suspend fun saveUser(name: String, email: String = "", phone: String = "", onboardingDone: Boolean = false) {
         context.dataStore.edit { prefs ->
             prefs[PrefsKeys.USER_NAME]    = name
             prefs[PrefsKeys.USER_EMAIL]   = email
             prefs[PrefsKeys.USER_PHONE]   = phone
             prefs[PrefsKeys.IS_LOGGED_IN] = true
+            if (onboardingDone) prefs[PrefsKeys.ONBOARDING] = true
         }
     }
 
