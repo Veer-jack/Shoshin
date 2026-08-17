@@ -14,6 +14,8 @@ import com.Shoshin.app.ui.theme.ShMatchaLightToken
 import com.Shoshin.app.utils.AnalyticsManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -132,8 +134,15 @@ class StreakViewModel(
                 // Recompute honestly on load too — otherwise a stale non-zero streak keeps
                 // showing until the user's next full completion happens to recalculate it.
                 if (loadedUser != null && loadedUser.currentStreak > 0 && hasMissedDay(loadedUser, System.currentTimeMillis())) {
-                    AnalyticsManager.logStreakReset("missed_day", loadedUser.currentStreak)
-                    userRepository.updateUser(loadedUser.copy(currentStreak = 0, streakStartDate = 0))
+                    // Re-check under the write lock: this emission may be the pre-write snapshot
+                    // of an increment still in flight, and resetting off it would undo the streak
+                    // the user just earned.
+                    mutateUser { current ->
+                        if (current.currentStreak > 0 && hasMissedDay(current, System.currentTimeMillis())) {
+                            AnalyticsManager.logStreakReset("missed_day", current.currentStreak)
+                            current.copy(currentStreak = 0, streakStartDate = 0)
+                        } else null
+                    }
                 }
             }
         }
@@ -152,77 +161,77 @@ class StreakViewModel(
 
     private fun isMilestone(streak: Int): Boolean = streak == 7 || (streak > 0 && streak % 15 == 0)
 
-    fun saveRoutineProgress(stepIndex: Int) {
-        val currentUser = _user.value ?: return
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    /**
+     * Every mutator here is a read-modify-write of the entire UserEntity row. Reading
+     * `_user.value` at call time meant two mutators firing back-to-back both worked from the
+     * same pre-write snapshot, and the second silently reverted the first — incrementStreak()
+     * followed by resetRoutineProgress() on the last checkpoint threw the new streak away.
+     *
+     * Serialising the writes and re-reading the row *inside* the lock makes them compose.
+     * [block] returns null to abort without writing. Slow fan-out (network, group sync) must
+     * be launched separately rather than held under the lock.
+     */
+    private val userWriteMutex = Mutex()
+
+    private fun mutateUser(block: suspend (UserEntity) -> UserEntity?) {
+        val uid = userRepository.userId ?: _user.value?.userId ?: return
         viewModelScope.launch {
-            userRepository.updateUser(currentUser.copy(
-                lastRoutineStepIndex = stepIndex,
-                lastRoutineDate = today
-            ))
+            userWriteMutex.withLock {
+                val latest = userRepository.getUser(uid) ?: return@withLock
+                val updated = block(latest) ?: return@withLock
+                userRepository.updateUser(updated)
+            }
         }
+    }
+
+    fun saveRoutineProgress(stepIndex: Int) {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        mutateUser { it.copy(lastRoutineStepIndex = stepIndex, lastRoutineDate = today) }
     }
 
     fun resetRoutineProgress() {
-        val currentUser = _user.value ?: return
-        viewModelScope.launch {
-            userRepository.updateUser(currentUser.copy(
-                lastRoutineStepIndex = 0,
-                lastRoutineDate = ""
-            ))
-        }
+        mutateUser { it.copy(lastRoutineStepIndex = 0, lastRoutineDate = "") }
     }
 
     fun incrementStreak() {
-        val currentUser = _user.value ?: return
         val now = System.currentTimeMillis()
-        val uid = currentUser.userId
+        mutateUser { currentUser ->
+            val uid = currentUser.userId
 
-        // Basic check: only increment once per day
-        if (isSameDay(currentUser.lastCheckpointDate, now)) return
+            // Basic check: only increment once per day
+            if (isSameDay(currentUser.lastCheckpointDate, now)) return@mutateUser null
 
-        // GitHub-style: missing a full day breaks the streak. Today's completion becomes
-        // day 1 of a new streak rather than being silently dropped.
-        val missedDay = hasMissedDay(currentUser, now)
-        val baseStreak = if (missedDay) {
-            AnalyticsManager.logStreakReset("missed_day", currentUser.currentStreak)
-            0
-        } else {
-            currentUser.currentStreak
-        }
-
-        val newStreak = baseStreak + 1
-        val newBest = if (newStreak > currentUser.bestStreak) newStreak else currentUser.bestStreak
-        val startDate = if (baseStreak == 0) now else currentUser.streakStartDate
-
-        if (isMilestone(newStreak)) {
-            checkStreakBadges(uid, newStreak)
-            AnalyticsManager.logMilestoneReached(newStreak, "professional")
-        }
-
-        AnalyticsManager.logStreakUpdated(newStreak, currentUser.currentStreak, "professional")
-
-        // Beginner badge on first ever activation
-        if (currentUser.totalActivations == 0) {
-            viewModelScope.launch {
-                badgeRepository.unlockBadge(uid, "milestone_first")
-                _newBadgeUnlocked.value = "milestone_first"
+            // GitHub-style: missing a full day breaks the streak. Today's completion becomes
+            // day 1 of a new streak rather than being silently dropped.
+            val missedDay = hasMissedDay(currentUser, now)
+            val baseStreak = if (missedDay) {
+                AnalyticsManager.logStreakReset("missed_day", currentUser.currentStreak)
+                0
+            } else {
+                currentUser.currentStreak
             }
-        }
 
-        viewModelScope.launch {
-            userRepository.updateUser(currentUser.copy(
-                currentStreak = newStreak,
-                bestStreak = newBest,
-                streakStartDate = startDate,
-                lastCheckpointDate = now,
-                totalActivations = currentUser.totalActivations + 1
-            ))
-        }
+            val newStreak = baseStreak + 1
+            val newBest = if (newStreak > currentUser.bestStreak) newStreak else currentUser.bestStreak
+            val startDate = if (baseStreak == 0) now else currentUser.streakStartDate
 
-        // Record today's completion for the per-day history (weekly/monthly charts, calendar).
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(now))
-        viewModelScope.launch {
+            if (isMilestone(newStreak)) {
+                checkStreakBadges(uid, newStreak)
+                AnalyticsManager.logMilestoneReached(newStreak, "professional")
+            }
+
+            AnalyticsManager.logStreakUpdated(newStreak, currentUser.currentStreak, "professional")
+
+            // Beginner badge on first ever activation
+            if (currentUser.totalActivations == 0) {
+                viewModelScope.launch {
+                    badgeRepository.unlockBadge(uid, "milestone_first")
+                    _newBadgeUnlocked.value = "milestone_first"
+                }
+            }
+
+            // Record today's completion for the per-day history (weekly/monthly charts, calendar).
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(now))
             streakDao?.insertStreak(
                 StreakEntity(
                     streakId = "$uid-$today",
@@ -234,11 +243,20 @@ class StreakViewModel(
                     lastUpdated = now
                 )
             )
-        }
 
-        // Reflect the new streak on this user's row in every group they belong to.
-        viewModelScope.launch {
-            groupRepository?.syncMemberStatsToAllGroups(uid, newStreak, today)
+            // Reflect the new streak on this user's row in every group they belong to.
+            // Launched, not awaited — this is network fan-out and must not hold the write lock.
+            viewModelScope.launch {
+                groupRepository?.syncMemberStatsToAllGroups(uid, newStreak, today)
+            }
+
+            currentUser.copy(
+                currentStreak = newStreak,
+                bestStreak = newBest,
+                streakStartDate = startDate,
+                lastCheckpointDate = now,
+                totalActivations = currentUser.totalActivations + 1
+            )
         }
     }
 
@@ -259,13 +277,9 @@ class StreakViewModel(
     }
 
     fun resetStreak() {
-        val currentUser = _user.value ?: return
-        AnalyticsManager.logStreakReset("manual_skip", currentUser.currentStreak)
-        viewModelScope.launch {
-            userRepository.updateUser(currentUser.copy(
-                currentStreak = 0,
-                streakStartDate = 0
-            ))
+        mutateUser { currentUser ->
+            AnalyticsManager.logStreakReset("manual_skip", currentUser.currentStreak)
+            currentUser.copy(currentStreak = 0, streakStartDate = 0)
         }
     }
 
