@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.Shoshin.app.BuildConfig
 import com.Shoshin.app.R
-import com.Shoshin.app.data.db.entities.avatarUrl
 import com.Shoshin.app.navigation.ShRoutes
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
@@ -56,7 +56,7 @@ fun SettingsScreen(
                 }
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = userName,
+                    text = "Settings",
                     style = ShTitleStyle.copy(fontSize = 28.sp, color = MaterialTheme.colorScheme.onBackground)
                 )
             }
@@ -68,45 +68,12 @@ fun SettingsScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(bottom = 32.dp)
                 ) {
-                    // Profile Section - Fix #4: Design Layout
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ShoshinAvatar(
-                            imageUrl = u.avatarUrl,
-                            name = userName,
-                            size = 96.dp,
-                            onClick = { navController.navigate(ShRoutes.EDIT_PROFILE) }
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Text(u.email ?: "", style = ShLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Joined July 2026", style = ShLabelStyle.copy(fontSize = 11.sp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-                    }
-
-                    // Fix #5: Prominent Mark Practice Button
-                    val isTodayMarked = u.lastRoutineStepIndex > 0 // In production, check date too
-                    MarkPracticeSection(isTodayMarked) {
-                        navController.navigate(ShRoutes.ACTIVATION)
-                    }
-
-                    // APPEARANCE
-                    val themeViewModel: ThemeViewModel = viewModel(key = "ShoshinThemeViewModel")
-                    val currentMode by themeViewModel.mode.collectAsState()
-                    
-                    SettingsSection(title = "APPEARANCE") {
-                        ThemeSelectorRow(
-                            selectedMode = currentMode,
-                            onModeSelected = { themeViewModel.setMode(it) }
-                        )
-                    }
+                    Spacer(Modifier.height(8.dp))
 
                     // ACCOUNT
                     SettingsSection(title = "ACCOUNT") {
                         SettingsRow(
-                            title = "Profile details",
+                            title = userName,
                             subtitle = u.phone ?: u.email,
                             iconRes = R.drawable.ic_user,
                             onClick = { navController.navigate(ShRoutes.EDIT_PROFILE) }
@@ -114,82 +81,72 @@ fun SettingsScreen(
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
                         SettingsRow(
                             title = "Invite the circle",
-                            subtitle = "Earn a month of Pro",
-                            iconRes = R.drawable.ic_plus,
+                            subtitle = "Unlock 5 extra spots",
+                            iconRes = R.drawable.ic_gift,
                             onClick = { navController.navigate(ShRoutes.REFERRALS) }
                         )
                     }
 
-                    // SUPPORT & PRIVACY
-                    SettingsSection(title = "SUPPORT & PRIVACY") {
+                    // APP
+                    val themeViewModel: ThemeViewModel = viewModel(key = "ShoshinThemeViewModel")
+                    val currentMode by themeViewModel.mode.collectAsState()
+
+                    SettingsSection(title = "APP") {
+                        SettingsRow(title = "Appearance", iconRes = R.drawable.ic_sun, showChevron = false)
+                        ThemeSelectorRow(
+                            selectedMode = currentMode,
+                            onModeSelected = { themeViewModel.setMode(it) }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
                         SettingsRow(
-                            title = "Help & Support",
+                            title = "Haptics",
+                            iconRes = R.drawable.ic_pulse,
+                            trailing = {
+                                ShoshinToggle(checked = u.hapticsEnabled, onCheckedChange = { viewModel.updateHaptics(it) })
+                            }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsRow(
+                            title = "About",
+                            value = "v${BuildConfig.VERSION_NAME}",
+                            iconRes = R.drawable.ic_info
+                        )
+                    }
+
+                    // HELP
+                    SettingsSection(title = "HELP") {
+                        SettingsRow(
+                            title = "Help & support",
                             iconRes = R.drawable.ic_help,
                             onClick = { navController.navigate(ShRoutes.SUPPORT) }
                         )
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
                         SettingsRow(
-                            title = "Privacy & Data",
-                            iconRes = R.drawable.ic_shield,
+                            title = "Privacy & data",
+                            iconRes = R.drawable.ic_lock,
                             onClick = { navController.navigate(ShRoutes.DATA_PRIVACY) }
                         )
                     }
 
-                    // LOGOUT
-                    Spacer(Modifier.height(24.dp))
-                    Text(
-                        text = "Log Out",
-                        style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.logout { navController.navigate(ShRoutes.AUTH) { popUpTo(0) } } }
-                            .padding(vertical = 16.dp),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                    // SIGN OUT
+                    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            SettingsRow(
+                                title = "Sign out",
+                                iconRes = R.drawable.ic_logout,
+                                danger = true,
+                                showChevron = false,
+                                onClick = { viewModel.logout { navController.navigate(ShRoutes.AUTH) { popUpTo(0) } } }
+                            )
+                        }
+                    }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun MarkPracticeSection(isCompleted: Boolean, onStart: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(if (isCompleted) MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f) else Color.Transparent)
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = if (isCompleted) "Today's practice: Completed ✓" else "Mark today's practice",
-                style = ShLabelStyle,
-                color = if (isCompleted) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (isCompleted) {
-                Icon(painterResource(R.drawable.ic_check), null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
-            }
-        }
-        
-        Spacer(Modifier.height(8.dp))
-        
-        ShoshinButton(
-            onClick = onStart,
-            variant = ShButtonVariant.Accent,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-        ) {
-            Icon(painterResource(R.drawable.ic_check), null, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("Mark Practice Complete", fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -251,6 +208,9 @@ private fun SettingsRow(
     subtitle: String? = null,
     value: String? = null,
     iconRes: Int,
+    danger: Boolean = false,
+    showChevron: Boolean = true,
+    trailing: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
     Row(
@@ -264,11 +224,11 @@ private fun SettingsRow(
             modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
-            Icon(painterResource(iconRes), null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+            Icon(painterResource(iconRes), null, tint = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = ShH2Style.copy(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface))
+            Text(title, style = ShH2Style.copy(fontSize = 16.sp, color = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface))
             if (subtitle != null) {
                 Text(subtitle, style = ShLabelStyle.copy(fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
             }
@@ -277,6 +237,9 @@ private fun SettingsRow(
             Text(value, style = ShLabelStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
             Spacer(Modifier.width(8.dp))
         }
-        Icon(painterResource(R.drawable.ic_arrow_right), null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
+        when {
+            trailing != null -> trailing()
+            showChevron -> Icon(painterResource(R.drawable.ic_arrow_right), null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        }
     }
 }

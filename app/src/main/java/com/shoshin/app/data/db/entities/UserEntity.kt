@@ -20,6 +20,7 @@ data class UserEntity(
     val notificationTime: String = "06:00",
     val notificationSound: Boolean = true,
     val notificationVibration: Boolean = true,
+    val hapticsEnabled: Boolean = true,
     val productiveStartTime: String = "06:00",
     val productiveEndTime: String = "22:00",
     val onboardingCompleted: Boolean = false,

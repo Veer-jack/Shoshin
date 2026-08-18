@@ -112,12 +112,35 @@ fun ProfileScreen(
 
                             Spacer(Modifier.height(16.dp))
 
-                            Text(
-                                text = displayName,
-                                style = ShTitleStyle.copy(fontSize = 28.sp),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = displayName,
+                                    style = ShTitleStyle.copy(fontSize = 28.sp),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Icon(
+                                    painterResource(R.drawable.ic_edit),
+                                    contentDescription = "Edit profile",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .clickable { navController.navigate(ShRoutes.EDIT_PROFILE) }
+                                )
+                            }
+
+                            if (!u.bio.isNullOrBlank()) {
+                                Spacer(Modifier.height(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(50))
+                                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(50))
+                                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                                ) {
+                                    Text(u.bio!!, style = ShLabelStyle.copy(fontSize = 12.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
 
                             Spacer(Modifier.height(24.dp))
                             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 1.dp, modifier = Modifier.padding(horizontal = 24.dp))
@@ -134,6 +157,33 @@ fun ProfileScreen(
                                 ProfileStatItem(value = consistencyValue.toString(), label = "CONSISTENCY", unit = "%", textColor = MaterialTheme.colorScheme.onSurface)
                             }
                         }
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+
+                    // Invite CTA — teaser for the full Referral screen
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(ShNight)
+                            .clickable { navController.navigate(ShRoutes.REFERRALS) }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.size(48.dp).clip(CircleShape).background(ShNight3),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(painterResource(R.drawable.ic_gift), null, tint = ShVermillionLight, modifier = Modifier.size(22.dp))
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Invite the circle", style = ShLabelStyle.copy(fontSize = 15.sp), fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Unlock 5 extra spots in your circle", style = ShLabelStyle.copy(fontSize = 12.sp), color = ShNightMuted)
+                        }
+                        Icon(painterResource(R.drawable.ic_arrow_right), null, tint = ShNightMuted, modifier = Modifier.size(18.dp))
                     }
 
                     Spacer(Modifier.height(32.dp))
