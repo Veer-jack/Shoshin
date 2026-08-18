@@ -44,7 +44,7 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
@@ -117,54 +117,6 @@ fun SettingsScreen(
                             subtitle = "Earn a month of Pro",
                             iconRes = R.drawable.ic_plus,
                             onClick = { navController.navigate(ShRoutes.REFERRALS) }
-                        )
-                    }
-
-                    // PRACTICE
-                    SettingsSection(title = "PRACTICE") {
-                        SettingsRow(
-                            title = "Default challenge",
-                            value = "Standard",
-                            iconRes = R.drawable.ic_bolt,
-                            onClick = { /* Change challenge */ }
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingsSwitchRow(
-                            title = "Require photo proof",
-                            checked = true,
-                            onCheckedChange = { },
-                            iconRes = R.drawable.ic_camera
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingsSwitchRow(
-                            title = "Strict mode",
-                            subtitle = "No skips, no excuses",
-                            checked = false,
-                            onCheckedChange = { },
-                            iconRes = R.drawable.ic_lock
-                        )
-                    }
-
-                    // NOTIFICATIONS - Fix #6: Functional Button
-                    SettingsSection(title = "NOTIFICATIONS") {
-                        SettingsRow(
-                            title = "View all notifications",
-                            iconRes = R.drawable.ic_bell,
-                            onClick = { navController.navigate(ShRoutes.NOTIFICATIONS) }
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingsRow(
-                            title = "Wind-down reminder",
-                            value = "9:30 PM",
-                            iconRes = R.drawable.ic_moon,
-                            onClick = { /* Change time */ }
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingsSwitchRow(
-                            title = "Streak alerts",
-                            checked = true,
-                            onCheckedChange = { },
-                            iconRes = R.drawable.ic_droplet
                         )
                     }
 
@@ -326,45 +278,5 @@ private fun SettingsRow(
             Spacer(Modifier.width(8.dp))
         }
         Icon(painterResource(R.drawable.ic_arrow_right), null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
-    }
-}
-
-@Composable
-private fun SettingsSwitchRow(
-    title: String,
-    subtitle: String? = null,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    iconRes: Int
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surface),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(painterResource(iconRes), null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
-        }
-        Spacer(Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = ShH2Style.copy(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface))
-            if (subtitle != null) {
-                Text(subtitle, style = ShLabelStyle.copy(fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
-            }
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = ShMatcha,
-                uncheckedThumbColor = Color.White.copy(alpha = 0.4f),
-                uncheckedTrackColor = MaterialTheme.colorScheme.outline
-            )
-        )
     }
 }

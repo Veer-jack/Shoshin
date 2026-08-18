@@ -66,6 +66,7 @@ fun AlarmScreen(navController: NavController, template: String = "walk") {
         onDayToggle = { day ->
             if (days.contains(day)) days.remove(day) else days.add(day)
         },
+        onBackClick = { navController.popBackStack() },
         onRoutineClick = { navController.navigate(ShRoutes.ROUTINE_EDITOR) },
         onSoundPickerClick = { navController.navigate(ShRoutes.SOUND_PICKER) },
         onSetAlarmClick = {
@@ -97,6 +98,7 @@ fun AlarmScreenContent(
     onAlarmTypeChange: (String) -> Unit,
     onIsAmChange: (Boolean) -> Unit,
     onDayToggle: (Int) -> Unit,
+    onBackClick: () -> Unit,
     onRoutineClick: () -> Unit,
     onSoundPickerClick: () -> Unit,
     onSetAlarmClick: () -> Unit
@@ -124,7 +126,17 @@ fun AlarmScreenContent(
                 modifier = Modifier.fillMaxSize().padding(padding)
                     .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)
             ) {
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(16.dp))
+
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        painterResource(R.drawable.ic_arrow_left),
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
 
                 // Header
                 Row(
@@ -504,6 +516,7 @@ fun AlarmScreenPreview() {
             onAlarmTypeChange = {},
             onIsAmChange = {},
             onDayToggle = {},
+            onBackClick = {},
             onRoutineClick = {},
             onSoundPickerClick = {},
             onSetAlarmClick = {})

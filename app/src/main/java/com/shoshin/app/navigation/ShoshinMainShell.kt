@@ -141,52 +141,60 @@ fun ShoshinBottomBar(
     onFabClick: () -> Unit
 ) {
     val isDark = MaterialTheme.colorScheme.background == ShNight
+    val pillShape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 16.dp)
     ) {
-        // Custom Bar Surface - Design Spec: rgba(250,249,246,0.86) light / rgba(15,15,15,0.86) dark
+        // Floating pill bar - inset from the screen edges, fully rounded.
         Surface(
-            color = (if (isDark) ShPaperDark else ShPaperLight).copy(alpha = 0.86f),
+            color = (if (isDark) ShPaperDark else ShPaperLight).copy(alpha = 0.96f),
+            shape = pillShape,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(80.dp), // Design Spec: ~80dp
+                .height(72.dp)
+                .shadow(
+                    elevation = 12.dp,
+                    shape = pillShape,
+                    ambientColor = ShFabShadow,
+                    spotColor = ShFabShadow
+                ),
             tonalElevation = 0.dp
         ) {
-            Column {
-                HorizontalDivider(color = if (isDark) ShLineDark else ShLineLight, thickness = 1.dp)
-                Row(
-                    modifier = Modifier.fillMaxSize().navigationBarsPadding(),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val tabs = ShTab.entries
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val tabs = ShTab.entries
 
-                    // Left 2 tabs: Progress, Challenges
-                    tabs.take(2).forEach { tab ->
-                        BottomNavItem(
-                            tab = tab,
-                            isSelected = currentRoute == tab.route,
-                            isDark = isDark,
-                            onClick = { onTabSelected(tab) }
-                        )
-                    }
+                // Left 2 tabs: Progress, Challenges
+                tabs.take(2).forEach { tab ->
+                    BottomNavItem(
+                        tab = tab,
+                        isSelected = currentRoute == tab.route,
+                        isDark = isDark,
+                        onClick = { onTabSelected(tab) }
+                    )
+                }
 
-                    // Space for FAB
-                    Spacer(modifier = Modifier.width(72.dp))
+                // Space for FAB
+                Spacer(modifier = Modifier.width(72.dp))
 
-                    // Right 2 tabs: Circles, Profile
-                    tabs.drop(2).forEach { tab ->
-                        BottomNavItem(
-                            tab = tab,
-                            isSelected = currentRoute == tab.route,
-                            isDark = isDark,
-                            onClick = { onTabSelected(tab) }
-                        )
-                    }
+                // Right 2 tabs: Circles, Profile
+                tabs.drop(2).forEach { tab ->
+                    BottomNavItem(
+                        tab = tab,
+                        isSelected = currentRoute == tab.route,
+                        isDark = isDark,
+                        onClick = { onTabSelected(tab) }
+                    )
                 }
             }
         }

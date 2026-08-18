@@ -88,10 +88,12 @@ fun OTPVerifyScreen(
     }
 
     val onBackgroundColor = MaterialTheme.colorScheme.onBackground
+    // `phone` already carries its own country-code prefix (e.g. "+14155551234").
+    val displayPhone = if (phone.startsWith("+")) phone else "+91 $phone"
     val subtitleText = buildAnnotatedString {
         append("Sent to ")
         withStyle(style = ShBodyStyle.toSpanStyle().copy(fontWeight = FontWeight.Bold, color = onBackgroundColor)) {
-            append("+91 $phone")
+            append(displayPhone)
         }
     }
 
