@@ -1,0 +1,119 @@
+rules_version = '2';
+
+// Shoshin Firestore security rules.
+//
+// Derived from every path the app actually touches (SyncManager, UserRepository,
+// GroupRepository, ReferralRepository, RoutineRepository, UserLimitsRepository,
+// FeedbackRepository, EditorScreen). Anything not matched below is denied by default —
+// that default is what was rejecting streak writes.
+//
+// REVIEW BEFORE DEPLOYING. Two rules are deliberately broad, both because the app
+// depends on them; tighten them if that tradeoff isn't what you want:
+//   * any signed-in user can read any profile (friend profiles, group leaderboards)
+//   * any signed-in user can read any group (joining by invite code queries groups
+//     you are not yet a member of)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function ownsIncoming() {
+      return signedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ── Profiles ────────────────────────────────────────────────
+    // Read is open to signed-in users: friend profiles, group leaderboards, and the
+    // group-capacity check all read other people's rows.
+    match /users/{userId} {
+      allow read:  if signedIn();
+      allow write: if isSelf(userId);
+
+      // Plan/referral limits. GroupRepository reads the *creator's* limits when someone
+      // else joins, so read stays open; only the owner may write.
+      match /limits/{docId} {
+        allow read:  if signedIn();
+        allow write: if isSelf(userId);
+      }
+
+      // Everything else under a profile is private to its owner.
+      match /{document=**} {
+        allow read, write: if isSelf(userId);
+      }
+    }
+
+    // ── Per-user activity logs ──────────────────────────────────
+    // streaks/{uid}/entries/{id} — this is the path that was throwing PERMISSION_DENIED.
+    // The uid is the parent document id, so the rule has to match on that wildcard.
+    match /streaks/{userId}/entries/{entryId} {
+      allow read, write: if isSelf(userId);
+    }
+
+    match /reflections/{userId}/entries/{entryId} {
+      allow read, write: if isSelf(userId);
+    }
+
+    match /photos/{userId}/entries/{entryId} {
+      allow read, write: if isSelf(userId);
+    }
+
+    // ── Referral codes ──────────────────────────────────────────
+    // Looked up by the person redeeming them, who by definition isn't the owner.
+    match /referralCodes/{code} {
+      allow read:          if signedIn();
+      allow create, update: if ownsIncoming();
+      allow delete:        if false;
+    }
+
+    // ── Social shares ───────────────────────────────────────────
+    match /shares/{shareId} {
+      allow read:           if signedIn();
+      allow create, update: if ownsIncoming();
+      allow delete:         if false;
+    }
+
+    // ── Feedback ────────────────────────────────────────────────
+    // Write-only from the app; replies are read in the console, not by clients.
+    match /feedback/{feedbackId} {
+      allow create: if ownsIncoming();
+      allow read, update, delete: if false;
+    }
+
+    // ── Groups ──────────────────────────────────────────────────
+    match /groups/{groupId} {
+      // Open read: joining by invite code runs whereEqualTo("inviteCode", ...) against
+      // groups the user has not joined yet, so membership can't gate this.
+      allow read: if signedIn();
+
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
+
+      // A joining user adds themselves to members, so the incoming doc is checked too.
+      allow update: if signedIn() && (
+                      request.auth.uid in resource.data.members ||
+                      request.auth.uid in request.resource.data.members
+                    );
+
+      allow delete: if signedIn() && request.auth.uid == resource.data.createdBy;
+
+      match /members/{memberId} {
+        allow read:  if signedIn();
+        // Your own row, or the group owner managing the roster.
+        allow write: if isSelf(memberId) ||
+                        request.auth.uid ==
+                          get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy;
+      }
+
+      match /posts/{postId} {
+        allow read:           if signedIn();
+        allow create:         if ownsIncoming();
+        allow update, delete: if signedIn() && resource.data.userId == request.auth.uid;
+      }
+    }
+  }
+}

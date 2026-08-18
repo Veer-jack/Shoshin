@@ -6,7 +6,9 @@ import com.Shoshin.app.data.db.entities.UserEntity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
@@ -18,6 +20,18 @@ class UserRepository(
     private val auth: FirebaseAuth
 ) {
     val userId: String? get() = auth.currentUser?.uid
+
+    /**
+     * Emits the signed-in uid, and re-emits on every sign-in/sign-out. ViewModels built before
+     * authentication finishes — the nav graph constructs several while the Auth screen is still
+     * up — otherwise read `userId` once, get null, and never recover. The listener fires
+     * immediately on registration, so a collector always gets the current state first.
+     */
+    val userIdFlow: Flow<String?> = callbackFlow {
+        val listener = FirebaseAuth.AuthStateListener { trySend(it.currentUser?.uid) }
+        auth.addAuthStateListener(listener)
+        awaitClose { auth.removeAuthStateListener(listener) }
+    }
 
     fun getUserFlow(uid: String): Flow<UserEntity?> = userDao.getUserFlow(uid)
 

@@ -187,6 +187,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         SyncWorker.cancelSyncWork(applicationContext)
+        // The connectivity callback outlives this Activity, and a new monitor is built in
+        // every onCreate — without this, each recreation leaves another one registered.
+        networkMonitor.unregister()
         super.onDestroy()
     }
 
