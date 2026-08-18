@@ -42,17 +42,20 @@ fun AuthScreen(
 ) {
     // Saveable so the number survives the trip to the OTP screen and back —
     // plain remember() is dropped when this destination leaves the composition.
-    var phoneInput by rememberSaveable { mutableStateOf("") }
+    // The dial code is stored by its string value since DialCode isn't Saveable.
+    var dialCodeValue by rememberSaveable { mutableStateOf(SH_COUNTRIES.first().dial) }
+    val dialCode = SH_COUNTRIES.firstOrNull { it.dial == dialCodeValue } ?: SH_COUNTRIES.first()
+    var phoneDigits by rememberSaveable { mutableStateOf("") }
     var referralCodeInput by rememberSaveable(initialReferralCode) { mutableStateOf(initialReferralCode ?: "") }
+    var referralExpanded by rememberSaveable(initialReferralCode) { mutableStateOf(!initialReferralCode.isNullOrEmpty()) }
     var phoneError by rememberSaveable { mutableStateOf<String?>(null) }
     var referralError by rememberSaveable { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
 
-    // Indian mobile numbers are 10 digits and never start below 6.
+    // Any country's mobile number, not just India's.
     fun validatePhone(value: String): String? = when {
         value.isEmpty() -> "Enter your mobile number"
-        value.length < 10 -> "Enter all 10 digits"
-        value.first() !in '6'..'9' -> "Mobile numbers start with 6, 7, 8 or 9"
+        value.length < 6 -> "Enter a valid mobile number"
         else -> null
     }
 
@@ -143,19 +146,19 @@ fun AuthScreen(
             
             Spacer(Modifier.height(24.dp))
 
-            // Phone Input
-            ShoshinTextField(
-                value = phoneInput,
-                onValueChange = { input ->
-                    val filtered = input.filter { it.isDigit() }.take(10)
-                    phoneInput = filtered
+            // Phone Input — country-code picker, no longer India-only
+            ShoshinPhoneField(
+                dialCode = dialCode,
+                onDialCodeChange = { dialCodeValue = it.dial },
+                digits = phoneDigits,
+                onDigitsChange = { input ->
+                    val filtered = input.filter { it.isDigit() }.take(14)
+                    phoneDigits = filtered
                     // Re-validate as they type, but only once an error is already showing —
                     // otherwise the first keystroke would flag a half-typed number.
                     if (phoneError != null) phoneError = validatePhone(filtered)
                 },
                 label = "MOBILE NUMBER",
-                prefix = "+91 ",
-                placeholder = "98765 43210",
                 enabled = !isGoogleLoading
             )
 
@@ -165,21 +168,31 @@ fun AuthScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // Optional Referral Code
-            ShoshinTextField(
-                value = referralCodeInput,
-                onValueChange = { input ->
-                    val filtered = input.filter { it.isLetterOrDigit() }.take(12).uppercase()
-                    referralCodeInput = filtered
-                    if (referralError != null) referralError = validateReferral(filtered)
-                },
-                label = "REFERRAL CODE (OPTIONAL)",
-                placeholder = "e.g. VINAY142",
-                enabled = !isGoogleLoading
-            )
+            // Referral code is optional and hidden behind a toggle until requested
+            if (referralExpanded) {
+                ShoshinTextField(
+                    value = referralCodeInput,
+                    onValueChange = { input ->
+                        val filtered = input.filter { it.isLetterOrDigit() }.take(12).uppercase()
+                        referralCodeInput = filtered
+                        if (referralError != null) referralError = validateReferral(filtered)
+                    },
+                    label = "REFERRAL CODE (OPTIONAL)",
+                    placeholder = "e.g. VINAY142",
+                    enabled = !isGoogleLoading
+                )
 
-            referralError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = ShLabelStyle, modifier = Modifier.padding(top = 4.dp).align(Alignment.Start))
+                referralError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = ShLabelStyle, modifier = Modifier.padding(top = 4.dp).align(Alignment.Start))
+                }
+            } else {
+                Text(
+                    text = "Have a referral code?",
+                    style = ShLabelStyle.copy(color = ShVermillion, fontWeight = FontWeight.Bold),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .clickable(enabled = !isGoogleLoading) { referralExpanded = true }
+                )
             }
 
             Spacer(Modifier.height(48.dp))
@@ -187,12 +200,12 @@ fun AuthScreen(
             // CTA
             ShoshinButton(
                 onClick = {
-                    val phoneProblem = validatePhone(phoneInput)
+                    val phoneProblem = validatePhone(phoneDigits)
                     val referralProblem = validateReferral(referralCodeInput)
                     phoneError = phoneProblem
                     referralError = referralProblem
                     if (phoneProblem == null && referralProblem == null) {
-                        onPhoneContinue(phoneInput, referralCodeInput.takeIf { it.isNotEmpty() })
+                        onPhoneContinue("${dialCode.dial}$phoneDigits", referralCodeInput.takeIf { it.isNotEmpty() })
                     }
                 },
                 variant = ShButtonVariant.Accent,

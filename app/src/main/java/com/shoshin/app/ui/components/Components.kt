@@ -11,6 +11,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,9 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -759,6 +764,143 @@ fun ShoshinAvatar(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
+        }
+    }
+}
+
+// ── ShoshinPhoneField ─────────────────────────────────────────
+data class DialCode(val country: String, val dial: String, val countryName: String)
+
+val SH_COUNTRIES = listOf(
+    DialCode("IN", "+91", "India"),
+    DialCode("US", "+1", "United States"),
+    DialCode("GB", "+44", "United Kingdom"),
+    DialCode("CA", "+1", "Canada"),
+    DialCode("AU", "+61", "Australia"),
+    DialCode("AE", "+971", "UAE"),
+    DialCode("SG", "+65", "Singapore"),
+    DialCode("DE", "+49", "Germany"),
+    DialCode("FR", "+33", "France"),
+    DialCode("JP", "+81", "Japan"),
+    DialCode("BR", "+55", "Brazil"),
+    DialCode("ZA", "+27", "South Africa")
+)
+
+fun detectDialCode(phone: String): DialCode =
+    SH_COUNTRIES.filter { phone.startsWith(it.dial) }.maxByOrNull { it.dial.length } ?: SH_COUNTRIES.first()
+
+@Composable
+fun ShoshinPhoneField(
+    dialCode: DialCode,
+    onDialCodeChange: (DialCode) -> Unit,
+    digits: String,
+    onDigitsChange: (String) -> Unit,
+    label: String = "Mobile number",
+    placeholder: String = "98765 43210",
+    enabled: Boolean = true
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = ShLabelStyle,
+            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        )
+        Spacer(Modifier.height(8.dp))
+        Box {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .background(
+                        if (enabled) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.clickable(enabled = enabled) { expanded = true },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = dialCode.dial,
+                        style = TextStyle(
+                            fontFamily = DmSansFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.ic_arrow_down),
+                        contentDescription = "Choose country code",
+                        tint = ShFog,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+
+                Spacer(Modifier.width(10.dp))
+                Box(modifier = Modifier.width(1.dp).height(22.dp).background(ShLine))
+                Spacer(Modifier.width(10.dp))
+
+                Box(modifier = Modifier.weight(1f)) {
+                    if (digits.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style = TextStyle(
+                                fontFamily = DmSansFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        )
+                    }
+                    BasicTextField(
+                        value = digits,
+                        onValueChange = onDigitsChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = enabled,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        textStyle = TextStyle(
+                            fontFamily = DmSansFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        ),
+                        cursorBrush = SolidColor(ShVermillion)
+                    )
+                }
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+            ) {
+                SH_COUNTRIES.forEach { country ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(country.countryName, color = MaterialTheme.colorScheme.onSurface, style = ShLabelStyle.copy(fontSize = 14.sp))
+                                Spacer(Modifier.width(16.dp))
+                                Text(country.dial, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, style = ShLabelStyle.copy(fontSize = 14.sp))
+                            }
+                        },
+                        onClick = {
+                            onDialCodeChange(country)
+                            expanded = false
+                        }
+                    )
+                }
+            }
         }
     }
 }

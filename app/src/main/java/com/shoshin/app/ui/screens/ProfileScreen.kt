@@ -54,8 +54,6 @@ fun ProfileScreen(
     }
 
     ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
-        val isDark = MaterialTheme.colorScheme.background == ShNight
-        
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -98,7 +96,7 @@ fun ProfileScreen(
                     ShoshinCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
+                            .padding(horizontal = 24.dp)
                     ) {
                         Column(
                             modifier = Modifier.padding(24.dp),
@@ -120,38 +118,6 @@ fun ProfileScreen(
                                 color = MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center
                             )
-
-                            Spacer(Modifier.height(12.dp))
-
-                            // Tiers
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Surface(
-                                    color = if (isDark) ShNight3 else ShInk,
-                                    shape = RoundedCornerShape(999.dp)
-                                ) {
-                                    val tierText = if (currentStreak >= 30) "Tier III · Master" 
-                                                  else if (currentStreak >= 14) "Tier II · Disciplined" 
-                                                  else "Tier I · Beginner"
-                                    Text(
-                                        tierText,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                        style = ShKickerStyle.copy(fontSize = 11.sp, letterSpacing = 0.5.sp)
-                                    )
-                                }
-                                Surface(
-                                    color = Color.Transparent,
-                                    shape = RoundedCornerShape(999.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                                ) {
-                                    Text(
-                                        "Early Riser",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                        style = ShKickerStyle.copy(fontSize = 11.sp, letterSpacing = 0.5.sp)
-                                    )
-                                }
-                            }
 
                             Spacer(Modifier.height(24.dp))
                             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 1.dp, modifier = Modifier.padding(horizontal = 24.dp))

@@ -71,72 +71,81 @@ fun SplashScreen(navController: NavController) {
 
     ShoshinTheme(type = ShoshinThemeType.ALWAYS_DARK) {
         Box(
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
         ) {
-            // Enso circle motif with animation
-            val ensoColor = ShVermillion
-            Box(
-                modifier = Modifier
-                    .size(320.dp)
-                    .rotate(rotation)
-                    .background(Color.Transparent)
-            ) {
-                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawArc(
-                        color = ensoColor.copy(alpha = 0.15f),
-                        startAngle = -90f,
-                        sweepAngle = 310f,
-                        useCenter = false,
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(
-                            width = 6.dp.toPx(),
-                            cap = androidx.compose.ui.graphics.StrokeCap.Round
-                        )
-                    )
-                }
-            }
-
             Column(
                 modifier = Modifier.fillMaxSize().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Equal weights above and below park the wordmark on the screen's
-                // vertical centre line, where the enso is already drawn.
-                Spacer(Modifier.weight(1f))
+                // Two independent zones around the ring: a spacer from the top
+                // edge to the ring, then the tagline centered from the ring
+                // down to the Begin button — instead of all sharing one
+                // centreline. The logo mark sits inline with the wordmark,
+                // both layered inside the ring.
+                Spacer(modifier = Modifier.weight(1f))
 
-                // Logo mark — using the updated component with enclosure
-                ShoshinLogoMark(on = "night", modifier = Modifier.padding(bottom = 24.dp))
+                // Enso circle motif with animation, logo + wordmark layered inside it
+                val ensoColor = ShVermillion
+                Box(
+                    modifier = Modifier.size(320.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.foundation.Canvas(
+                        modifier = Modifier.fillMaxSize().rotate(rotation)
+                    ) {
+                        drawArc(
+                            color = ensoColor.copy(alpha = 0.15f),
+                            startAngle = -90f,
+                            sweepAngle = 310f,
+                            useCenter = false,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                width = 6.dp.toPx(),
+                                cap = androidx.compose.ui.graphics.StrokeCap.Round
+                            )
+                        )
+                    }
 
-                Text(
-                    text = "Shoshin",
-                    fontSize = 52.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = CormorantGaramond,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    letterSpacing = 0.5.sp
-                )
-                Text(
-                    text = "初心",
-                    fontSize = 22.sp,
-                    fontFamily = NotoSerifJP,
-                    color = ShVermillion,
-                    letterSpacing = 8.sp,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            ShoshinLogoMark(on = "night")
+                            Text(
+                                text = "Shoshin",
+                                fontSize = 52.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = CormorantGaramond,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                        Text(
+                            text = "初心",
+                            fontSize = 22.sp,
+                            fontFamily = NotoSerifJP,
+                            color = ShVermillion,
+                            letterSpacing = 8.sp,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
 
-                Spacer(Modifier.weight(1f))
-
-                // Tagline sits with the CTA, not with the wordmark
-                Text(
-                    text = "Beginner's mind.\nEvery morning.",
-                    style = ShBodyStyle.copy(
-                        fontSize = 18.sp,
-                        lineHeight = 24.sp,
-                        textAlign = TextAlign.Center,
-                        color = Color.White.copy(alpha = 0.8f)
-                    ),
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Tagline centered between the ring and the Begin button
+                    Text(
+                        text = "Beginner's mind.\nEvery morning.",
+                        style = ShBodyStyle.copy(
+                            fontSize = 18.sp,
+                            lineHeight = 24.sp,
+                            textAlign = TextAlign.Center,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    )
+                }
 
                 val interactionSource = remember { MutableInteractionSource() }
 

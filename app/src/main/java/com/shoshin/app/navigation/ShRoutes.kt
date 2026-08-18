@@ -68,7 +68,7 @@ object ShRoutes {
     const val GROUP_STATS     = "group_stats/{groupId}"
 
     // Helpers
-    fun otpPhone(number: String, code: String? = null)  = "otp/phone/$number" + (if (code != null) "?code=$code" else "")
+    fun otpPhone(number: String, code: String? = null)  = "otp/phone/${java.net.URLEncoder.encode(number, "UTF-8")}" + (if (code != null) "?code=$code" else "")
     fun otpEmail(email: String, pass: String, code: String? = null, name: String = "User") = 
         "otp/email/$email?pass=$pass" + (if (code != null) "&code=$code" else "") + "&name=${java.net.URLEncoder.encode(name, "UTF-8")}"
     fun onboarding(page: Int = 0) = "onboarding/$page"
