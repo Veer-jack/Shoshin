@@ -24,10 +24,16 @@ class PhoneAuthManager(private val auth: FirebaseAuth) {
         val cleanPhone = phone.replace(Regex("[^0-9+]"), "")
         val formattedPhone = when {
             cleanPhone.startsWith("+") -> cleanPhone
-            cleanPhone.length == 10 -> "+91$cleanPhone"
+            // If it starts with 91 and is 12 digits, assume it's an Indian number already containing the code
+            cleanPhone.startsWith("91") && cleanPhone.length == 12 -> "+$cleanPhone"
+            cleanPhone.length >= 10 -> {
+                // Default to +91 if no country code is detected and it looks like a standard number
+                // Note: AuthScreen now passes the full number including dial code, but this is a safety net.
+                if (cleanPhone.startsWith("+")) cleanPhone else "+91$cleanPhone"
+            }
             else -> {
                 Log.e(TAG, "Unrecognized phone format: $cleanPhone")
-                onError(Exception("Please enter a valid phone number with country code"))
+                onError(Exception("Please enter a valid phone number"))
                 return
             }
         }

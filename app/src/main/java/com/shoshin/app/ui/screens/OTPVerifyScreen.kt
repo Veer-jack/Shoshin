@@ -28,6 +28,7 @@ import com.Shoshin.app.navigation.ShRoutes
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
 import com.Shoshin.app.utils.ErrorHandler
+import com.Shoshin.app.utils.findActivity
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -45,7 +46,7 @@ fun OTPVerifyScreen(
     onSuccess: (String, String?, String?) -> Unit = { _, _, _ -> }
 ) {
     val context = LocalContext.current
-    val activity = context as? Activity
+    val activity = remember(context) { context.findActivity() }
     val scope = rememberCoroutineScope()
     val auth = FirebaseAuth.getInstance()
     val phoneAuthManager = remember { PhoneAuthManager(auth) }
@@ -58,25 +59,31 @@ fun OTPVerifyScreen(
     
     var resendCooldown by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(Unit) {
-        if (mode == OtpMode.Phone && activity != null) {
-            isSending = true
-            phoneAuthManager.startPhoneAuth(
-                phone = phone,
-                activity = activity,
-                onCodeSent = { 
-                    isSending = false
-                    resendCooldown = 60
-                },
-                onAutoVerified = { userId ->
-                    isSending = false
-                    onSuccess(userId, phone, referralCode)
-                },
-                onError = { e ->
-                    errorMessage = ErrorHandler.mapFirebaseError(e)
-                    isSending = false
-                }
-            )
+    LaunchedEffect(phone, activity) {
+        if (mode == OtpMode.Phone) {
+            if (activity != null && phone.isNotBlank()) {
+                isSending = true
+                phoneAuthManager.startPhoneAuth(
+                    phone = phone,
+                    activity = activity,
+                    onCodeSent = { 
+                        isSending = false
+                        resendCooldown = 60
+                    },
+                    onAutoVerified = { userId ->
+                        isSending = false
+                        onSuccess(userId, phone, referralCode)
+                    },
+                    onError = { e ->
+                        errorMessage = ErrorHandler.mapFirebaseError(e)
+                        isSending = false
+                    }
+                )
+            } else if (activity == null) {
+                errorMessage = "Internal error: Could not resolve activity context"
+            } else if (phone.isBlank()) {
+                errorMessage = "Phone number is missing"
+            }
         }
     }
 

@@ -44,7 +44,7 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    fun updateProfile(name: String, phone: String, email: String) {
+    fun updateProfile(name: String, phone: String, email: String, bio: String = "") {
         val currentUser = _user.value ?: return
         viewModelScope.launch {
             _isLoading.value = true
@@ -52,6 +52,7 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
                 displayName = name,
                 phone = phone,
                 email = email.ifBlank { null },
+                bio = bio.ifBlank { null },
                 lastUpdated = System.currentTimeMillis()
             )
             repository.updateUser(updatedUser)

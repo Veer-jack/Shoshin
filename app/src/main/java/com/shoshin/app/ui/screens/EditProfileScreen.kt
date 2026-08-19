@@ -60,6 +60,7 @@ fun EditProfileScreen(
     var dialCode by remember { mutableStateOf(SH_COUNTRIES.first()) }
     var phoneDigits by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var bio by remember { mutableStateOf("") }
 
     var nameError by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
@@ -73,6 +74,7 @@ fun EditProfileScreen(
             dialCode = detected
             phoneDigits = phone.removePrefix(detected.dial).filter { c -> c.isDigit() }
             email = it.email.orEmpty()
+            bio = it.bio.orEmpty()
         }
     }
 
@@ -107,7 +109,8 @@ fun EditProfileScreen(
         viewModel.updateProfile(
             name = name.trim(),
             phone = "${dialCode.dial}$phoneDigits",
-            email = email.trim()
+            email = email.trim(),
+            bio = bio.trim()
         )
         Toast.makeText(context, "Profile updated", Toast.LENGTH_SHORT).show()
         navController.popBackStack()
@@ -222,6 +225,16 @@ fun EditProfileScreen(
             Spacer(Modifier.height(6.dp))
             Text(emailError!!, style = ShLabelStyle.copy(fontSize = 12.sp), color = ShError)
         }
+
+        Spacer(Modifier.height(20.dp))
+
+        ShoshinTextField(
+            value = bio,
+            onValueChange = { bio = it.take(30) },
+            label = "Identity tag (optional)",
+            placeholder = "e.g. Morning walker",
+            enabled = !isLoading
+        )
 
         Spacer(Modifier.height(40.dp))
 
