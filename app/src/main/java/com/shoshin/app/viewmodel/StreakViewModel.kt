@@ -12,6 +12,7 @@ import com.Shoshin.app.data.db.entities.UserEntity
 import com.Shoshin.app.data.models.MonthlyStats
 import com.Shoshin.app.ui.theme.ShMatchaLightToken
 import com.Shoshin.app.utils.AnalyticsManager
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -50,60 +51,82 @@ class StreakViewModel(
     private val _monthlyStats = MutableStateFlow<MonthlyStats?>(null)
     val monthlyStats: StateFlow<MonthlyStats?> = _monthlyStats.asStateFlow()
 
+    /**
+     * The nav graph builds this ViewModel up front, while the Auth screen is still showing, so
+     * `userRepository.userId` is null at construction. Reading it once there meant the loaders
+     * bailed out and never ran again after sign-in: Home rendered a signed-in user's streak as
+     * 0, while Profile — whose ViewModel is built lazily, after login — showed the real value.
+     * Driving everything off the auth flow makes the ViewModel pick the user up whenever they
+     * appear, and drop them on sign-out.
+     */
     init {
-        loadUser()
-        loadHistory()
-        loadMonthlyStats()
-    }
-
-    private fun loadHistory() {
-        val uid = userRepository.userId ?: return
-        val dao = streakDao ?: return
         viewModelScope.launch {
-            dao.getUserStreaksFlow(uid).collect { entries ->
-                _historyByDate.value = entries.associate { it.date to it.completed }
-                val completedDates = entries.filter { it.completed }.map { it.date }.toSet()
-                val dateFmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-                // Week pattern: Monday..Sunday of the current week.
-                val cal = Calendar.getInstance()
-                cal.firstDayOfWeek = Calendar.MONDAY
-                while (cal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) cal.add(Calendar.DAY_OF_YEAR, -1)
-                val todayStr = dateFmt.format(Date())
-                val week = (0 until 7).map { offset ->
-                    val dayCal = cal.clone() as Calendar
-                    dayCal.add(Calendar.DAY_OF_YEAR, offset)
-                    val dayStr = dateFmt.format(dayCal.time)
-                    when {
-                        dayStr > todayStr -> null // hasn't happened yet
-                        completedDates.contains(dayStr) -> true
-                        else -> false
-                    }
+            userRepository.userIdFlow.distinctUntilChanged().collectLatest { uid ->
+                if (uid == null) {
+                    _user.value = null
+                    _historyByDate.value = emptyMap()
+                    _weekPattern.value = List(7) { null }
+                    _monthlyTrend.value = emptyList()
+                    _monthlyStats.value = null
+                    return@collectLatest
                 }
-                _weekPattern.value = week
-
-                // Monthly trend: last 4 calendar months, oldest first.
-                val monthFmt = SimpleDateFormat("yyyy-MM", Locale.getDefault())
-                val monthLabelFmt = SimpleDateFormat("MMM", Locale.getDefault())
-                val monthCal = Calendar.getInstance()
-                monthCal.add(Calendar.MONTH, -3)
-                val trend = (0 until 4).map {
-                    val key = monthFmt.format(monthCal.time)
-                    val label = monthLabelFmt.format(monthCal.time)
-                    val daysInMonth = monthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
-                    val keptThisMonth = completedDates.count { it.startsWith(key) }
-                    val rate = (keptThisMonth.toFloat() / daysInMonth.toFloat()).coerceIn(0f, 1f)
-                    monthCal.add(Calendar.MONTH, 1)
-                    label to rate
+                // Room is the live source, but it is empty right after a re-login on a fresh
+                // install — seed it from Firestore first, the way ProfileViewModel does, or the
+                // flow below just emits null forever.
+                runCatching { userRepository.getUser(uid) }
+                coroutineScope {
+                    launch { observeUser(uid) }
+                    launch { observeHistory(uid) }
+                    launch { observeMonthlyStats(uid) }
                 }
-                _monthlyTrend.value = trend
             }
         }
     }
 
+    private suspend fun observeHistory(uid: String) {
+        val dao = streakDao ?: return
+        dao.getUserStreaksFlow(uid).collect { entries ->
+            _historyByDate.value = entries.associate { it.date to it.completed }
+            val completedDates = entries.filter { it.completed }.map { it.date }.toSet()
+            val dateFmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+            // Week pattern: Monday..Sunday of the current week.
+            val cal = Calendar.getInstance()
+            cal.firstDayOfWeek = Calendar.MONDAY
+            while (cal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) cal.add(Calendar.DAY_OF_YEAR, -1)
+            val todayStr = dateFmt.format(Date())
+            val week = (0 until 7).map { offset ->
+                val dayCal = cal.clone() as Calendar
+                dayCal.add(Calendar.DAY_OF_YEAR, offset)
+                val dayStr = dateFmt.format(dayCal.time)
+                when {
+                    dayStr > todayStr -> null // hasn't happened yet
+                    completedDates.contains(dayStr) -> true
+                    else -> false
+                }
+            }
+            _weekPattern.value = week
+
+            // Monthly trend: last 4 calendar months, oldest first.
+            val monthFmt = SimpleDateFormat("yyyy-MM", Locale.getDefault())
+            val monthLabelFmt = SimpleDateFormat("MMM", Locale.getDefault())
+            val monthCal = Calendar.getInstance()
+            monthCal.add(Calendar.MONTH, -3)
+            val trend = (0 until 4).map {
+                val key = monthFmt.format(monthCal.time)
+                val label = monthLabelFmt.format(monthCal.time)
+                val daysInMonth = monthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                val keptThisMonth = completedDates.count { it.startsWith(key) }
+                val rate = (keptThisMonth.toFloat() / daysInMonth.toFloat()).coerceIn(0f, 1f)
+                monthCal.add(Calendar.MONTH, 1)
+                label to rate
+            }
+            _monthlyTrend.value = trend
+        }
+    }
+
     /** Current calendar month's completion stats, combined live from StreakDao + the loaded user. */
-    fun getMonthlyStats(): Flow<MonthlyStats> {
-        val uid = userRepository.userId ?: return flowOf(MonthlyStats(0, 0f, 0, 0))
+    private fun monthlyStatsFlow(uid: String): Flow<MonthlyStats> {
         val dao = streakDao ?: return flowOf(MonthlyStats(0, 0f, 0, 0))
         val yearMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())
         val daysInMonth = Calendar.getInstance().getActualMaximum(Calendar.DAY_OF_MONTH)
@@ -120,29 +143,24 @@ class StreakViewModel(
         }
     }
 
-    private fun loadMonthlyStats() {
-        viewModelScope.launch {
-            getMonthlyStats().collect { _monthlyStats.value = it }
-        }
+    private suspend fun observeMonthlyStats(uid: String) {
+        monthlyStatsFlow(uid).collect { _monthlyStats.value = it }
     }
 
-    private fun loadUser() {
-        val uid = userRepository.userId ?: return
-        viewModelScope.launch {
-            userRepository.getUserFlow(uid).collect { loadedUser ->
-                _user.value = loadedUser
-                // Recompute honestly on load too — otherwise a stale non-zero streak keeps
-                // showing until the user's next full completion happens to recalculate it.
-                if (loadedUser != null && loadedUser.currentStreak > 0 && hasMissedDay(loadedUser, System.currentTimeMillis())) {
-                    // Re-check under the write lock: this emission may be the pre-write snapshot
-                    // of an increment still in flight, and resetting off it would undo the streak
-                    // the user just earned.
-                    mutateUser { current ->
-                        if (current.currentStreak > 0 && hasMissedDay(current, System.currentTimeMillis())) {
-                            AnalyticsManager.logStreakReset("missed_day", current.currentStreak)
-                            current.copy(currentStreak = 0, streakStartDate = 0)
-                        } else null
-                    }
+    private suspend fun observeUser(uid: String) {
+        userRepository.getUserFlow(uid).collect { loadedUser ->
+            _user.value = loadedUser
+            // Recompute honestly on load too — otherwise a stale non-zero streak keeps
+            // showing until the user's next full completion happens to recalculate it.
+            if (loadedUser != null && loadedUser.currentStreak > 0 && hasMissedDay(loadedUser, System.currentTimeMillis())) {
+                // Re-check under the write lock: this emission may be the pre-write snapshot
+                // of an increment still in flight, and resetting off it would undo the streak
+                // the user just earned.
+                mutateUser { current ->
+                    if (current.currentStreak > 0 && hasMissedDay(current, System.currentTimeMillis())) {
+                        AnalyticsManager.logStreakReset("missed_day", current.currentStreak)
+                        current.copy(currentStreak = 0, streakStartDate = 0)
+                    } else null
                 }
             }
         }
