@@ -1,5 +1,6 @@
 package com.Shoshin.app.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -43,33 +44,19 @@ fun ShoshinMainShell(
     val currentBackStack by innerNav.currentBackStackEntryAsState()
     val currentRoute = currentBackStack?.destination?.route
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            ShoshinBottomBar(
-                currentRoute = currentRoute,
-                onTabSelected = { tab ->
-                    innerNav.navigate(tab.route) {
-                        popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                onFabClick = {
-                    // Home button takes you back to the Dashboard
-                    innerNav.navigate(ShRoutes.HOME) {
-                        popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        }
-    ) { padding ->
+    // A Scaffold bottomBar reserves hard, full-width layout space for whatever's in
+    // it — content can never scroll behind it. That's wrong for a floating pill: we
+    // want the nav bar layered ON TOP of the screen content instead, so content shows
+    // through the rounded corners and side margins as it scrolls underneath.
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
         NavHost(
             navController = innerNav,
             startDestination = ShRoutes.HOME,
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.fillMaxSize()
         ) {
             composable(ShRoutes.HOME) {
                 DashboardTab(
@@ -131,6 +118,26 @@ fun ShoshinMainShell(
                 ProfileScreen(navController = rootNavController, viewModel = profileViewModel)
             }
         }
+
+        ShoshinBottomBar(
+            currentRoute = currentRoute,
+            onTabSelected = { tab ->
+                innerNav.navigate(tab.route) {
+                    popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            onFabClick = {
+                // Home button takes you back to the Dashboard
+                innerNav.navigate(ShRoutes.HOME) {
+                    popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
@@ -138,17 +145,18 @@ fun ShoshinMainShell(
 fun ShoshinBottomBar(
     currentRoute: String?,
     onTabSelected: (ShTab) -> Unit,
-    onFabClick: () -> Unit
+    onFabClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val isDark = MaterialTheme.colorScheme.background == ShNight
     val pillShape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
             .navigationBarsPadding()
-            .padding(horizontal = 44.dp)
+            .padding(horizontal = 12.dp)
             .padding(bottom = 16.dp)
     ) {
         // Floating pill bar - inset from the screen edges, fully rounded.
@@ -192,7 +200,7 @@ fun ShoshinBottomBar(
                 }
 
                 // Space for FAB
-                Spacer(modifier = Modifier.width(72.dp))
+                Spacer(modifier = Modifier.width(96.dp))
 
                 Row(
                     modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -211,17 +219,25 @@ fun ShoshinBottomBar(
             }
         }
 
-        // Floating FAB - Design Spec: 56dp circle, ShVermillion, margin-top: -26dp
+        // Floating FAB - 80dp circle, ShVermillion, larger than the 72dp pill so it
+        // pokes out symmetrically top and bottom. Since the FAB (80dp) is now taller
+        // than the pill (72dp), the wrapContentHeight() Box around them grows to fit
+        // the FAB instead of the pill, which shifts the pill's BottomCenter position
+        // down within that taller box — so the correct offset here is +(H-P)/2, not
+        // -(P-H)/2 (that formula only holds while the FAB is the *shorter* child).
+        // (80dp - 72dp) / 2 = +4dp.
+        // Fixed dark fill (not theme-dependent) — same ShNight token used for the
+        // hero/invite cards elsewhere, matching the design reference.
         // Dark override: border-color var(--sh-paper) to separate it from the dark bar
         FloatingActionButton(
             onClick = onFabClick,
-            containerColor = ShVermillion,
+            containerColor = ShNight,
             contentColor = Color.White,
             shape = androidx.compose.foundation.shape.CircleShape,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = (-26).dp)
-                .size(56.dp)
+                .offset(y = 4.dp)
+                .size(80.dp)
                 .shadow(
                     elevation = 8.dp,
                     shape = androidx.compose.foundation.shape.CircleShape,
@@ -240,7 +256,7 @@ fun ShoshinBottomBar(
             Icon(
                 painter = painterResource(R.drawable.ic_home_heavy),
                 contentDescription = "Home",
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
     }

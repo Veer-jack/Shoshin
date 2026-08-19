@@ -30,6 +30,14 @@
           }
         },
         {
+          "client_id": "91496310161-ohooedbb31jqk5oa2s6jvgqla8h2gh11.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Shoshin.app",
+            "certificate_hash": "7a8431687a857c7f8b14ed5282d5b9341ca682f3"
+          }
+        },
+        {
           "client_id": "91496310161-s18ct7hqt5o1vt63d60tduv3v5p4qrnr.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
