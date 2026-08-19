@@ -1,6 +1,10 @@
 package com.Shoshin.app.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,20 +20,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.Shoshin.app.R
 import com.Shoshin.app.data.groups.GroupMember
 import com.Shoshin.app.navigation.ShRoutes
 import com.Shoshin.app.ui.components.*
 import com.Shoshin.app.ui.theme.*
+import com.Shoshin.app.utils.decodeBitmapFromUri
 import com.Shoshin.app.viewmodel.GroupViewModel
 import com.Shoshin.app.viewmodel.GroupStatsViewModel
 import com.google.firebase.auth.FirebaseAuth
+import java.io.File
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -42,15 +53,26 @@ fun GroupDetailScreen(
     val group by viewModel.currentGroup.collectAsState()
     val members by viewModel.groupMembers.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val photoUploading by viewModel.photoUploading.collectAsState()
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showLeaveDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var showImageChooser by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf("") }
     var editDescription by remember { mutableStateOf("") }
     var memberToRemove by remember { mutableStateOf<GroupMember?>(null) }
     val isOwner = group?.createdBy == userId
+
+    val context = LocalContext.current
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { viewModel.updateGroupPhoto(groupId, context.decodeBitmapFromUri(it)) }
+    }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { capturedOk ->
+        if (capturedOk) pendingCameraUri?.let { viewModel.updateGroupPhoto(groupId, context.decodeBitmapFromUri(it)) }
+    }
 
     LaunchedEffect(groupId) {
         viewModel.loadGroupMembers(groupId)
@@ -117,9 +139,51 @@ fun GroupDetailScreen(
                     Kicker("ACCOUNTABILITY", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Your circle", 
+                        "Your circle",
                         style = ShTitleStyle.copy(fontSize = 32.sp, color = MaterialTheme.colorScheme.onBackground)
                     )
+
+                    Spacer(Modifier.height(20.dp))
+
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .then(
+                                    if (isOwner) Modifier.clickable(enabled = !photoUploading) { showImageChooser = true }
+                                    else Modifier
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val photoUrl = group?.photo
+                            if (photoUrl != null) {
+                                AsyncImage(
+                                    model = photoUrl,
+                                    contentDescription = "Circle image",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Text(
+                                    text = group?.name?.take(1)?.uppercase() ?: "C",
+                                    style = ShTitleStyle.copy(fontSize = 32.sp),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            if (photoUploading) {
+                                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+                                }
+                            } else if (isOwner) {
+                                // Faint scrim + camera glyph, only when idle, so the tap target reads as editable.
+                                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+                                    Icon(painterResource(R.drawable.ic_camera), contentDescription = "Change circle image", tint = Color.White, modifier = Modifier.size(22.dp))
+                                }
+                            }
+                        }
+                    }
 
                     Spacer(Modifier.height(24.dp))
 
@@ -331,6 +395,40 @@ fun GroupDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { memberToRemove = null }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    if (showImageChooser) {
+        AlertDialog(
+            onDismissRequest = { showImageChooser = false },
+            title = { Text("Change circle image", style = ShTitleStyle.copy(fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)) },
+            text = {
+                Column {
+                    TextButton(onClick = {
+                        showImageChooser = false
+                        galleryLauncher.launch("image/*")
+                    }) {
+                        Text("Choose from gallery", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    TextButton(onClick = {
+                        showImageChooser = false
+                        val file = File.createTempFile("group_avatar_", ".jpg", context.cacheDir)
+                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                        pendingCameraUri = uri
+                        cameraLauncher.launch(uri)
+                    }) {
+                        Text("Take photo", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showImageChooser = false }) {
                     Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.Shoshin.app.R
 import com.Shoshin.app.data.db.entities.toBadgeIdList
 import com.Shoshin.app.data.groups.Group
@@ -87,10 +88,31 @@ fun GroupLeaderboardScreen(
                 IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
                     Icon(painterResource(R.drawable.ic_arrow_left), contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                 }
-                Spacer(Modifier.width(16.dp))
+                Spacer(Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val photoUrl = currentGroup?.photo
+                    if (photoUrl != null) {
+                        AsyncImage(
+                            model = photoUrl,
+                            contentDescription = "Circle image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                    } else {
+                        Text(
+                            text = currentGroup?.name?.take(1)?.uppercase() ?: "C",
+                            style = ShH2Style.copy(fontSize = 22.sp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
                 Text(
                     "${currentGroup?.name?.takeIf { it.isNotBlank() } ?: "Circle"} leaderboard",
-                    style = ShTitleStyle.copy(fontSize = 32.sp),
+                    style = ShTitleStyle.copy(fontSize = 26.sp),
                     color = MaterialTheme.colorScheme.onBackground
                 )
             }

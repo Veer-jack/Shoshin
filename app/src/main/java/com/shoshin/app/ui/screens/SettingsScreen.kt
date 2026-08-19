@@ -99,14 +99,6 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
                         SettingsRow(
-                            title = "Haptics",
-                            iconRes = R.drawable.ic_pulse,
-                            trailing = {
-                                ShoshinToggle(checked = u.hapticsEnabled, onCheckedChange = { viewModel.updateHaptics(it) })
-                            }
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingsRow(
                             title = "About",
                             value = "v${BuildConfig.VERSION_NAME}",
                             iconRes = R.drawable.ic_info
