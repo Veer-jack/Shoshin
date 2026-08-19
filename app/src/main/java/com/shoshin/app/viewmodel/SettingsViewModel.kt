@@ -46,13 +46,6 @@ class SettingsViewModel(
         }
     }
 
-    fun updateHaptics(enabled: Boolean) {
-        val currentUser = _user.value ?: return
-        viewModelScope.launch {
-            userRepository.updateUser(currentUser.copy(hapticsEnabled = enabled))
-        }
-    }
-
     fun updateNotificationTime(hour: Int, minute: Int) {
         val currentUser = _user.value ?: return
         val timeString = String.format("%02d:%02d", hour, minute)

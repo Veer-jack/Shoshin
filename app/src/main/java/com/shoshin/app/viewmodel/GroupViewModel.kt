@@ -1,5 +1,6 @@
 package com.Shoshin.app.viewmodel
 
+import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.Shoshin.app.data.db.entities.UserEntity
@@ -46,6 +47,9 @@ class GroupViewModel(
     private val _creationSuccess = MutableStateFlow(false)
     val creationSuccess: StateFlow<Boolean> = _creationSuccess.asStateFlow()
 
+    private val _joinSuccess = MutableStateFlow(false)
+    val joinSuccess: StateFlow<Boolean> = _joinSuccess.asStateFlow()
+
     private val _selectedMemberProfile = MutableStateFlow<UserEntity?>(null)
     val selectedMemberProfile: StateFlow<UserEntity?> = _selectedMemberProfile.asStateFlow()
 
@@ -68,17 +72,31 @@ class GroupViewModel(
         }
     }
 
-    fun createGroup(name: String, description: String) {
+    fun createGroup(name: String, description: String, photoBitmap: Bitmap? = null) {
         viewModelScope.launch {
             _isLoading.value = true
             _creationSuccess.value = false
-            val result = repository.createGroup(name, description)
+            val result = repository.createGroup(name, description, photoBitmap)
             result.onSuccess {
                 _creationSuccess.value = true
                 loadGroups()
             }
             result.onFailure { _error.value = it.message }
             _isLoading.value = false
+        }
+    }
+
+    private val _photoUploading = MutableStateFlow(false)
+    val photoUploading: StateFlow<Boolean> = _photoUploading.asStateFlow()
+
+    /** Creator-only: replaces the group's avatar image. */
+    fun updateGroupPhoto(groupId: String, bitmap: Bitmap) {
+        viewModelScope.launch {
+            _photoUploading.value = true
+            val result = repository.updateGroupPhoto(groupId, bitmap)
+            result.onSuccess { loadGroupMembers(groupId) }
+            result.onFailure { _error.value = it.message }
+            _photoUploading.value = false
         }
     }
 
@@ -90,11 +108,13 @@ class GroupViewModel(
     fun joinGroup(inviteCode: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            _joinSuccess.value = false
             val result = repository.joinGroup(inviteCode)
             result.onSuccess {
+                _joinSuccess.value = true
                 loadGroups()
             }
-            result.onFailure { 
+            result.onFailure {
                 val msg = it.message ?: ""
                 when {
                     msg.startsWith("LIMIT_REACHED:") -> _limitReached.value = msg.substringAfter(":")
@@ -104,6 +124,10 @@ class GroupViewModel(
             }
             _isLoading.value = false
         }
+    }
+
+    fun resetJoinState() {
+        _joinSuccess.value = false
     }
 
     fun clearLimitError() {

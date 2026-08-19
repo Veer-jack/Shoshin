@@ -148,7 +148,7 @@ fun ShoshinBottomBar(
             .fillMaxWidth()
             .wrapContentHeight()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 44.dp)
             .padding(bottom = 16.dp)
     ) {
         // Floating pill bar - inset from the screen edges, fully rounded.
@@ -169,32 +169,44 @@ fun ShoshinBottomBar(
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val tabs = ShTab.entries
 
-                // Left 2 tabs: Progress, Challenges
-                tabs.take(2).forEach { tab ->
-                    BottomNavItem(
-                        tab = tab,
-                        isSelected = currentRoute == tab.route,
-                        isDark = isDark,
-                        onClick = { onTabSelected(tab) }
-                    )
+                // Left half and right half each get equal width, so the FAB gap
+                // between them always lands exactly on the bar's centreline —
+                // independent of how wide either pair's labels render.
+                Row(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    tabs.take(2).forEach { tab ->
+                        BottomNavItem(
+                            tab = tab,
+                            isSelected = currentRoute == tab.route,
+                            isDark = isDark,
+                            onClick = { onTabSelected(tab) }
+                        )
+                    }
                 }
 
                 // Space for FAB
                 Spacer(modifier = Modifier.width(72.dp))
 
-                // Right 2 tabs: Circles, Profile
-                tabs.drop(2).forEach { tab ->
-                    BottomNavItem(
-                        tab = tab,
-                        isSelected = currentRoute == tab.route,
-                        isDark = isDark,
-                        onClick = { onTabSelected(tab) }
-                    )
+                Row(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    tabs.drop(2).forEach { tab ->
+                        BottomNavItem(
+                            tab = tab,
+                            isSelected = currentRoute == tab.route,
+                            isDark = isDark,
+                            onClick = { onTabSelected(tab) }
+                        )
+                    }
                 }
             }
         }

@@ -10,6 +10,7 @@ data class Group(
     val createdBy: String = "",
     val members: List<String> = emptyList(),
     val inviteCode: String = "",
+    val photo: String? = null,
     @ServerTimestamp
     val createdAt: Date? = null
 )

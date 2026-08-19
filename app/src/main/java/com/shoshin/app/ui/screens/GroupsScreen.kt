@@ -1,5 +1,6 @@
 package com.Shoshin.app.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,11 +36,42 @@ fun GroupsScreen(
     val isLoading by groupViewModel?.isLoading?.collectAsState() ?: remember { mutableStateOf(false) }
     val isOnline by networkMonitor?.isOnline?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
 
+    val joinSuccess by groupViewModel?.joinSuccess?.collectAsState() ?: remember { mutableStateOf(false) }
+    val limitReached by groupViewModel?.limitReached?.collectAsState() ?: remember { mutableStateOf(null) }
+    val groupFull by groupViewModel?.groupFull?.collectAsState() ?: remember { mutableStateOf(null) }
+    val joinError by groupViewModel?.error?.collectAsState() ?: remember { mutableStateOf(null) }
+    val context = LocalContext.current
+
     var showJoinDialog by remember { mutableStateOf(false) }
     var joinCode by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         groupViewModel?.loadGroups()
+    }
+
+    // Join succeeded — close the dialog and reset the code field.
+    LaunchedEffect(joinSuccess) {
+        if (joinSuccess) {
+            showJoinDialog = false
+            joinCode = ""
+            groupViewModel?.resetJoinState()
+        }
+    }
+
+    // Join failed for some reason — surface it and keep the dialog open so the user can retry.
+    // Limit-reached takes priority over group-full when (improbably) both are set at once.
+    LaunchedEffect(limitReached, groupFull, joinError) {
+        val message = when {
+            limitReached != null -> "You've reached max groups (5). Invite more friends to expand your limit."
+            groupFull != null -> "This group is full. Ask the owner to expand capacity."
+            joinError != null -> joinError
+            else -> null
+        }
+        if (message != null) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            groupViewModel?.clearLimitError()
+            if (joinError != null) groupViewModel?.clearError()
+        }
     }
 
     ShoshinTheme(type = ShoshinThemeType.DYNAMIC) {
@@ -109,10 +142,19 @@ fun GroupsScreen(
                                     modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = group.name.take(1).uppercase(),
-                                        style = ShH2Style.copy(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                                    )
+                                    if (group.photo != null) {
+                                        coil.compose.AsyncImage(
+                                            model = group.photo,
+                                            contentDescription = "${group.name} image",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                        )
+                                    } else {
+                                        Text(
+                                            text = group.name.take(1).uppercase(),
+                                            style = ShH2Style.copy(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                        )
+                                    }
                                 }
                                 
                                 Spacer(Modifier.width(16.dp))
@@ -165,7 +207,11 @@ fun GroupsScreen(
 
     if (showJoinDialog) {
         AlertDialog(
-            onDismissRequest = { showJoinDialog = false },
+            onDismissRequest = {
+                showJoinDialog = false
+                groupViewModel?.clearLimitError()
+                groupViewModel?.clearError()
+            },
             title = { Text("Join a Circle", style = ShTitleStyle.copy(fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface)) },
             text = {
                 Column {
@@ -178,19 +224,26 @@ fun GroupsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true,
+                        enabled = !isLoading,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
                     )
+                    if (isLoading) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Joining…", style = ShLabelStyle.copy(fontSize = 12.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             },
             confirmButton = {
                 TextButton(
-                    onClick = { 
+                    enabled = !isLoading,
+                    onClick = {
+                        // Dialog is closed by the joinSuccess LaunchedEffect above, not here —
+                        // closing unconditionally is exactly the silent-failure bug this fixes.
                         if (joinCode.isNotBlank()) {
                             groupViewModel?.joinGroup(joinCode)
-                            showJoinDialog = false
                         }
                     }
                 ) {
@@ -198,7 +251,11 @@ fun GroupsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showJoinDialog = false }) {
+                TextButton(onClick = {
+                    showJoinDialog = false
+                    groupViewModel?.clearLimitError()
+                    groupViewModel?.clearError()
+                }) {
                     Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },

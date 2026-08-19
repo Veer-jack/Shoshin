@@ -1,5 +1,6 @@
 package com.Shoshin.app.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,8 +34,40 @@ fun GroupPreviewScreen(
     val members by viewModel.groupMembers.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    val joinSuccess by viewModel.joinSuccess.collectAsState()
+    val limitReached by viewModel.limitReached.collectAsState()
+    val groupFull by viewModel.groupFull.collectAsState()
+    val joinError by viewModel.error.collectAsState()
+    val context = LocalContext.current
+    var isJoining by remember { mutableStateOf(false) }
+
     LaunchedEffect(inviteCode) {
         viewModel.loadGroupPreviewByCode(inviteCode)
+    }
+
+    // Join succeeded — leave the preview screen.
+    LaunchedEffect(joinSuccess) {
+        if (joinSuccess) {
+            viewModel.resetJoinState()
+            navController.popBackStack()
+        }
+    }
+
+    // Join failed — surface why and stay put so the user actually sees it,
+    // instead of popping back before the async result ever comes in.
+    LaunchedEffect(limitReached, groupFull, joinError) {
+        val message = when {
+            limitReached != null -> "You've reached max groups (5). Invite more friends to expand your limit."
+            groupFull != null -> "This group is full. Ask the owner to expand capacity."
+            joinError != null -> joinError
+            else -> null
+        }
+        if (message != null) {
+            isJoining = false
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.clearLimitError()
+            if (joinError != null) viewModel.clearError()
+        }
     }
 
     Column(
@@ -140,18 +174,23 @@ fun GroupPreviewScreen(
 
             Column(modifier = Modifier.padding(bottom = 32.dp)) {
                 ShoshinButton(
-                    onClick = { 
-                        group?.inviteCode?.let { viewModel.joinGroup(it) }
-                        navController.popBackStack()
+                    onClick = {
+                        // Dialog/screen is dismissed by the joinSuccess LaunchedEffect above,
+                        // not here — popping back unconditionally is the silent-failure bug.
+                        group?.inviteCode?.let {
+                            isJoining = true
+                            viewModel.joinGroup(it)
+                        }
                     },
                     variant = ShButtonVariant.Accent,
+                    enabled = !isJoining,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Join the circle", fontWeight = FontWeight.Bold)
+                    Text(if (isJoining) "Joining…" else "Join the circle", fontWeight = FontWeight.Bold)
                 }
-                
+
                 Spacer(Modifier.height(12.dp))
-                
+
                 ShoshinButton(
                     onClick = { navController.popBackStack() },
                     variant = ShButtonVariant.Ghost,

@@ -1,5 +1,6 @@
 package com.Shoshin.app.data.groups
 
+import android.graphics.Bitmap
 import com.Shoshin.app.R
 import com.Shoshin.app.data.db.dao.GroupDao
 import com.Shoshin.app.data.db.dao.GroupMemberDao
@@ -10,10 +11,13 @@ import com.Shoshin.app.data.db.entities.NotificationEntity
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.io.ByteArrayOutputStream
 import java.util.UUID
 
 class GroupRepository(
@@ -23,6 +27,16 @@ class GroupRepository(
 ) {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private val storage = FirebaseStorage.getInstance()
+
+    /** Uploads [bitmap] as the group's avatar and returns its download URL. */
+    private suspend fun uploadGroupPhoto(groupId: String, bitmap: Bitmap): String {
+        val ref = storage.reference.child("groups/$groupId/avatar.jpg")
+        val baos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, baos)
+        ref.putBytes(baos.toByteArray()).await()
+        return ref.downloadUrl.await().toString()
+    }
 
     /** Local-only echo of the current user's own group action — not seen by other members. */
     private suspend fun notifyLocal(title: String, body: String) {
@@ -42,11 +56,15 @@ class GroupRepository(
         )
     }
 
-    suspend fun createGroup(name: String, description: String): Result<String> {
+    suspend fun createGroup(name: String, description: String, photoBitmap: Bitmap? = null): Result<String> {
         return try {
             val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not authenticated"))
             val groupId = UUID.randomUUID().toString()
             val inviteCode = UUID.randomUUID().toString().take(6).uppercase()
+
+            // Upload before the group doc exists so the URL can be written in the same .set() call
+            // below, rather than creating the group first and patching the photo on afterward.
+            val photoUrl = photoBitmap?.let { uploadGroupPhoto(groupId, it) }
 
             val group = Group(
                 id = groupId,
@@ -54,7 +72,8 @@ class GroupRepository(
                 description = description,
                 createdBy = userId,
                 members = listOf(userId),
-                inviteCode = inviteCode
+                inviteCode = inviteCode,
+                photo = photoUrl
             )
 
             // Save to Firestore
@@ -75,7 +94,7 @@ class GroupRepository(
                 groupName = name,
                 description = description,
                 memberCount = 1,
-                photo = null,
+                photo = photoUrl,
                 inviteLinkCode = inviteCode,
                 created_at = System.currentTimeMillis(),
                 updated_at = System.currentTimeMillis(),
@@ -152,7 +171,7 @@ class GroupRepository(
                 groupName = group.name,
                 description = group.description,
                 memberCount = newMembers.size,
-                photo = null,
+                photo = group.photo,
                 inviteLinkCode = group.inviteCode,
                 created_at = System.currentTimeMillis(),
                 updated_at = System.currentTimeMillis(),
@@ -194,7 +213,7 @@ class GroupRepository(
                         groupName = g.name,
                         description = g.description,
                         memberCount = g.members.size,
-                        photo = null,
+                        photo = g.photo,
                         inviteLinkCode = g.inviteCode,
                         created_at = System.currentTimeMillis(),
                         updated_at = System.currentTimeMillis(),
@@ -210,7 +229,7 @@ class GroupRepository(
             if (!syncLocal) return Result.failure(e)
             // If error (e.g. offline), return local groups
             val localGroups = groupDao.getAllGroups().map { entity ->
-                Group(id = entity.groupId, name = entity.groupName, description = entity.description, createdBy = entity.userId, inviteCode = entity.inviteLinkCode, members = emptyList())
+                Group(id = entity.groupId, name = entity.groupName, description = entity.description, createdBy = entity.userId, inviteCode = entity.inviteLinkCode, members = emptyList(), photo = entity.photo)
             }
             if (localGroups.isNotEmpty()) Result.success(localGroups) else Result.failure(e)
         }
@@ -372,6 +391,15 @@ class GroupRepository(
             // Delete group in Firestore
             groupRef.delete().await()
 
+            // Delete the avatar image, if any. Not fatal — the group is already gone either way.
+            if (group.photo != null) {
+                try {
+                    storage.reference.child("groups/$groupId/avatar.jpg").delete().await()
+                } catch (e: StorageException) {
+                    android.util.Log.w("GroupRepo", "Failed to delete group avatar for $groupId", e)
+                }
+            }
+
             // Remove from local cache
             groupDao.deleteGroup(groupId)
 
@@ -427,6 +455,33 @@ class GroupRepository(
             }
 
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** Creator-only: replaces the group's avatar image. */
+    suspend fun updateGroupPhoto(groupId: String, bitmap: Bitmap): Result<String> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not authenticated"))
+
+            val groupRef = db.collection("groups").document(groupId)
+            val groupDoc = groupRef.get().await()
+            val group = groupDoc.toObject(Group::class.java) ?: return Result.failure(Exception("Group not found"))
+
+            if (group.createdBy != userId) {
+                return Result.failure(Exception("Only the creator can change the circle image"))
+            }
+
+            val url = uploadGroupPhoto(groupId, bitmap)
+            groupRef.update("photo", url).await()
+
+            val existing = groupDao.getGroup(groupId)
+            if (existing != null) {
+                groupDao.updateGroup(existing.copy(photo = url, updated_at = System.currentTimeMillis()))
+            }
+
+            Result.success(url)
         } catch (e: Exception) {
             Result.failure(e)
         }

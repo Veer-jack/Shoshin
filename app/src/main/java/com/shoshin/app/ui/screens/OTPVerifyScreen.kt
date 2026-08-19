@@ -18,7 +18,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalContext
-import android.app.Activity
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
 import com.Shoshin.app.R
